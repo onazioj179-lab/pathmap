@@ -1,110 +1,103 @@
 # PathMap
 
-**Private, encrypted, real-time location tracking for teams that can't afford to trust anyone else's server.**
+**Encrypted real-time location tracking for private teams, field operations, and commercial deployments.**
 
-PathMap gives operations teams live location coordination with end-to-end encryption — meaning even the server operator cannot see where your people are. It is built for field teams, private deployments, and regulated environments where handing location data to a third-party cloud is not an option.
+PathMap is location infrastructure for teams that need live coordination without handing sensitive movement data to a third-party tracking cloud. Devices encrypt location updates before they leave the client. The server routes encrypted payloads, but cannot read the location inside them.
 
-> PathMap is proprietary software by **onazi Treasure Oj**. Local evaluation is permitted. Production use, hosted access, resale, and commercial deployment require a paid license. See [Pricing](#commercial-license--pricing) and [LICENSE.md](LICENSE.md).
+Built for operations teams, private fleets, safety workflows, and regulated deployments where location privacy is not optional.
 
----
-
-## Who This Is For
-
-You are an operations lead managing 10–50 mobile workers. You need to know where they are in real time, but you cannot send that data through Google, Apple, or any commercial tracking cloud — whether for regulatory, competitive, or safety reasons.
-
-You need tracking infrastructure you can run yourself, with a guarantee that the server sees only encrypted blobs it cannot read.
-
-PathMap is that infrastructure.
+> PathMap is proprietary commercial software by **onazi Treasure Oj**. Local evaluation is allowed. Production use, hosted access, resale, SaaS use, white-label use, or any commercial deployment requires a paid PathMap license. See [Commercial License & Pricing](#commercial-license--pricing) and [LICENSE.md](LICENSE.md).
 
 ---
 
-## What PathMap Does
+## Why PathMap Exists
 
-### Encrypted Location Relay
+Most tracking products force a bad choice:
 
-Every location update is encrypted on the device before it leaves. The server routes opaque encrypted blobs — it knows who is communicating and when, but never where they are. Only the intended recipient can decrypt the payload.
+- Use a polished commercial service and expose sensitive location data to someone else's infrastructure.
+- Self-host a tool and lose the reliability, routing, and usability your team actually needs.
+
+PathMap is built for teams that need both control and a real operating experience: encrypted live tracking, team coordination, routing, geofencing, and deployment ownership.
+
+**Primary user:** an operations lead managing 10-50 mobile workers who needs real-time visibility without trusting a third-party platform with location data.
+
+---
+
+## What You Get
+
+| Capability | What it gives your team |
+|---|---|
+| **Encrypted live map** | Track devices in real time while keeping location payloads unreadable to the server. |
+| **Private team coordination** | Share location between authorized users without exposing raw coordinates to the backend. |
+| **Sensor-smoothed positioning** | GPS, accelerometer, gyroscope, and compass fusion reduce jumpy tracks and false alerts. |
+| **Offline-capable routing** | A*, Dijkstra, and greedy routing over OpenStreetMap graphs without paid external routing APIs. |
+| **Geofencing** | Trigger entry and exit alerts for operational zones. |
+| **Ghost mode** | Pause broadcasting while maintaining online presence when safety or privacy requires it. |
+| **Traffic obfuscation** | Add padding, timing jitter, and decoy messages to reduce metadata clarity. |
+| **Deployment control** | Run your own backend and connect your own database, billing, secrets, and infrastructure. |
+
+---
+
+## Security Model
+
+PathMap is designed around a simple promise: **the server should not be able to read location payloads.**
+
+Location updates are encrypted client-to-client. The backend handles accounts, sessions, geofences, and message routing. It does not need plaintext location data to operate.
 
 ```
-[Your Device] ──TLS──► [PathMap Server] ──TLS──► [Recipient Device]
-      │                       │                         │
-      └───────── End-to-end encrypted location ─────────┘
-                    (server sees only ciphertext)
+[Client Device] --TLS--> [PathMap Server] --TLS--> [Recipient Device]
+       |                         |                         |
+       +------- end-to-end encrypted location payload ------+
+                         server sees ciphertext only
 ```
 
-### Stable Position Tracking
+### Protects Against
 
-Raw GPS moves ±10m even standing still. PathMap fuses GPS with accelerometer, gyroscope, and compass through an Extended Kalman filter, producing smooth, reliable position tracks. This prevents false geofence alerts and reduces unnecessary route corrections in urban environments.
+- Passive server compromise: encrypted payloads remain opaque.
+- Network interception: TLS plus application-layer encryption protect data in transit.
+- Basic token theft: short-lived tokens and refresh rotation limit exposure.
 
-### Offline-Ready Routing
+### Does Not Protect Against
 
-Navigation runs entirely over OpenStreetMap data with no external API calls. Your team can route and navigate with intermittent or no connectivity. No per-request API costs, no third-party routing dependency.
+- Compromised client devices: if the endpoint is owned, location data is exposed.
+- Traffic analysis: timing and packet sizes can still reveal metadata.
+- Targeted key extraction: no HSM integration; keys live in process memory.
 
----
-
-## Security Design
-
-PathMap is built to survive a compromised server.
-
-**Protected against:**
-- Server operator accessing location data — payloads are encrypted client-to-client
-- Network interception — TLS in transit, AES-256-GCM at the application layer
-- Token theft — short-lived JWTs with refresh rotation
-
-**Not protected against:**
-- Compromised end-user device — if the device is owned, location is exposed
-- Traffic analysis — connection timing and packet sizes are observable (partially mitigated by traffic obfuscation)
-- Key extraction — no HSM support; keys are held in process memory
-
-**Cryptography stack:**
+### Cryptography
 
 | Layer | Algorithm | Notes |
 |---|---|---|
-| Key exchange | X25519 ECDH | `cryptography` library required |
-| Payload encryption | AES-256-GCM | 96-bit nonces, counter-tracked |
-| Key derivation | HKDF-SHA256 | Per-session keys |
-| Authentication | HMAC-SHA256 | Short-lived JWT tokens |
-| Password hashing | bcrypt | Cost factor 12 |
+| Key exchange | X25519 ECDH | Requires the Python `cryptography` package. |
+| Payload encryption | AES-256-GCM | 96-bit nonces with counter tracking. |
+| Key derivation | HKDF-SHA256 | Per-session keys. |
+| Authentication | HMAC-SHA256 | Short-lived JWT-style tokens. |
+| Password storage | bcrypt | Cost factor 12. |
 
-Session keys rotate every 300 seconds or after 10,000 messages — whichever comes first. Renegotiation is automatic.
+Session keys rotate automatically every 300 seconds or after 10,000 messages.
 
-> **Dependency note:** The Python `cryptography` library is required for all security guarantees. Without it, the system falls back to weak XOR obfuscation and logs a prominent startup warning. Install it before any deployment handling real data.
-
----
-
-## Features
-
-| Feature | What it does | Known limit |
-|---|---|---|
-| **Encrypted tunnel** | X25519 + AES-256-GCM location relay | Server cannot decrypt |
-| **Kalman filter positioning** | Sensor-fused smooth tracks | No indoor positioning |
-| **Offline routing** | A*, Dijkstra, OSM-based navigation | Requires OSM graph on startup |
-| **Geofencing** | Entry/exit alerts for defined zones | Circular zones only |
-| **Time-limited location sharing** | Share position with precision control for a set window | Both parties must be online |
-| **Ghost mode** | Stop broadcasting while appearing connected | Social engineering risk |
-| **Traffic obfuscation** | Packet padding, timing jitter, decoys | 10–30% bandwidth overhead |
-| **Rate limiting** | Token bucket per endpoint | No distributed rate limiting |
+> Security requirement: install the Python `cryptography` package before using PathMap with real data. Without it, the system falls back to weak XOR obfuscation and logs a warning. That fallback is for development only and should not be treated as secure.
 
 ---
 
 ## Commercial License & Pricing
 
-PathMap is proprietary software. This repository is public for evaluation and authorized development only — it does not grant any right to run it in production, resell it, host it as a service, or white-label it.
+PathMap is not open-source freeware. This repository is available for evaluation, review, and authorized development only. It does not grant production, hosted, resale, SaaS, or white-label rights.
 
-| Plan | Price | Best for | Includes |
+| Plan | Price | Intended use | Includes |
 |---|---|---|---|
-| **Starter** | $19 / seat / month | Small teams running private encrypted tracking | Up to 5 devices, live encrypted map, route sharing, deployment support |
-| **Pro** | $49 / seat / month | Field operations needing production-grade controls | Up to 25 devices, priority workflows, safety/routing/diagnostics, commercial production license |
-| **Enterprise** | Custom — annual contract | Regulated teams, large-scale or private deployments | Device count by agreement, security review, dedicated deployment support |
+| **Starter** | $19 / seat / month | Small teams evaluating private encrypted tracking. | Up to 5 tracked devices, encrypted live map, route sharing, deployment guidance. |
+| **Pro** | $49 / seat / month | Field operations needing production controls. | Up to 25 tracked devices, commercial production license, priority safety/routing/diagnostics workflows. |
+| **Enterprise** | Custom annual contract | Regulated teams and private deployments. | Device limits by agreement, security review, private deployment support, dedicated terms. |
 
-To get a license or ask about Enterprise terms, contact **onazi Treasure Oj** directly.
+Payment processing is intentionally not bundled in this repository. Production operators should connect their approved billing provider, subscription ledger, and license enforcement service before offering hosted access.
 
-Payment infrastructure is not bundled in this repository. Production operators connect their own billing and license enforcement before offering hosted access.
+For licensing or Enterprise terms, contact **onazi Treasure Oj**.
 
 ---
 
 ## Quick Start
 
-### 1. Start the server
+### 1. Start the backend
 
 ```bash
 cd backend
@@ -128,6 +121,7 @@ curl -X POST http://localhost:8000/api/v1/social/register \
 
 ```javascript
 const ws = new WebSocket("ws://localhost:8000/api/v1/tunnel/connect");
+
 ws.onopen = () => {
   ws.send(JSON.stringify({
     type: "handshake",
@@ -137,7 +131,7 @@ ws.onopen = () => {
 };
 ```
 
-### 4. Send an encrypted location update
+### 4. Send a location update
 
 ```javascript
 const encrypted = aesGcmEncrypt(sharedSecret, JSON.stringify({
@@ -146,22 +140,23 @@ const encrypted = aesGcmEncrypt(sharedSecret, JSON.stringify({
   accuracy: 10,
   timestamp: Date.now(),
 }));
+
 ws.send(JSON.stringify({ type: "location", payload: encrypted }));
 ```
 
-**Common errors:**
+### Common Responses
 
-| Code | Meaning | Fix |
+| Response | Meaning | Fix |
 |---|---|---|
-| `401` | Token expired | Refresh token and retry |
-| `429` | Rate limited | Wait 60 seconds |
-| `handshake_failed` | Key exchange rejected | Regenerate keypair |
+| `401` | Token expired. | Refresh the token and retry. |
+| `429` | Rate limited. | Back off for 60 seconds. |
+| `handshake_failed` | Key exchange failed. | Regenerate the keypair and reconnect. |
 
 ---
 
 ## Deployment
 
-### Environment variables
+### Environment Variables
 
 ```env
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/pathmap
@@ -175,7 +170,7 @@ CORS_ORIGINS=https://your-domain.com
 docker-compose up -d
 ```
 
-Add a PostgreSQL service to `docker-compose.yml` before running in production.
+Add a PostgreSQL service to `docker-compose.yml` before production use.
 
 ### Kubernetes
 
@@ -183,54 +178,54 @@ Add a PostgreSQL service to `docker-compose.yml` before running in production.
 kubectl apply -f k8s/
 ```
 
-Deploys: backend (3 replicas) + PostgreSQL StatefulSet.
-Not included: ingress, TLS termination, secrets management.
+The manifests deploy the backend and PostgreSQL StatefulSet. Ingress, TLS termination, secrets management, observability, and billing are intentionally left to the production operator.
 
 ---
 
-## How It Handles Failures
+## Failure Behavior
 
-| Failure | What happens | How it recovers |
+| Failure | Behavior | Recovery |
 |---|---|---|
-| Database down | Auth fails; active sessions continue | Exponential backoff reconnect |
-| WebSocket drops | Client queues updates locally | Auto-reconnect with replay |
-| `cryptography` missing | Falls back to weak obfuscation, logs warning | Install the library |
-| OSM graph missing | Routing disabled; tracking continues | Restart with valid graph |
+| Database unavailable | New authentication fails; active sessions continue. | Exponential backoff reconnect. |
+| WebSocket disconnect | Client queues updates locally. | Auto-reconnect with replay. |
+| Crypto library missing | Weak obfuscation fallback with startup warning. | Install `cryptography`. |
+| OSM graph load failure | Routing becomes unavailable; tracking continues. | Restart with a valid graph. |
 
 ---
 
-## What PathMap Does Not Do
+## Known Limits
 
-- **No consumer mobile apps** — No iOS or Android app provided; web interface only
-- **No compliance certification** — Not audited for HIPAA, SOC 2, or GDPR
-- **No sub-meter accuracy** — Consumer GPS hardware limits apply
-- **No indoor positioning** — No WiFi or BLE beacon support
-- **No historical analytics** — No location storage, heatmaps, or replay
-- **No geo-replication** — Single-region deployment only
+- No iOS or Android app is included; the repository provides web/backend infrastructure.
+- No HIPAA, SOC 2, GDPR, or other compliance certification is included.
+- No sub-meter accuracy; consumer GPS hardware limits still apply.
+- No indoor positioning through WiFi, BLE, or beacon systems.
+- No historical location warehouse, replay system, or heatmap analytics.
+- No multi-region replication or HSM-backed key storage out of the box.
 
-PathMap is location infrastructure for teams building private tracking systems. It is not a turnkey consumer product.
+PathMap is encrypted location infrastructure for teams building private tracking systems. It is not a turnkey consumer app.
 
 ---
 
 ## Architecture Notes
 
-**Why FastAPI:** Native async support for WebSocket scale. Sufficient for 10,000 concurrent connections. Pydantic validation reduces malformed-input bugs.
+**Backend:** FastAPI for async WebSocket handling, Pydantic validation, and high-concurrency routing.
 
-**Why WebSockets over polling:** 50× lower connection overhead for 2-second update intervals. Native browser support without a proxy layer. Tradeoff: manual backpressure handling required.
+**Realtime transport:** WebSockets for low-overhead 2-second location updates with browser support.
 
-**What the server stores:** Accounts, sessions, geofences.  
-**What the server never stores:** Location data.
+**Storage:** PostgreSQL for accounts, sessions, and geofences. Plaintext location history is not stored by default.
+
+**Routing:** OpenStreetMap graph routing with A*, Dijkstra, and greedy algorithms.
 
 ---
 
 ## Version History
 
-| Version | What shipped |
+| Version | Shipped |
 |---|---|
-| 96 | X25519 tunnel encryption, traffic obfuscation |
-| 95 | Device tracking API, JWT authentication |
-| 94 | Kalman filter sensor fusion |
-| 93 | Friends, location sharing, ghost mode |
+| 96 | X25519 tunnel encryption and traffic obfuscation. |
+| 95 | Device tracking API and JWT authentication. |
+| 94 | Kalman filter sensor fusion. |
+| 93 | Friends, location sharing, and ghost mode. |
 
 ---
 
@@ -238,4 +233,4 @@ PathMap is location infrastructure for teams building private tracking systems. 
 
 Proprietary commercial software. All rights reserved.
 
-See [LICENSE.md](LICENSE.md). No production, hosted, resale, SaaS, or white-label rights are granted without a written paid license agreement from **onazi Treasure Oj**.
+See [LICENSE.md](LICENSE.md). No production, hosted, resale, SaaS, white-label, or commercial-use rights are granted without a written paid license agreement from **onazi Treasure Oj**.
