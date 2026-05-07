@@ -1438,17 +1438,17 @@ export default function Home() {
           </span>
           <span className="sys-stat" data-state={tracking ? 'live' : 'idle'}>
             <span className="sys-stat-dot" />
-            {tracking ? 'Live tracking' : 'Standby'}
+            {tracking ? 'Tracking is on' : 'Not tracking'}
           </span>
         </div>
         <div className="sys-bar-right">
-          <span className="sys-metric" title="Active targets">
-            <em>Targets</em>
+          <span className="sys-metric" title="Saved targets">
+            <em>Saved targets</em>
             {mapTargets.length}
           </span>
-          <span className="sys-metric" title="Route engine">
-            <em>Route</em>
-            {aiRoute ? 'Ready' : 'Idle'}
+          <span className="sys-metric" title="Directions status">
+            <em>Directions</em>
+            {aiRoute ? 'Ready' : 'Not set'}
           </span>
           <span className="sys-metric" title="Privacy mode">
             <em>Privacy</em>
@@ -1795,7 +1795,7 @@ export default function Home() {
                 <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
               </svg>
             </span>
-            <span>Track</span>
+            <span>Map</span>
           </button>
           <button className={tab === 'devices' ? 'active' : ''} onClick={() => setTab('devices')}>
             <span className="tab-icon">
@@ -1803,7 +1803,7 @@ export default function Home() {
                 <path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z" />
               </svg>
             </span>
-            <span>Systems</span>
+            <span>Status</span>
           </button>
           <button className={tab === 'routes' ? 'active' : ''} onClick={() => setTab('routes')}>
             <span className="tab-icon">
@@ -1811,7 +1811,7 @@ export default function Home() {
                 <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
               </svg>
             </span>
-            <span>AI Route</span>
+            <span>Directions</span>
           </button>
           <button className={tab === 'settings' ? 'active' : ''} onClick={() => setTab('settings')}>
             <span className="tab-icon">
@@ -1844,7 +1844,7 @@ export default function Home() {
                       <circle cx="12" cy="12" r="6" />
                       <circle cx="12" cy="12" r="2" fill="currentColor" />
                     </svg>{' '}
-                    Targets
+                    Saved targets
                   </div>
                   <div className="device-list">
                     {mapTargets.map(target => (
@@ -1939,17 +1939,17 @@ export default function Home() {
                   </svg>
                 </div>
                 <div className="hint-text">
-                  <strong>Tap anywhere on the map</strong>
-                  <span>to create a tracking target for any person, place, or object</span>
+                  <strong>Tap the map to add a target</strong>
+                  <span>Choose a person, place, or object to track.</span>
                 </div>
               </div>
 
-              {/* Get My Location Button - always visible */}
+              {/* Use my location Button - always visible */}
               {!deviceData?.location && (
                 <button
                   className="btn-primary location-btn"
                   onClick={() => {
-                    console.log('Get My Location clicked');
+                    console.log('Use my location clicked');
                     if (!navigator.geolocation) {
                       alert('Geolocation not supported');
                       return;
@@ -2003,18 +2003,18 @@ export default function Home() {
                       d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                     />
                   </svg>
-                  Get My Location
+                  Use my location
                 </button>
               )}
 
               {/* Tracking Lock */}
               {deviceData?.location && (
                 <div className="section">
-                  <div className="section-header">Tracking lock</div>
+                  <div className="section-header">Location</div>
                   <div className="live-card system-status-card">
                     <div>
-                      <strong>Location secured</strong>
-                      <span>Accuracy radius: ±{Math.round(deviceData.location.accuracy)}m</span>
+                      <strong>Your location is ready</strong>
+                      <span>Accuracy: within about {Math.round(deviceData.location.accuracy)} m.</span>
                     </div>
                     <span className="system-chip">Private</span>
                   </div>
@@ -2027,32 +2027,32 @@ export default function Home() {
           {tab === 'devices' && (
             <>
               <div className="section">
-                <div className="section-header">System status</div>
+                <div className="section-header">Status</div>
                 <div className="system-overview-grid">
                   <div className="system-overview-card">
-                    <span className="system-overview-label">Session</span>
-                    <strong>{tracking ? 'Active' : 'Ready'}</strong>
-                    <span>{tracking ? 'Monitoring enabled' : 'Waiting for target'}</span>
+                    <span className="system-overview-label">Tracking</span>
+                    <strong>{tracking ? 'On' : 'Ready'}</strong>
+                    <span>{tracking ? 'Tracking is active' : 'Choose a target to start'}</span>
                   </div>
                   <div className="system-overview-card">
-                    <span className="system-overview-label">Targets</span>
+                    <span className="system-overview-label">Saved</span>
                     <strong>{mapTargets.length}</strong>
-                    <span>{mapTargets.length === 1 ? 'Saved target' : 'Saved targets'}</span>
+                    <span>{mapTargets.length === 1 ? 'target saved' : 'targets saved'}</span>
                   </div>
                   <div className="system-overview-card">
-                    <span className="system-overview-label">Sources</span>
+                    <span className="system-overview-label">Signals</span>
                     <strong>{connectedHardware.length + satelliteData.satellites.length}</strong>
-                    <span>Ready sources</span>
+                    <span>Signals available</span>
                   </div>
                 </div>
               </div>
               <div className="section">
                 <div className="system-status-card">
                   <div>
-                    <strong>Tracking workspace ready</strong>
-                    <span>Only operational tracking controls are shown in this view.</span>
+                    <strong>PathMap is ready</strong>
+                    <span>The app shows only the controls you need for tracking.</span>
                   </div>
-                  <span className="system-chip">Clean</span>
+                  <span className="system-chip">Ready</span>
                 </div>
               </div>
             </>
@@ -2072,7 +2072,7 @@ export default function Home() {
                   >
                     <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
                   </svg>
-                  AI Pathfinding
+                  Directions
                 </div>
                 <div className="algo-grid">
                   {['ShadowPath', 'Dijkstra', 'A*', 'BFS'].map(algo => (
@@ -2115,7 +2115,7 @@ export default function Home() {
                           d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                         />
                       </svg>{' '}
-                      Finding Route...
+                      Finding directions...
                     </>
                   ) : (
                     <>
@@ -2133,7 +2133,7 @@ export default function Home() {
                           d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
                         />
                       </svg>{' '}
-                      Find AI Route
+                      Find directions
                     </>
                   )}
                 </button>
@@ -2141,8 +2141,8 @@ export default function Home() {
 
               {!selectedDevice && !aiRoute && (
                 <EmptyState
-                  title="Select a device to route"
-                  message="Choose a tracked device first, then PathMap can calculate a route using the active pathfinding engine."
+                  title="Choose a target first"
+                  message="Choose a target first, then PathMap can find directions on the map."
                   icon={
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
                       <path d="M9 11.5c0-.83.67-1.5 1.5-1.5S12 10.67 12 11.5 11.33 13 10.5 13 9 12.33 9 11.5zm4.5 0c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S15.83 13 15 13s-1.5-.67-1.5-1.5zM20 9V7c0-1.1-.9-2-2-2h-3c-.41-1.16-1.52-2-2.82-2h-.36C10.52 3 9.41 3.84 9 5H6C4.9 5 4 5.9 4 7v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3z" />
@@ -2950,6 +2950,7 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
     </div>
   );
 }
+
 
 
 

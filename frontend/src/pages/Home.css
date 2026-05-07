@@ -3868,3 +3868,16 @@ body {
 @media (max-width: 720px) {
   .app.holo-mode .sheet { max-height: min(33dvh, 250px) !important; }
 }
+
+/* Plain English labels */
+.app.holo-mode .sys-metric em,
+.app.holo-mode .section-header,
+.app.holo-mode .system-overview-label {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.app.holo-mode .sys-metric em,
+.app.holo-mode .system-overview-label {
+  font-size: 10px !important;
+}
