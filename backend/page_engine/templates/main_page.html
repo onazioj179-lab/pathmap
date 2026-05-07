@@ -1,0 +1,310 @@
+<div id="main-page" class="main-page-container">
+    <style>
+        .main-page-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Map Container */
+        #map-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* Scan Animation Overlay */
+        #scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 400;
+        }
+        
+        /* UI Controls Layer */
+        #ui-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 500;
+        }
+        
+        /* Bottom Navigation */
+        #bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            pointer-events: auto;
+            z-index: 600;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-button {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            background: transparent;
+            color: #6b7280;
+        }
+        
+        .nav-button:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #3b82f6;
+        }
+        
+        .nav-button.active {
+            color: #3b82f6;
+        }
+        
+        .nav-button-icon {
+            font-size: 1.5rem;
+        }
+        
+        .nav-button-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Slide Panels */
+        .slide-panel {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            width: 100%;
+            max-height: 60%;
+            background: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(100%);
+            transition: transform 0.15s ease-in-out;
+            pointer-events: auto;
+            z-index: 700;
+            overflow: hidden;
+        }
+        
+        .slide-panel.open {
+            transform: translateY(0);
+        }
+        
+        .panel-handle {
+            width: 40px;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 2px;
+            margin: 12px auto 8px;
+        }
+        
+        .panel-content {
+            padding: 1rem;
+            max-height: calc(60vh - 80px);
+            overflow-y: auto;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+            z-index: 800;
+        }
+        
+        .loading-spinner.show {
+            display: block;
+        }
+        
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+    </style>
+    
+    {# Map Container (React component will mount here) #}
+    <div id="map-container"></div>
+    
+    {# Scan Animation Overlay (V43 integration) #}
+    <div id="scan-overlay"></div>
+    
+    {# UI Controls Layer #}
+    <div id="ui-controls">
+        {# React components will render here #}
+        <div id="top-controls"></div>
+        <div id="side-controls"></div>
+    </div>
+    
+    {# Loading Spinner #}
+    <div id="loading-spinner" class="loading-spinner"></div>
+    
+    {# Bottom Navigation #}
+    <div id="bottom-nav">
+        <button class="nav-button" data-panel="route" onclick="togglePanel('route')">
+            <div class="nav-button-icon" aria-hidden="true"></div>
+            <div class="nav-button-label">Route</div>
+        </button>
+        
+        <button class="nav-button" data-panel="safe-return" onclick="togglePanel('safe-return')">
+            <div class="nav-button-icon" aria-hidden="true"></div>
+            <div class="nav-button-label">Safe Return</div>
+        </button>
+        
+        <button class="nav-button" data-panel="explore" onclick="togglePanel('explore')">
+            <div class="nav-button-icon" aria-hidden="true"></div>
+            <div class="nav-button-label">Explore</div>
+        </button>
+        
+        <button class="nav-button" data-panel="tracking" onclick="togglePanel('tracking')">
+            <div class="nav-button-icon" aria-hidden="true"></div>
+            <div class="nav-button-label">Track</div>
+        </button>
+        
+        <button class="nav-button" data-panel="diagnostics" onclick="togglePanel('diagnostics')">
+            <div class="nav-button-icon" aria-hidden="true"></div>
+            <div class="nav-button-label">Settings</div>
+        </button>
+    </div>
+    
+    {# Slide Panels #}
+    <div id="route-panel" class="slide-panel">
+        <div class="panel-handle"></div>
+        <div class="panel-content" id="route-panel-content">
+            {# React RoutePanel will mount here #}
+        </div>
+    </div>
+    
+    <div id="safe-return-panel" class="slide-panel">
+        <div class="panel-handle"></div>
+        <div class="panel-content" id="safe-return-panel-content">
+            {# React SafeReturnPanel will mount here #}
+        </div>
+    </div>
+    
+    <div id="explore-panel" class="slide-panel">
+        <div class="panel-handle"></div>
+        <div class="panel-content" id="explore-panel-content">
+            {# React ExplorePanel will mount here #}
+        </div>
+    </div>
+    
+    <div id="tracking-panel" class="slide-panel">
+        <div class="panel-handle"></div>
+        <div class="panel-content" id="tracking-panel-content">
+            {# React TrackingPanel will mount here #}
+        </div>
+    </div>
+    
+    <div id="diagnostics-panel" class="slide-panel">
+        <div class="panel-handle"></div>
+        <div class="panel-content" id="diagnostics-panel-content">
+            {# React DiagnosticsPanel will mount here #}
+        </div>
+    </div>
+    
+    <script>
+        // Panel management integrated with PPE
+        let currentPanel = {{ current_panel|tojson }};
+        
+        function togglePanel(panelName) {
+            const panels = document.querySelectorAll('.slide-panel');
+            const buttons = document.querySelectorAll('.nav-button');
+            const targetPanel = document.getElementById(`${panelName}-panel`);
+            
+            // Close all panels
+            panels.forEach(panel => panel.classList.remove('open'));
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // If same panel, just close
+            if (currentPanel === panelName) {
+                currentPanel = null;
+                // Notify PPE
+                window.PPE.sendEvent('panel', { panel: null });
+                return;
+            }
+            
+            // Open target panel
+            if (targetPanel) {
+                targetPanel.classList.add('open');
+                document.querySelector(`[data-panel="${panelName}"]`).classList.add('active');
+                currentPanel = panelName;
+                
+                // Notify PPE
+                window.PPE.sendEvent('panel', { panel: panelName });
+            }
+        }
+        
+        // Listen for PPE panel updates
+        window.addEventListener('ppe-update', (event) => {
+            if (event.detail.type === 'panel') {
+                const panelName = event.detail.data.panel;
+                
+                if (panelName !== currentPanel) {
+                    if (panelName) {
+                        togglePanel(panelName);
+                    } else {
+                        // Close all panels
+                        document.querySelectorAll('.slide-panel').forEach(panel => {
+                            panel.classList.remove('open');
+                        });
+                        document.querySelectorAll('.nav-button').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        currentPanel = null;
+                    }
+                }
+            }
+        });
+        
+        // Loading spinner control
+        function showLoading() {
+            document.getElementById('loading-spinner').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-spinner').classList.remove('show');
+        }
+        
+        // Listen for pipeline state changes
+        window.addEventListener('ppe-update', (event) => {
+            if (event.detail.type === 'pipeline') {
+                const state = event.detail.data.state;
+                
+                if (state === 'WAITING_BACKEND' || state === 'RENDERING') {
+                    showLoading();
+                } else {
+                    hideLoading();
+                }
+            }
+        });
+    </script>
+</div>

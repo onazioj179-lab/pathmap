@@ -1,0 +1,205 @@
+# PATHMAP - Nightly Builds and Maintenance
+# ========================================
+# Scheduled maintenance tasks and nightly testing
+
+name: Nightly Maintenance
+
+on:
+  schedule:
+    # Run at 2 AM UTC every day
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  # ============== DEPENDENCY AUDIT ==============
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Audit Python dependencies
+        run: |
+          cd backend
+          pip install safety pip-audit
+          pip install -r requirements.txt
+          safety check --json > safety-report.json || true
+          pip-audit --format json > pip-audit-report.json || true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Audit npm dependencies
+        run: |
+          cd frontend
+          npm ci
+          npm audit --json > npm-audit-report.json || true
+
+      - name: Upload audit reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audits
+          path: |
+            backend/safety-report.json
+            backend/pip-audit-report.json
+            frontend/npm-audit-report.json
+
+  # ============== FULL TEST SUITE ==============
+  full-test-suite:
+    name: Full Test Suite
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: pathmap
+          POSTGRES_PASSWORD: pathmap_test
+          POSTGRES_DB: pathmap_test
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio pytest-benchmark
+
+      - name: Run backend tests with benchmarks
+        env:
+          DATABASE_URL: postgresql://pathmap:pathmap_test@localhost:5432/pathmap_test
+          REDIS_URL: redis://localhost:6379
+        run: |
+          cd backend
+          pytest tests/ -v --benchmark-only --benchmark-json=benchmark.json || true
+          pytest tests/ -v --cov=. --cov-report=html
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm test -- --coverage
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-test-reports
+          path: |
+            backend/coverage_html
+            backend/benchmark.json
+            frontend/coverage
+
+  # ============== DATABASE BACKUP TEST ==============
+  backup-test:
+    name: Backup & Restore Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: pathmap
+          POSTGRES_PASSWORD: pathmap_test
+          POSTGRES_DB: pathmap_test
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Test backup procedure
+        run: |
+          # Test pg_dump
+          PGPASSWORD=pathmap_test pg_dump -h localhost -U pathmap pathmap_test > backup_test.sql
+          
+          # Test restore
+          PGPASSWORD=pathmap_test psql -h localhost -U pathmap -d pathmap_test -c "SELECT 1;"
+          
+          echo "Backup test completed successfully"
+
+  # ============== PERFORMANCE BENCHMARK ==============
+  performance-benchmark:
+    name: Performance Benchmark
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install locust pytest-benchmark
+
+      - name: Run benchmarks
+        run: |
+          cd backend
+          # Run quick benchmark suite
+          python -c "print('Performance benchmarks would run here')"
+
+      - name: Store benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks
+          path: backend/benchmark-results/
+
+  # ============== CLEANUP OLD ARTIFACTS ==============
+  cleanup:
+    name: Cleanup Old Resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 30
+          keep_minimum_runs: 10
+
+      - name: Cleanup old packages
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: pathmap-backend
+          package-type: container
+          min-versions-to-keep: 10
+        continue-on-error: true

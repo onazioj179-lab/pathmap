@@ -1,0 +1,27 @@
+{
+  "app": {
+    "name": "Pathfinding Map Application",
+    "version": "1.0.0",
+    "debug": true
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "cors_origins": ["*"]
+  },
+  "map": {
+    "default_location": "Piedmont, California, USA",
+    "default_center": [37.8272, -122.2913],
+    "default_zoom": 14,
+    "network_type": "drive",
+    "cache_path": "backend/data/map_graph.graphml"
+  },
+  "pathfinding": {
+    "default_algorithm": "astar",
+    "max_distance_km": 50
+  },
+  "ui": {
+    "tile_layer": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    "attribution": "© OpenStreetMap contributors"
+  }
+}

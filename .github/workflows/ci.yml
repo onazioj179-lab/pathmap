@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies (if any)
+        run: |
+          if [ -f package.json ]; then npm ci; fi
+
+      - name: Run Build Guard
+        run: node scripts/build-guard.mjs
+
+      - name: Run CEE (optional)
+        run: |
+          if [ -f scripts/cee.mjs ]; then node scripts/cee.mjs || true; fi

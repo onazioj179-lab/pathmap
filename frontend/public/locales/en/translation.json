@@ -1,0 +1,54 @@
+{
+  "app": {
+    "title": "PathMap V98",
+    "subtitle": "Advanced Neural Navigation",
+    "status": "System Online",
+    "version": "Version {{version}}"
+  },
+  "nav": {
+    "home": "Home",
+    "settings": "Settings",
+    "map": "Map",
+    "diagnostics": "Diagnostics"
+  },
+  "settings": {
+    "title": "Application Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "unitSystem": "Units",
+    "unitsMetric": "Metric",
+    "unitsImperial": "Imperial",
+    "notifications": "Notifications",
+    "offlineMode": "Offline Mode",
+    "debugMode": "Debug Mode",
+    "save": "Save Settings",
+    "reset": "Reset Defaults",
+    "subtitle": "Tune the map, tracking, alerts, and diagnostics from one quiet control surface.",
+    "experience": "Experience",
+    "navigation": "Navigation",
+    "privacy": "Privacy",
+    "themeSystem": "System",
+    "languageDetail": "Interface labels and regional defaults.",
+    "themeDetail": "Display mode for map controls and panels.",
+    "unitsDetail": "Distance, speed, altitude, and route summaries.",
+    "syncMode": "Sync",
+    "onlineMode": "Online",
+    "precisionMode": "High precision tracking",
+    "precisionModeDetail": "Use tighter GPS sampling when navigation is active.",
+    "offlineModeDetail": "Keep recent routes and map data available during weak signal.",
+    "safetyAlerts": "Safety alerts",
+    "safetyAlertsDetail": "Notify when routes, zones, or device status need attention.",
+    "reducedMotion": "Reduced motion",
+    "reducedMotionDetail": "Lower panel animation and visual motion across the app.",
+    "debugModeDetail": "Show diagnostics, logs, and engine status while testing.",
+    "saved": "Saved"
+  },
+  "dashboard": {
+    "activeServices": "Active Services",
+    "networkStatus": "Network Status",
+    "recentActivity": "Recent Activity",
+    "startNavigation": "Start Navigation"
+  }
+}

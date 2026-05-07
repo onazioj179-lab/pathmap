@@ -1,0 +1,54 @@
+{
+  "app": {
+    "title": "PathMap V98",
+    "subtitle": "Navegación Neural Avanzada",
+    "status": "Sistema en Línea",
+    "version": "Versión {{version}}"
+  },
+  "nav": {
+    "home": "Inicio",
+    "settings": "Ajustes",
+    "map": "Mapa",
+    "diagnostics": "Diagnóstico"
+  },
+  "settings": {
+    "title": "Configuración de la Aplicación",
+    "language": "Idioma",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "unitSystem": "Unidades",
+    "unitsMetric": "Métrico",
+    "unitsImperial": "Imperial",
+    "notifications": "Notificaciones",
+    "offlineMode": "Modo Fuera de Línea",
+    "debugMode": "Modo Depuración",
+    "save": "Guardar Configuración",
+    "reset": "Restablecer Valores",
+    "subtitle": "Ajusta el mapa, seguimiento, alertas y diagnósticos desde un panel limpio.",
+    "experience": "Experiencia",
+    "navigation": "Navegación",
+    "privacy": "Privacidad",
+    "themeSystem": "Sistema",
+    "languageDetail": "Etiquetas de la interfaz y valores regionales.",
+    "themeDetail": "Modo visual para controles del mapa y paneles.",
+    "unitsDetail": "Distancia, velocidad, altitud y resúmenes de ruta.",
+    "syncMode": "Sincronización",
+    "onlineMode": "En línea",
+    "precisionMode": "Seguimiento de alta precisión",
+    "precisionModeDetail": "Usa muestreo GPS más preciso durante la navegación.",
+    "offlineModeDetail": "Mantén rutas recientes y datos del mapa durante señal débil.",
+    "safetyAlerts": "Alertas de seguridad",
+    "safetyAlertsDetail": "Notifica cuando rutas, zonas o dispositivos requieren atención.",
+    "reducedMotion": "Movimiento reducido",
+    "reducedMotionDetail": "Reduce animaciones de paneles y movimiento visual en la app.",
+    "debugModeDetail": "Muestra diagnósticos, registros y estado del motor durante pruebas.",
+    "saved": "Guardado"
+  },
+  "dashboard": {
+    "activeServices": "Servicios Activos",
+    "networkStatus": "Estado de Red",
+    "recentActivity": "Actividad Reciente",
+    "startNavigation": "Iniciar Navegación"
+  }
+}

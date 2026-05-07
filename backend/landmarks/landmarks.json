@@ -1,0 +1,28 @@
+{
+  "safe": [
+    {
+      "id": "safe_1",
+      "name": "Berkeley Police Department",
+      "type": "police",
+      "lat": 37.8697,
+      "lon": -122.2735
+    },
+    {
+      "id": "safe_2",
+      "name": "Alta Bates Summit Medical Center",
+      "type": "hospital",
+      "lat": 37.8574,
+      "lon": -122.2645
+    }
+  ],
+  "personal": [],
+  "poi": [
+    {
+      "id": "poi_1",
+      "name": "UC Berkeley Campus",
+      "type": "university",
+      "lat": 37.8719,
+      "lon": -122.2585
+    }
+  ]
+}

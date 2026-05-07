@@ -1,0 +1,57 @@
+{
+  "name": "PathMap - AI Location Tracking",
+  "short_name": "PathMap",
+  "description": "Real-time AI-powered location tracking with multi-GNSS satellite fusion",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#000000",
+  "theme_color": "#0066FF",
+  "scope": "/",
+  "id": "/",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["navigation", "utilities", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Track Location",
+      "short_name": "Track",
+      "description": "Start live GPS tracking",
+      "url": "/?tab=track",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Devices",
+      "short_name": "Devices",
+      "description": "View all connected devices",
+      "url": "/?tab=devices",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Routes",
+      "short_name": "Routes",
+      "description": "AI pathfinding algorithms",
+      "url": "/?tab=routes",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "display_override": ["standalone", "window-controls-overlay"],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}

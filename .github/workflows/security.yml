@@ -1,0 +1,126 @@
+name: Security Hardening CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * 0" # Weekly on Sunday
+
+jobs:
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Safety
+        run: pip install safety
+
+      - name: Scan Python dependencies
+        working-directory: ./backend
+        run: safety check --json -r requirements.txt
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Audit npm packages
+        working-directory: ./frontend
+        run: npm audit --audit-level=moderate
+
+  sbom-generation:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CycloneDX
+        run: |
+          pip install cyclonedx-bom
+          npm install -g @cyclonedx/cyclonedx-npm
+
+      - name: Generate Backend SBOM
+        working-directory: ./backend
+        run: cyclonedx-py -r -o backend-sbom.xml
+
+      - name: Generate Frontend SBOM
+        working-directory: ./frontend
+        run: cyclonedx-npm --output-file frontend-sbom.xml
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifacts
+          path: |
+            backend/backend-sbom.xml
+            frontend/frontend-sbom.xml
+          retention-days: 90
+
+  container-scan:
+    name: Container Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build -t pathmap-backend:test ./backend
+
+      - name: Build frontend image
+        run: docker build -t pathmap-frontend:test ./frontend
+
+      - name: Run Trivy scanner (backend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: pathmap-backend:test
+          format: "sarif"
+          output: "trivy-backend.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Run Trivy scanner (frontend)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: pathmap-frontend:test
+          format: "sarif"
+          output: "trivy-frontend.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: "."
+
+  security-headers:
+    name: Test Security Headers
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start test environment
+        run: docker-compose up -d
+        env:
+          JWT_SECRET: test_secret_for_ci_only
+          POSTGRES_PASSWORD: test_password
+
+      - name: Wait for services
+        run: sleep 10
+
+      - name: Test security headers
+        run: |
+          curl -I http://localhost:8000/v1/health | grep -i "x-frame-options: DENY"
+          curl -I http://localhost:8000/v1/health | grep -i "x-content-type-options: nosniff"
+          curl -I http://localhost:8000/v1/health | grep -i "strict-transport-security"
+
+      - name: Stop test environment
+        run: docker-compose down

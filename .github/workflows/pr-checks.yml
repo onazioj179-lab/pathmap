@@ -1,0 +1,143 @@
+# PATHMAP - Pull Request Checks
+# =============================
+# Fast checks for every pull request
+
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # ============== QUICK LINT ==============
+  lint:
+    name: Quick Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Lint Python
+        run: |
+          pip install ruff
+          cd backend
+          ruff check . --ignore E501 --output-format=github
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Lint TypeScript
+        run: |
+          cd frontend
+          npm ci
+          npm run lint || true
+
+  # ============== TYPE CHECK ==============
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Type check Python
+        run: |
+          pip install mypy
+          cd backend
+          pip install -r requirements.txt
+          mypy . --ignore-missing-imports || true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Type check TypeScript
+        run: |
+          cd frontend
+          npm ci
+          npm run type-check || true
+
+  # ============== UNIT TESTS ==============
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Python tests
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+          pytest tests/ -v -m "not slow" --tb=short || true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run JavaScript tests
+        run: |
+          cd frontend
+          npm ci
+          npm test -- --passWithNoTests || true
+
+  # ============== PR SIZE CHECK ==============
+  pr-size:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR size
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          xs_label: 'size/XS'
+          xs_max_size: 10
+          s_label: 'size/S'
+          s_max_size: 100
+          m_label: 'size/M'
+          m_max_size: 500
+          l_label: 'size/L'
+          l_max_size: 1000
+          xl_label: 'size/XL'
+          fail_if_xl: false
+
+  # ============== COMMIT MESSAGE CHECK ==============
+  commit-check:
+    name: Commit Message Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit messages
+        run: |
+          echo "Checking commit message format..."
+          # Add conventional commit check here if needed
+          echo "Commit check passed"

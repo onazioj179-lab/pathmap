@@ -1,0 +1,35 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+osmnx==1.7.1
+networkx==3.2.1
+jinja2==3.1.2
+websockets==12.0
+httpx==0.25.2
+gunicorn==21.2.0
+uvloop==0.19.0
+httptools==0.6.1
+
+# V93: Social Features - Find My Friends
+cryptography==41.0.7  # E2E encryption for location sharing
+
+# V95: Device Tracking API
+PyJWT==2.8.0  # JWT token authentication
+
+# V97: Production Hardening
+redis[hiredis]==5.0.1  # Distributed rate limiting, caching
+asyncpg==0.29.0  # PostgreSQL async driver
+sqlalchemy[asyncio]==2.0.23  # ORM with async support
+
+# V99: Observability
+prometheus-fastapi-instrumentator==6.1.0  # Prometheus metrics
+
+# V97: Push Notifications (optional - install if using FCM/APNs)
+# firebase-admin>=6.0.0  # FCM for Android/Web/iOS
+# aioapns>=3.0  # Direct APNs for iOS
+
+# V97: Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Pathfinder {{ version }}</title>
+    
+    {# High-DPI support #}
+    <meta name="format-detection" content="telephone=no">
+    
+    {# Preconnect to improve performance #}
+    <link rel="preconnect" href="http://localhost:8000">
+    
+    {# PWA manifest #}
+    <link rel="manifest" href="/manifest.json">
+    
+    <style>
+        /* V44 PPE Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        #app-root {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        /* High-resolution rendering */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            body {
+                image-rendering: -webkit-optimize-contrast;
+                image-rendering: crisp-edges;
+            }
+        }
+        
+        /* Smooth transitions */
+        .page-transition {
+            transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+        }
+        
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-root">
+        {# LockScreen Layer #}
+        {% if lockscreen_active %}
+        <div id="lockscreen-layer">
+            {% include 'lockscreen.html' %}
+        </div>
+        {% endif %}
+        
+        {# Main Application Layer #}
+        <div id="main-layer" style="{% if lockscreen_active %}display: none;{% endif %}">
+            {% include 'main_page.html' %}
+        </div>
+    </div>
+    
+    {# Embedded state for hydration #}
+    <script id="ppe-state" type="application/json">
+    {
+        "version": {{ version }},
+        "ppe_enabled": {{ ppe_enabled|tojson }},
+        "lockscreen_active": {{ lockscreen_active|tojson }},
+        "map_initialized": {{ map_initialized|tojson }},
+        "current_panel": {{ current_panel|tojson }},
+        "scan_active": {{ scan_active|tojson }},
+        "scan_mode": {{ scan_mode|tojson }},
+        "pipeline_state": {{ pipeline_state|tojson }},
+        "gps_lat": {{ gps_lat|tojson }},
+        "gps_lon": {{ gps_lon|tojson }},
+        "route_active": {{ route_active|tojson }},
+        "tracking_active": {{ tracking_active|tojson }},
+        "state_version": {{ version }}
+    }
+    </script>
+    
+    {# PPE Sync Script #}
+    <script>
+        // V44 PPE Client-Side Sync
+        window.PPE = {
+            state: JSON.parse(document.getElementById('ppe-state').textContent),
+            version: {{ version }},
+            
+            // WebSocket connection for real-time updates
+            ws: null,
+            
+            // Connect to sync endpoint
+            connect() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const host = window.location.hostname;
+                const port = 8000;
+                
+                this.ws = new WebSocket(`${protocol}//${host}:${port}/ws/sync`);
+                
+                this.ws.onopen = () => {
+                    console.log('[PPE] Connected to sync layer');
+                    this.syncState();
+                };
+                
+                this.ws.onmessage = (event) => {
+                    const update = JSON.parse(event.data);
+                    this.handleUpdate(update);
+                };
+                
+                this.ws.onerror = (error) => {
+                    console.error('[PPE] WebSocket error:', error);
+                };
+                
+                this.ws.onclose = () => {
+                    console.log('[PPE] Disconnected from sync layer');
+                    // Reconnect after 2 seconds
+                    setTimeout(() => this.connect(), 2000);
+                };
+            },
+            
+            // Handle incremental updates
+            handleUpdate(update) {
+                console.log('[PPE] Received update:', update);
+                
+                // Update local state
+                if (update.version > this.state.state_version) {
+                    Object.assign(this.state, update.data);
+                    this.state.state_version = update.version;
+                    
+                    // Dispatch custom event for React components
+                    window.dispatchEvent(new CustomEvent('ppe-update', {
+                        detail: update
+                    }));
+                }
+            },
+            
+            // Sync current state with server
+            syncState() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'sync_request',
+                        version: this.state.state_version
+                    }));
+                }
+            },
+            
+            // Send event to server
+            sendEvent(eventType, data) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'event',
+                        event_type: eventType,
+                        data: data,
+                        source: 'typescript'
+                    }));
+                }
+            }
+        };
+        
+        // Auto-connect on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => window.PPE.connect());
+        } else {
+            window.PPE.connect();
+        }
+    </script>
+    
+    {# Main application bundle (React/Vite) #}
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

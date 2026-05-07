@@ -1,0 +1,23 @@
+{
+  "status": "verified",
+  "buildTime": "2026-01-06T12:31:56.849Z",
+  "engineHash": "46d8f067d39083925029871330bfc4f6cb13920b0688962e89cbc7d011fdc8d3",
+  "checksums": [
+    {
+      "file": "src\\services\\watermark.ts",
+      "sha256": "1c94f1308d1110cc2c1457016739f42eb765a841f1a3f915d3e2dbf876df5c37"
+    },
+    {
+      "file": "src\\engines\\EngineMetadata.ts",
+      "sha256": "a054206ba934cabe120f338a275336f62d3a6af76eb7ae9d88b01dc8aa77ab95"
+    },
+    {
+      "file": "src\\components\\MapView3D.tsx",
+      "sha256": "1e9f9b3cdb24ac74ba280822c5f11622f3faadb91fa6725a5cbe6429725f9044"
+    },
+    {
+      "file": "src\\styles\\unified-system.css",
+      "sha256": "ef68aea065b404edd1acf19d5a66eb442c03e152cca9ac87fb7c8947f5cebefa"
+    }
+  ]
+}
