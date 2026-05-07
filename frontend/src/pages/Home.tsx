@@ -2925,8 +2925,9 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
         </div>
 
         <div className="form-group">
-          <label>Radius: {radius}m</label>
+          <label htmlFor="safe-zone-radius">Radius: {radius}m</label>
           <input
+            id="safe-zone-radius"
             type="range"
             min="50"
             max="1000"
@@ -2938,8 +2939,9 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
 
         <div className="form-row">
           <div className="form-group">
-            <label>Latitude</label>
+            <label htmlFor="safe-zone-lat">Latitude</label>
             <input
+              id="safe-zone-lat"
               type="number"
               step="0.000001"
               value={lat}
@@ -2947,8 +2949,9 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
             />
           </div>
           <div className="form-group">
-            <label>Longitude</label>
+            <label htmlFor="safe-zone-lng">Longitude</label>
             <input
+              id="safe-zone-lng"
               type="number"
               step="0.000001"
               value={lng}
