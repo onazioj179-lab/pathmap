@@ -25,7 +25,7 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
     "leaflet": "^1.9.4",
-    "lucide-react": "^0.554.0",
+    "lucide-react": "^1.14.0",
     "mapbox-gl": "^2.15.0",
     "maplibre-gl": "^5.13.0",
     "react": "^18.2.0",
