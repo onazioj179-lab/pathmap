@@ -2,7 +2,7 @@
  * PATHMAP - Military-Grade Encrypted Tunnel Client
  * =================================================
  * X25519 key exchange + AES-256-GCM encryption + Stealth obfuscation
- * 
+ *
  * Features:
  * - Perfect Forward Secrecy
  * - Zero-Knowledge Architecture
@@ -47,7 +47,7 @@ const DEFAULT_CONFIG: TunnelConfig = {
   reconnectAttempts: 5,
   reconnectDelay: 2000,
   heartbeatInterval: 30000,
-  stealthMode: true
+  stealthMode: true,
 };
 
 // TLS-like magic bytes for stealth
@@ -73,13 +73,12 @@ class TunnelService {
   async connect(): Promise<boolean> {
     try {
       console.log('[TUNNEL] Initiating secure tunnel...');
-      
+
       // Generate X25519 keypair (using P-256 as WebCrypto fallback)
-      this.keyPair = await crypto.subtle.generateKey(
-        { name: 'ECDH', namedCurve: 'P-256' },
-        true,
-        ['deriveKey', 'deriveBits']
-      );
+      this.keyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
+        'deriveKey',
+        'deriveBits',
+      ]);
 
       // Export public key for handshake
       const publicKeyRaw = await crypto.subtle.exportKey('raw', this.keyPair.publicKey);
@@ -89,7 +88,7 @@ class TunnelService {
       const handshakeResponse = await fetch(`${this.config.apiBase}/api/v1/tunnel/handshake`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client_public_key: publicKeyB64 })
+        body: JSON.stringify({ client_public_key: publicKeyB64 }),
       });
 
       if (!handshakeResponse.ok) {
@@ -116,20 +115,16 @@ class TunnelService {
       );
 
       // Derive session keys using HKDF
-      const keyMaterial = await crypto.subtle.importKey(
-        'raw',
-        sharedBits,
-        'HKDF',
-        false,
-        ['deriveKey']
-      );
+      const keyMaterial = await crypto.subtle.importKey('raw', sharedBits, 'HKDF', false, [
+        'deriveKey',
+      ]);
 
       const sendKey = await crypto.subtle.deriveKey(
         {
           name: 'HKDF',
           hash: 'SHA-256',
           salt: new Uint8Array(32),
-          info: new TextEncoder().encode('pathmap-send')
+          info: new TextEncoder().encode('pathmap-send'),
         },
         keyMaterial,
         { name: 'AES-GCM', length: 256 },
@@ -142,7 +137,7 @@ class TunnelService {
           name: 'HKDF',
           hash: 'SHA-256',
           salt: new Uint8Array(32),
-          info: new TextEncoder().encode('pathmap-recv')
+          info: new TextEncoder().encode('pathmap-recv'),
         },
         keyMaterial,
         { name: 'AES-GCM', length: 256 },
@@ -161,15 +156,14 @@ class TunnelService {
         bytesTransferred: 0,
         messagesTransferred: 0,
         createdAt: Date.now(),
-        lastActivity: Date.now()
+        lastActivity: Date.now(),
       };
 
       // Connect WebSocket
       await this.connectWebSocket();
-      
+
       console.log('[TUNNEL] Secure tunnel established');
       return true;
-
     } catch (error) {
       console.error('[TUNNEL] Connection failed:', error);
       return false;
@@ -200,11 +194,11 @@ class TunnelService {
         resolve();
       };
 
-      this.ws.onmessage = async (event) => {
+      this.ws.onmessage = async event => {
         await this.handleIncomingMessage(event.data);
       };
 
-      this.ws.onclose = (event) => {
+      this.ws.onclose = event => {
         console.log('[TUNNEL] WebSocket closed:', event.code);
         this.stopHeartbeat();
         if (this.session) {
@@ -213,7 +207,7 @@ class TunnelService {
         this.attemptReconnect();
       };
 
-      this.ws.onerror = (error) => {
+      this.ws.onerror = error => {
         console.error('[TUNNEL] WebSocket error:', error);
         reject(error);
       };
@@ -233,7 +227,7 @@ class TunnelService {
 
     try {
       const plaintext = new TextEncoder().encode(JSON.stringify(message));
-      
+
       // Generate nonce (counter + random)
       const nonce = new Uint8Array(12);
       const view = new DataView(nonce.buffer);
@@ -249,18 +243,17 @@ class TunnelService {
 
       // Build encrypted frame
       const frame = this.buildFrame(0, nonce, new Uint8Array(ciphertext));
-      
+
       // Apply stealth obfuscation
       const obfuscated = this.config.stealthMode ? this.obfuscate(frame) : frame;
 
       this.ws.send(obfuscated);
-      
+
       this.session.bytesTransferred += obfuscated.byteLength;
       this.session.messagesTransferred++;
       this.session.lastActivity = Date.now();
 
       return true;
-
     } catch (error) {
       console.error('[TUNNEL] Send failed:', error);
       return false;
@@ -275,7 +268,7 @@ class TunnelService {
 
     try {
       let frame: Uint8Array = new Uint8Array(data);
-      
+
       // Remove stealth obfuscation
       if (this.config.stealthMode) {
         const deobfuscated = this.deobfuscate(frame);
@@ -294,12 +287,11 @@ class TunnelService {
       );
 
       const message: TunnelMessage = JSON.parse(new TextDecoder().decode(plaintext));
-      
+
       this.session.lastActivity = Date.now();
-      
+
       // Dispatch to handlers
       this.dispatchMessage(message);
-
     } catch (error) {
       console.error('[TUNNEL] Message handling failed:', error);
     }
@@ -322,7 +314,11 @@ class TunnelService {
   /**
    * Parse encrypted frame
    */
-  private parseFrame(frame: Uint8Array): { frameType: number; nonce: Uint8Array; ciphertext: Uint8Array } {
+  private parseFrame(frame: Uint8Array): {
+    frameType: number;
+    nonce: Uint8Array;
+    ciphertext: Uint8Array;
+  } {
     const frameType = frame[1];
     const nonce = frame.slice(2, 14);
     const ciphertextLen = new DataView(frame.buffer).getUint32(14, false);
@@ -342,11 +338,11 @@ class TunnelService {
 
     // Build obfuscated packet
     const packet = new Uint8Array(5 + 4 + 4 + data.byteLength + paddingLen);
-    
+
     // TLS header camouflage
     packet.set(TLS_MAGIC, 0);
     new DataView(packet.buffer).setUint16(3, packet.byteLength - 5, false);
-    
+
     // Data length + padding length + data + padding
     new DataView(packet.buffer).setUint32(5, data.byteLength, false);
     new DataView(packet.buffer).setUint32(9, paddingLen, false);
@@ -452,7 +448,7 @@ class TunnelService {
   private dispatchMessage(message: TunnelMessage): void {
     const handlers = this.messageHandlers.get(message.type) || [];
     const wildcardHandlers = this.messageHandlers.get('*') || [];
-    
+
     [...handlers, ...wildcardHandlers].forEach(handler => {
       try {
         handler(message);
@@ -465,7 +461,12 @@ class TunnelService {
   /**
    * Send encrypted location update
    */
-  async sendLocation(lat: number, lng: number, accuracy: number, extras?: object): Promise<boolean> {
+  async sendLocation(
+    lat: number,
+    lng: number,
+    accuracy: number,
+    extras?: object
+  ): Promise<boolean> {
     return this.send({
       type: 'location_update',
       location: {
@@ -473,8 +474,8 @@ class TunnelService {
         lng,
         accuracy,
         timestamp: Date.now(),
-        ...extras
-      }
+        ...extras,
+      },
     });
   }
 
@@ -485,7 +486,7 @@ class TunnelService {
     return this.send({
       type: 'tracking_request',
       target_id: targetId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -494,16 +495,16 @@ class TunnelService {
    */
   close(): void {
     this.stopHeartbeat();
-    
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
-    
+
     if (this.session) {
       this.session.state = 'closed';
     }
-    
+
     this.keyPair = null;
     console.log('[TUNNEL] Connection closed');
   }
@@ -520,7 +521,7 @@ class TunnelService {
    */
   getStats(): object {
     if (!this.session) return { connected: false };
-    
+
     return {
       connected: this.session.state === 'established',
       sessionId: this.session.sessionId.slice(0, 8) + '...',
@@ -528,7 +529,7 @@ class TunnelService {
       bytesTransferred: this.session.bytesTransferred,
       messagesTransferred: this.session.messagesTransferred,
       uptime: Date.now() - this.session.createdAt,
-      lastActivity: this.session.lastActivity
+      lastActivity: this.session.lastActivity,
     };
   }
 

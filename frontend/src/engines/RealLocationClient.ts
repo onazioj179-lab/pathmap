@@ -1,6 +1,6 @@
 /**
  * PATHFINDER V48 - REAL LOCATION CLIENT
- * 
+ *
  * Client-side GPS tracking with:
  * - Secure context validation (HTTPS enforcement)
  * - User-triggered permission flow
@@ -44,39 +44,39 @@ export class RealLocationClient {
   private active: boolean = false;
   private callbacks: RLECallbacks;
   private apiBase: string;
-  
+
   constructor(apiBase: string = getApiHttpBase(), callbacks: RLECallbacks = {}) {
     this.apiBase = apiBase;
     this.callbacks = callbacks;
   }
-  
+
   /**
    * Validate secure context before starting GPS
    */
   async validateSecureContext(): Promise<boolean> {
     const origin = window.location.origin;
-    
+
     try {
       const response = await fetch(`${this.apiBase}/api/v48/validate-secure-context`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origin })
+        body: JSON.stringify({ origin }),
       });
-      
+
       const result = await response.json();
-      
+
       if (!result.secure) {
         console.error('[V48 RLE] Insecure context:', result.message);
         if (this.callbacks.onError) {
           this.callbacks.onError({
             type: 'INSECURE_CONTEXT',
             message: result.message,
-            guidance: result.guidance
+            guidance: result.guidance,
           });
         }
         return false;
       }
-      
+
       console.log('[V48 RLE] Secure context validated');
       return true;
     } catch (error) {
@@ -84,7 +84,7 @@ export class RealLocationClient {
       return false;
     }
   }
-  
+
   /**
    * Start GPS tracking (must be called from user interaction)
    */
@@ -94,24 +94,24 @@ export class RealLocationClient {
       console.warn('[V48 RLE] Tracking already active');
       return true;
     }
-    
+
     // Validate secure context
     const isSecure = await this.validateSecureContext();
     if (!isSecure) {
       return false;
     }
-    
+
     // Notify backend
     try {
       const origin = window.location.origin;
       const response = await fetch(`${this.apiBase}/api/v48/start-tracking`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ origin })
+        body: JSON.stringify({ origin }),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.status !== 'started') {
         console.error('[V48 RLE] Failed to start tracking:', result);
         return false;
@@ -120,39 +120,39 @@ export class RealLocationClient {
       console.error('[V48 RLE] Failed to notify backend:', error);
       return false;
     }
-    
+
     // Start browser geolocation watch
     if (!navigator.geolocation) {
       console.error('[V48 RLE] Geolocation not supported');
       if (this.callbacks.onError) {
         this.callbacks.onError({
           type: 'NOT_SUPPORTED',
-          message: 'Geolocation not supported by browser'
+          message: 'Geolocation not supported by browser',
         });
       }
       return false;
     }
-    
+
     this.watchId = navigator.geolocation.watchPosition(
-      (position) => this.handlePositionSuccess(position),
-      (error) => this.handlePositionError(error),
+      position => this.handlePositionSuccess(position),
+      error => this.handlePositionError(error),
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 0
+        maximumAge: 0,
       }
     );
-    
+
     this.active = true;
-    
+
     if (this.callbacks.onStatusChange) {
       this.callbacks.onStatusChange('tracking_started');
     }
-    
+
     console.log('[V48 RLE] GPS tracking started');
     return true;
   }
-  
+
   /**
    * Stop GPS tracking
    */
@@ -160,32 +160,32 @@ export class RealLocationClient {
     if (!this.active) {
       return;
     }
-    
+
     // Stop browser watch
     if (this.watchId !== null) {
       navigator.geolocation.clearWatch(this.watchId);
       this.watchId = null;
     }
-    
+
     // Notify backend
     try {
       await fetch(`${this.apiBase}/api/v48/stop-tracking`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     } catch (error) {
       console.error('[V48 RLE] Failed to notify backend of stop:', error);
     }
-    
+
     this.active = false;
-    
+
     if (this.callbacks.onStatusChange) {
       this.callbacks.onStatusChange('tracking_stopped');
     }
-    
+
     console.log('[V48 RLE] GPS tracking stopped');
   }
-  
+
   /**
    * Handle successful position update
    */
@@ -198,36 +198,33 @@ export class RealLocationClient {
       altitudeAccuracy: position.coords.altitudeAccuracy,
       heading: position.coords.heading,
       speed: position.coords.speed,
-      timestamp: position.timestamp
+      timestamp: position.timestamp,
     };
-    
+
     // Send to backend
     try {
       const response = await fetch(`${this.apiBase}/api/v48/update-position`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(locationData)
+        body: JSON.stringify(locationData),
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success && this.callbacks.onPositionUpdate) {
-        this.callbacks.onPositionUpdate(
-          locationData,
-          result.position.statistics
-        );
+        this.callbacks.onPositionUpdate(locationData, result.position.statistics);
       }
     } catch (error) {
       console.error('[V48 RLE] Failed to send position update:', error);
     }
   }
-  
+
   /**
    * Handle position error
    */
   private async handlePositionError(error: GeolocationPositionError): Promise<void> {
     console.error('[V48 RLE] Position error:', error.message);
-    
+
     // Send to backend
     try {
       await fetch(`${this.apiBase}/api/v48/handle-gps-error`, {
@@ -235,22 +232,22 @@ export class RealLocationClient {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           error_code: error.code,
-          error_message: error.message
-        })
+          error_message: error.message,
+        }),
       });
     } catch (err) {
       console.error('[V48 RLE] Failed to send error to backend:', err);
     }
-    
+
     if (this.callbacks.onError) {
       this.callbacks.onError({
         type: 'GPS_ERROR',
         code: error.code,
-        message: error.message
+        message: error.message,
       });
     }
   }
-  
+
   /**
    * Get current RLE state from backend
    */
@@ -264,7 +261,7 @@ export class RealLocationClient {
       return null;
     }
   }
-  
+
   /**
    * Check if tracking is active
    */
@@ -283,26 +280,28 @@ export function createGPSEnableButton(
 ): HTMLButtonElement {
   const button = document.createElement('button');
   button.textContent = 'Enable Location';
-  button.className = 'bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors';
-  
+  button.className =
+    'bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors';
+
   button.addEventListener('click', async () => {
     button.disabled = true;
     button.textContent = 'Starting GPS...';
-    
+
     const success = await rleClient.startTracking();
-    
+
     if (success) {
       button.textContent = 'GPS Active';
       button.className = 'bg-green-600 text-white px-6 py-3 rounded-lg font-semibold';
       if (onSuccess) onSuccess();
     } else {
       button.textContent = 'GPS Failed - Retry';
-      button.className = 'bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors';
+      button.className =
+        'bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors';
       button.disabled = false;
       if (onError) onError({ message: 'Failed to start GPS' });
     }
   });
-  
+
   return button;
 }
 
@@ -311,11 +310,11 @@ export function createGPSEnableButton(
  */
 export function isSecureContext(): boolean {
   const origin = window.location.origin;
-  
+
   if (origin.startsWith('https://')) return true;
   if (origin.includes('localhost')) return true;
   if (origin.includes('127.0.0.1')) return true;
-  
+
   return false;
 }
 
@@ -324,9 +323,10 @@ export function isSecureContext(): boolean {
  */
 export function showSecureContextWarning(): void {
   if (isSecureContext()) return;
-  
+
   const warning = document.createElement('div');
-  warning.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+  warning.className =
+    'fixed top-4 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
   warning.innerHTML = `
     <div class="flex items-center gap-3">
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -338,9 +338,9 @@ export function showSecureContextWarning(): void {
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(warning);
-  
+
   setTimeout(() => {
     warning.remove();
   }, 8000);

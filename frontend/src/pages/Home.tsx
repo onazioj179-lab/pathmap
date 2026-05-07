@@ -1940,8 +1940,8 @@ export default function Home() {
                   </svg>
                 </div>
                 <div className="hint-text">
-                  <strong>Tap the map to add a target</strong>
-                  <span>Choose a person, place, or object to track.</span>
+                  <strong>No target selected</strong>
+                  <span>Ready for live tracking.</span>
                 </div>
               </div>
 

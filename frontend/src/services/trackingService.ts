@@ -96,19 +96,19 @@ class TrackingService {
       const connected = await tunnelService.connect();
       if (connected) {
         console.log('[TrackingService] Encrypted tunnel ACTIVE - all location data protected');
-        
+
         // Register tunnel message handlers
-        tunnelService.on('location_update', (msg) => {
+        tunnelService.on('location_update', msg => {
           if (msg.location) {
             this.locationCallbacks.forEach(cb => cb(msg.location as LocationData));
           }
         });
 
-        tunnelService.on('geofence_enter', (msg) => {
+        tunnelService.on('geofence_enter', msg => {
           this.geofenceCallbacks.forEach(cb => cb(msg as { type: string; geofence: Geofence }));
         });
 
-        tunnelService.on('geofence_exit', (msg) => {
+        tunnelService.on('geofence_exit', msg => {
           this.geofenceCallbacks.forEach(cb => cb(msg as { type: string; geofence: Geofence }));
         });
       } else {
@@ -182,13 +182,10 @@ class TrackingService {
 
   // ============ HTTP HELPERS ============
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>)
+      ...(options.headers as Record<string, string>),
     };
 
     if (this.token) {
@@ -197,7 +194,7 @@ class TrackingService {
 
     const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
-      headers
+      headers,
     });
 
     if (!response.ok) {
@@ -213,7 +210,7 @@ class TrackingService {
   async register(email: string, password: string, name: string): Promise<void> {
     const data = await this.request<{ token: string; user_id: string }>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, name })
+      body: JSON.stringify({ email, password, name }),
     });
 
     this.token = data.token;
@@ -225,14 +222,14 @@ class TrackingService {
   async login(email: string, password: string): Promise<void> {
     const data = await this.request<{ token: string; user_id: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
 
     this.token = data.token;
     this.userId = data.user_id;
     this.saveToStorage();
     this.notifyAuthChange();
-    
+
     // Connect WebSocket after login
     this.connectWebSocket();
   }
@@ -260,7 +257,7 @@ class TrackingService {
 
     const device = await this.request<TrackedDevice>('/devices/register', {
       method: 'POST',
-      body: JSON.stringify({ name, type, platform, user_agent: userAgent })
+      body: JSON.stringify({ name, type, platform, user_agent: userAgent }),
     });
 
     this.deviceId = device.id;
@@ -279,7 +276,7 @@ class TrackingService {
   async updateDevice(deviceId: string, updates: Partial<TrackedDevice>): Promise<TrackedDevice> {
     return this.request(`/devices/${deviceId}`, {
       method: 'PATCH',
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
   }
 
@@ -304,7 +301,7 @@ class TrackingService {
           speed: location.speed,
           heading: location.heading,
           source: location.source,
-          device_id: deviceId
+          device_id: deviceId,
         }
       );
       return { success };
@@ -315,8 +312,8 @@ class TrackingService {
       method: 'POST',
       body: JSON.stringify({
         device_id: deviceId,
-        ...location
-      })
+        ...location,
+      }),
     });
   }
 
@@ -347,7 +344,7 @@ class TrackingService {
   async createGeofence(geofence: Omit<Geofence, 'id' | 'created_at'>): Promise<Geofence> {
     return this.request('/geofences', {
       method: 'POST',
-      body: JSON.stringify(geofence)
+      body: JSON.stringify(geofence),
     });
   }
 
@@ -358,7 +355,7 @@ class TrackingService {
   async updateGeofence(geofenceId: string, updates: Partial<Geofence>): Promise<Geofence> {
     return this.request(`/geofences/${geofenceId}`, {
       method: 'PATCH',
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
   }
 
@@ -371,7 +368,7 @@ class TrackingService {
   async createShareLink(deviceId: string, expiresInHours: number = 24): Promise<ShareLink> {
     return this.request('/share', {
       method: 'POST',
-      body: JSON.stringify({ device_id: deviceId, expires_in_hours: expiresInHours })
+      body: JSON.stringify({ device_id: deviceId, expires_in_hours: expiresInHours }),
     });
   }
 
@@ -392,8 +389,8 @@ class TrackingService {
   async exportData(): Promise<Blob> {
     const response = await fetch(`${API_BASE}/data/export`, {
       headers: {
-        'Authorization': `Bearer ${this.token}`
-      }
+        Authorization: `Bearer ${this.token}`,
+      },
     });
     return response.blob();
   }
@@ -431,10 +428,10 @@ class TrackingService {
         }
       };
 
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = event => {
         try {
           const data = JSON.parse(event.data);
-          
+
           if (data.type === 'location_update') {
             this.locationCallbacks.forEach(cb => cb(data.location));
           } else if (data.type === 'geofence_enter' || data.type === 'geofence_exit') {
@@ -450,7 +447,7 @@ class TrackingService {
         this.scheduleReconnect();
       };
 
-      this.ws.onerror = (error) => {
+      this.ws.onerror = error => {
         console.error('[TrackingService] WebSocket error:', error);
       };
     } catch (error) {
@@ -494,7 +491,7 @@ class TrackingService {
       const registration = await navigator.serviceWorker.ready;
       try {
         await (registration as any).periodicSync.register('location-update', {
-          minInterval: 15 * 60 * 1000 // 15 minutes
+          minInterval: 15 * 60 * 1000, // 15 minutes
         });
       } catch {
         console.log('[TrackingService] Periodic sync not available');
@@ -523,7 +520,7 @@ class TrackingService {
       }
 
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        position => {
           resolve({
             lat: position.coords.latitude,
             lng: position.coords.longitude,
@@ -532,16 +529,16 @@ class TrackingService {
             speed: position.coords.speed || undefined,
             heading: position.coords.heading || undefined,
             source: 'gps',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
         },
-        (error) => {
+        error => {
           reject(new Error(`Geolocation error: ${error.message}`));
         },
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 0
+          maximumAge: 0,
         }
       );
     });
@@ -549,7 +546,7 @@ class TrackingService {
 
   watchPosition(callback: (location: LocationData) => void): number {
     return navigator.geolocation.watchPosition(
-      (position) => {
+      position => {
         callback({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -558,16 +555,16 @@ class TrackingService {
           speed: position.coords.speed || undefined,
           heading: position.coords.heading || undefined,
           source: 'gps',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       },
-      (error) => {
+      error => {
         console.error('[TrackingService] Watch position error:', error);
       },
       {
         enableHighAccuracy: true,
         timeout: 10000,
-        maximumAge: 1000
+        maximumAge: 1000,
       }
     );
   }

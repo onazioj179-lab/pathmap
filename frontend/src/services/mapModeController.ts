@@ -1,18 +1,18 @@
 /**
  * PATHFINDER V92 — UNIFIED MAP MODE CONTROLLER
  * =============================================
- * 
+ *
  * Central controller for switching between map modes:
  *   - Standard (2D base map)
  *   - Satellite (high-res imagery)
  *   - Globe (3D Earth with orbital camera)
- * 
+ *
  * Features:
  *   - Smooth transitions between modes
  *   - FPS targets: 60 FPS (2D), 40 FPS (Globe)
  *   - State management and coordination
  *   - Performance monitoring
- * 
+ *
  * Author: Onazi Treasure
  * Watermark: OJ
  */
@@ -67,11 +67,11 @@ export class MapModeController {
         tile_load_max_ms: 120,
         proxy_latency_ms: 35,
         terrain_update_ms: 22,
-        camera_interaction_latency_ms: 12
+        camera_interaction_latency_ms: 12,
       },
       smoothTransitions: true,
       transitionDuration: 800,
-      ...config
+      ...config,
     };
 
     this.state = {
@@ -81,8 +81,8 @@ export class MapModeController {
       performanceMetrics: {
         fps: 0,
         frameTime: 0,
-        lastUpdate: 0
-      }
+        lastUpdate: 0,
+      },
     };
 
     // Initialize sub-controllers
@@ -91,7 +91,9 @@ export class MapModeController {
 
     console.log('[V92:MODE] Map Mode Controller initialized');
     console.log(`[V92:MODE] Initial mode: ${this.config.initialMode}`);
-    console.log(`[V92:MODE] FPS targets: 2D=${this.config.performanceTargets.fps_2d}, Globe=${this.config.performanceTargets.fps_globe}`);
+    console.log(
+      `[V92:MODE] FPS targets: 2D=${this.config.performanceTargets.fps_2d}, Globe=${this.config.performanceTargets.fps_globe}`
+    );
   }
 
   /**
@@ -132,7 +134,6 @@ export class MapModeController {
 
       console.log('[V92:MODE] [OK] Switched to standard mode');
       return true;
-
     } catch (error) {
       console.error('[V92:MODE] Standard mode switch failed:', error);
       this.state.isTransitioning = false;
@@ -170,7 +171,6 @@ export class MapModeController {
       } else {
         throw new Error('Satellite activation failed');
       }
-
     } catch (error) {
       console.error('[V92:MODE] Satellite mode switch failed:', error);
       this.state.isTransitioning = false;
@@ -202,16 +202,15 @@ export class MapModeController {
         this.state.currentMode = 'globe';
         this.state.isTransitioning = false;
         console.log('[V92:MODE] [OK] Switched to globe mode');
-        
+
         if (satelliteWasActive) {
           console.log('[V92:MODE] Satellite imagery remains active in globe mode');
         }
-        
+
         return true;
       } else {
         throw new Error('Globe activation failed');
       }
-
     } catch (error) {
       console.error('[V92:MODE] Globe mode switch failed:', error);
       this.state.isTransitioning = false;
@@ -271,7 +270,7 @@ export class MapModeController {
         this.state.performanceMetrics = {
           fps,
           frameTime,
-          lastUpdate: now
+          lastUpdate: now,
         };
 
         this.frameCount = 0;

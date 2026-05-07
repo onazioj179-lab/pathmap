@@ -20,7 +20,7 @@ export class ActionEngine {
   private state: ActionState = {
     current: null,
     status: 'idle',
-    startTime: null
+    startTime: null,
   };
   private listeners: Set<(state: ActionState) => void> = new Set();
 
@@ -51,22 +51,22 @@ export class ActionEngine {
     if (this.isLocked()) {
       return {
         success: false,
-        message: 'Another action is in progress'
+        message: 'Another action is in progress',
       };
     }
 
     this.setState({
       current: action,
       status: 'processing',
-      startTime: Date.now()
+      startTime: Date.now(),
     });
 
     try {
       const result = await this.performAction(action, params);
-      
+
       this.setState({
         status: result.success ? 'success' : 'error',
-        startTime: null
+        startTime: null,
       });
 
       setTimeout(() => {
@@ -76,28 +76,27 @@ export class ActionEngine {
       }, 1000);
 
       return result;
-
     } catch (error) {
       this.setState({
         status: 'error',
         current: null,
-        startTime: null
+        startTime: null,
       });
 
       return {
         success: false,
-        message: error instanceof Error ? error.message : 'Action failed'
+        message: error instanceof Error ? error.message : 'Action failed',
       };
     }
   }
 
   private async performAction(action: NavigationAction, params?: any): Promise<ActionResult> {
     const endpoints: Record<NavigationAction, string> = {
-      'route': '/api/action/route',
+      route: '/api/action/route',
       'safe-return': '/api/action/safe-return',
-      'explore': '/api/action/explore',
+      explore: '/api/action/explore',
       'track-start': '/api/action/track/start',
-      'track-stop': '/api/action/track/stop'
+      'track-stop': '/api/action/track/stop',
     };
 
     const endpoint = endpoints[action];
@@ -108,9 +107,9 @@ export class ActionEngine {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(params || {})
+      body: JSON.stringify(params || {}),
     });
 
     if (!response.ok) {
@@ -121,7 +120,7 @@ export class ActionEngine {
     const data = await response.json();
     return {
       success: true,
-      data
+      data,
     };
   }
 
@@ -135,7 +134,7 @@ export class ActionEngine {
     this.setState({
       current: null,
       status: 'idle',
-      startTime: null
+      startTime: null,
     });
   }
 }

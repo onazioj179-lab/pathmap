@@ -232,7 +232,6 @@ class MapBootPipeline {
           'raster-opacity': 0.6,
         },
       });
-
     } catch (e) {
       console.error('Failed to load fallback tiles:', e);
     }

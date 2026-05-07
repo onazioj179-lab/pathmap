@@ -10,7 +10,7 @@ import { framePacingEngine } from '../services/framePacingEngine';
 import { locationFluidityEngine } from '../services/locationFluidityEngine';
 import { gpuStreamingPipeline } from '../services/gpuStreamingPipeline';
 import { cameraFluidityEngine } from '../services/cameraFluidityEngine';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { CursorArrowRaysIcon, MagnifyingGlassIcon, MapPinIcon } from '@heroicons/react/24/solid';
 import { aiCameraEngine } from '../services/aiCameraEngine';
 import { motionClassificationEngine } from '../services/motionClassificationEngine';
 import { environmentDetectionEngine } from '../services/environmentDetectionEngine';
@@ -37,7 +37,6 @@ import { ultraSmoothAnimationEngine } from '../services/ultraSmoothAnimationEngi
 import { motionInterpolationEngine } from '../services/motionInterpolationEngine';
 import { uiScaleEngine } from '../services/uiScaleEngine';
 import { earthScaleTerrainEngine } from '../services/earthScaleTerrainEngine';
-import { satelliteImageryLayer } from '../services/satelliteImageryLayer';
 import { globalElevationTerrainMorphingEngine } from '../services/globalElevationTerrainMorphingEngine';
 import { atmosphericRenderingModel } from '../services/atmosphericRenderingModel';
 import { earthZoomPipeline } from '../services/earthZoomPipeline';
@@ -50,12 +49,9 @@ import { darkAdaptiveAtmosphere } from '../services/darkAdaptiveAtmosphere';
 import { checkIntegrity as bfisCheck } from '../services/bfis';
 import { mapBootPipeline } from '../services/mapBootPipeline';
 import { getMapRendererFix } from '../services/mapRendererFix';
-import { getTileValidationEngine } from '../services/tileValidationEngine';
-import { getProviderRebindingEngine } from '../services/providerRebindingEngine';
 import { getMapModeController } from '../services/mapModeController';
 import type { MapMode } from '../services/mapModeController';
 import { mapEngine } from '../services/mapEngine';
-import { holographicMapEngine } from '../services/holographicMapEngine';
 
 // Map library reference and provider flag
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -219,25 +215,31 @@ function MapView3D(props: MapView3DProps) {
         return {
           version: 8,
           sources: {
-            osm: {
+            carto: {
               type: 'raster',
-              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tiles: [
+                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+              ],
               tileSize: 256,
-              attribution: '© OpenStreetMap contributors',
+              attribution: '© OpenStreetMap contributors © CARTO',
             },
           },
-          layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+          layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
         };
       }
 
       const styleUrl = pickStyle();
 
+      const isCompactViewport = window.matchMedia('(max-width: 720px)').matches;
+
       const options: any = {
         container: containerRef.current,
         style: styleUrl,
         center: [initialCenter[1], initialCenter[0]],
-        zoom: 16,
-        pitch: 60,
+        zoom: isCompactViewport ? 14 : 15,
+        pitch: isCompactViewport ? 0 : 28,
         bearing: 0,
         antialias: true,
         preserveDrawingBuffer: false,
@@ -247,7 +249,7 @@ function MapView3D(props: MapView3DProps) {
         dragRotate: true,
         pitchWithRotate: true,
         touchZoomRotate: true,
-        maxPitch: 85,
+        maxPitch: 60,
         refreshExpiredTiles: false,
         maxTileCacheSize: 100,
         performanceMetricsCollection: false,
@@ -274,9 +276,6 @@ function MapView3D(props: MapView3DProps) {
 
       // V84-V86: Initialize tile engines
       const mapRendererFix = getMapRendererFix();
-      const tileValidationEngine = getTileValidationEngine();
-      const providerRebindingEngine = getProviderRebindingEngine();
-
       mapRendererFix.attachToMap(map);
       console.log('[V84] Map renderer fix attached - tile retry logic active');
 
@@ -287,35 +286,18 @@ function MapView3D(props: MapView3DProps) {
         // V57: Initialize 120Hz rendering pipeline
         console.log('[V57] Initializing ultra-fluid 120Hz rendering');
 
-        // V86: Rebind terrain/imagery/satellite providers
-        try {
-          providerRebindingEngine.attachToMap(map);
-          console.log('[V86] Provider rebinding complete - terrain/imagery/satellite attached');
-        } catch (e) {
-          console.warn('[V86] Provider rebinding failed', e);
-        }
-
-        // V75: Initialize Earth-scale engines (ESTE, SIL, ARM)
-        try {
-          satelliteImageryLayer.init(map);
-          earthScaleTerrainEngine.init(map);
-          atmosphericRenderingModel.apply(map, { enableSkyLayer: isMapbox });
-          // V77: Apply dark mode satellite adjustments
-          if (fullDarkModeEngine.isDark()) {
-            const adj = fullDarkModeEngine.getDarkTerrainAdjustments();
-            try {
-              if (map.setPaintProperty) {
-                map.setPaintProperty('v75-satellite', 'raster-brightness-min', 0.0);
-                map.setPaintProperty('v75-satellite', 'raster-brightness-max', adj.brightness);
-                map.setPaintProperty('v75-satellite', 'raster-contrast', adj.contrast - 1.0);
-              }
-            } catch {}
-            try {
-              darkAdaptiveAtmosphere.apply(map);
-            } catch {}
+        if (!isCompactViewport) {
+          try {
+            earthScaleTerrainEngine.init(map);
+            atmosphericRenderingModel.apply(map, { enableSkyLayer: isMapbox });
+            if (fullDarkModeEngine.isDark()) {
+              try {
+                darkAdaptiveAtmosphere.apply(map);
+              } catch {}
+            }
+          } catch (e) {
+            console.warn('Map atmosphere setup partial', e);
           }
-        } catch (e) {
-          console.warn('[V75] Earth-scale init partial', e);
         }
 
         // V76: Start Global Offline Terrain Cache (GOTC) & AQSS
@@ -352,12 +334,13 @@ function MapView3D(props: MapView3DProps) {
             }
           }
 
-          // V75: Adapt Earth-scale visuals per frame
-          try {
-            earthScaleTerrainEngine.adaptWithZoom(map);
-            atmosphericRenderingModel.adaptWithZoom(map);
-            globalElevationTerrainMorphingEngine.tick(map, deltaMs);
-          } catch {}
+          if (!isCompactViewport) {
+            try {
+              earthScaleTerrainEngine.adaptWithZoom(map);
+              atmosphericRenderingModel.adaptWithZoom(map);
+              globalElevationTerrainMorphingEngine.tick(map, deltaMs);
+            } catch {}
+          }
           // V78: Update global lighting and shadows
           try {
             const cpos = map.getCenter();
@@ -448,81 +431,78 @@ function MapView3D(props: MapView3DProps) {
         );
         gpuStreamingPipeline.prefetchArea(zoom, tileX, tileY, 2);
 
-        // V56: 3D building extrusion with shadows, glass facades, and ambient occlusion
-        try {
-          const buildingLayerId = 'building';
-          const sourceId = isMapbox ? 'composite' : 'openmaptiles';
-          const sourceLayer = isMapbox ? 'building' : 'building';
+        if (!isCompactViewport && isMapbox) {
+          try {
+            const buildingLayerId = 'building';
+            const sourceId = 'composite';
+            const sourceLayer = 'building';
 
-          if (!map.getLayer('building-extrusion')) {
-            const lightCfg = cinematicLighting.getLightConfig();
+            if (!map.getLayer('building-extrusion')) {
+              const lightCfg = cinematicLighting.getLightConfig();
 
-            map.addLayer(
-              {
-                id: 'building-extrusion',
-                type: 'fill-extrusion',
+              map.addLayer(
+                {
+                  id: 'building-extrusion',
+                  type: 'fill-extrusion',
+                  source: sourceId,
+                  'source-layer': sourceLayer,
+                  minzoom: 15,
+                  paint: {
+                    // V56: Dynamic building color based on material type
+                    'fill-extrusion-color': [
+                      'case',
+                      ['==', ['get', 'type'], 'glass'],
+                      '#b0c4de', // Glass facade
+                      ['==', ['get', 'material'], 'glass'],
+                      '#b0c4de',
+                      '#9ca3af', // Default concrete/brick
+                    ],
+                    'fill-extrusion-height': [
+                      'coalesce',
+                      ['get', 'height'],
+                      ['get', 'render_height'],
+                      20,
+                    ],
+                    'fill-extrusion-base': [
+                      'coalesce',
+                      ['get', 'min_height'],
+                      ['get', 'render_min_height'],
+                      0,
+                    ],
+                    // V56: Glass transparency
+                    'fill-extrusion-opacity': [
+                      'case',
+                      ['==', ['get', 'type'], 'glass'],
+                      0.7,
+                      ['==', ['get', 'material'], 'glass'],
+                      0.75,
+                      0.92,
+                    ],
+                    'fill-extrusion-vertical-gradient': true,
+                  },
+                } as any,
+                buildingLayerId
+              );
+            }
+
+            // V56: Add roof detail layer for photorealistic rooftops
+            if (isMapbox && !map.getLayer('building-roof-detail')) {
+              map.addLayer({
+                id: 'building-roof-detail',
+                type: 'fill',
                 source: sourceId,
                 'source-layer': sourceLayer,
-                minzoom: 15,
+                minzoom: 17,
                 paint: {
-                  // V56: Dynamic building color based on material type
-                  'fill-extrusion-color': [
-                    'case',
-                    ['==', ['get', 'type'], 'glass'],
-                    '#b0c4de', // Glass facade
-                    ['==', ['get', 'material'], 'glass'],
-                    '#b0c4de',
-                    '#9ca3af', // Default concrete/brick
-                  ],
-                  'fill-extrusion-height': [
-                    'coalesce',
-                    ['get', 'height'],
-                    ['get', 'render_height'],
-                    20,
-                  ],
-                  'fill-extrusion-base': [
-                    'coalesce',
-                    ['get', 'min_height'],
-                    ['get', 'render_min_height'],
-                    0,
-                  ],
-                  // V56: Glass transparency
-                  'fill-extrusion-opacity': [
-                    'case',
-                    ['==', ['get', 'type'], 'glass'],
-                    0.7,
-                    ['==', ['get', 'material'], 'glass'],
-                    0.75,
-                    0.92,
-                  ],
-                  // V56: Ambient occlusion for realism
-                  'fill-extrusion-ambient-occlusion-intensity': 0.45,
-                  'fill-extrusion-ambient-occlusion-radius': 8,
-                  // V56: Dynamic shadows
-                  'fill-extrusion-vertical-gradient': true,
+                  'fill-color': '#4a5568',
+                  'fill-opacity': 0.15,
+                  'fill-pattern': 'roof-texture', // Falls back gracefully if not in style
                 },
-              } as any,
-              buildingLayerId
-            );
+              } as any);
+            }
+          } catch (e) {
+            console.warn('Building layer setup partial:', e);
           }
-
-          // V56: Add roof detail layer for photorealistic rooftops
-          if (isMapbox && !map.getLayer('building-roof-detail')) {
-            map.addLayer({
-              id: 'building-roof-detail',
-              type: 'fill',
-              source: sourceId,
-              'source-layer': sourceLayer,
-              minzoom: 17,
-              paint: {
-                'fill-color': '#4a5568',
-                'fill-opacity': 0.15,
-                'fill-pattern': 'roof-texture', // Falls back gracefully if not in style
-              },
-            } as any);
-          }
-        } catch (e) {
-          console.warn('[V56] Building layer setup partial:', e);
         }
 
         // Route source/layers
@@ -568,26 +548,6 @@ function MapView3D(props: MapView3DProps) {
           const { lng, lat } = e.lngLat;
           onMapClick(lat, lng);
         });
-
-        try {
-          holographicMapEngine.init(map, {
-            enableGrid: true,
-            enableScanlines: true,
-            enableVignette: true,
-            enable3DBuildings: true,
-            enableDataLabels: true,
-            enableDeliveryCard: false,
-          });
-
-          const container = map.getContainer?.();
-          if (container) {
-            container.parentElement?.classList.add('holo-mode');
-          }
-
-          (window as any).holoMapEngine = holographicMapEngine;
-        } catch (e) {
-          console.warn('Holographic map engine could not start:', e);
-        }
 
         setReady(true);
       });
@@ -929,7 +889,13 @@ function MapView3D(props: MapView3DProps) {
       }
     } else if (startPoint) {
       // Recenter to start when not live navigating
-      map.easeTo({ center: [startPoint[1], startPoint[0]], pitch: 60, bearing: 0, duration: 350 });
+      const isCompactViewport = window.matchMedia('(max-width: 720px)').matches;
+      map.easeTo({
+        center: [startPoint[1], startPoint[0]],
+        pitch: isCompactViewport ? 0 : 28,
+        bearing: 0,
+        duration: 350,
+      });
       if (currentMarkerRef.current) {
         currentMarkerRef.current.remove();
         currentMarkerRef.current = null;
@@ -1048,7 +1014,6 @@ function MapModeSwitcher() {
       const success = await controller.switchToMode(mode);
       if (success) {
         setCurrentMode(mode);
-        console.log(`[V92:UI] Switched to ${mode} mode`);
       }
     } catch (error) {
       console.error('[V92:UI] Mode switch failed:', error);
@@ -1147,7 +1112,11 @@ const ARModeButton = memo(function ARModeButton({ routeData }: { routeData: any 
       title="AR"
       className="v58-control-btn"
     >
-      {busy ? '…' : 'AR'}
+      {busy ? (
+        <span className="v58-control-loading" aria-hidden="true" />
+      ) : (
+        <CursorArrowRaysIcon className="v58-control-icon" aria-hidden="true" />
+      )}
     </button>
   );
 });
@@ -1177,7 +1146,11 @@ const EnableGPSButton = memo(function EnableGPSButton() {
 
   return (
     <button onClick={onClick} aria-label="Enable GPS" title="GPS" className="v58-control-btn">
-      {busy ? '…' : 'GPS'}
+      {busy ? (
+        <span className="v58-control-loading" aria-hidden="true" />
+      ) : (
+        <MapPinIcon className="v58-control-icon" aria-hidden="true" />
+      )}
     </button>
   );
 });

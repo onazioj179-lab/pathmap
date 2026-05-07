@@ -32,10 +32,7 @@ import { Button } from '../components/Button';
 import { ToastStack } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
 import { trackingService } from '../services/trackingService';
-import {
-  accountBillingService,
-  type PersistedSettings,
-} from '../services/accountBillingService';
+import { accountBillingService, type PersistedSettings } from '../services/accountBillingService';
 import './Settings.css';
 
 type ThemePreference = 'dark' | 'light' | 'system';
