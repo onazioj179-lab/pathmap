@@ -20,9 +20,20 @@ async function sha256Str(str: string): Promise<string> {
 }
 
 async function deriveKey(secret: string, salt: string) {
-  const base = await crypto.subtle.importKey('raw', enc(secret) as unknown as BufferSource, { name: 'PBKDF2' }, false, ['deriveKey']);
+  const base = await crypto.subtle.importKey(
+    'raw',
+    enc(secret) as unknown as BufferSource,
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: enc(salt) as unknown as BufferSource, iterations: 100000, hash: 'SHA-256' },
+    {
+      name: 'PBKDF2',
+      salt: enc(salt) as unknown as BufferSource,
+      iterations: 100000,
+      hash: 'SHA-256',
+    },
     base,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -45,8 +56,20 @@ async function decryptEES(): Promise<Record<string, string> | null> {
 }
 
 export const secureConfigVault = {
-  getBuildTime(): string | null { try { return BUILD_TIME || null; } catch { return null; } },
-  getExpectedEngineHash(): string | null { try { return ENGINE_HASH || null; } catch { return null; } },
+  getBuildTime(): string | null {
+    try {
+      return BUILD_TIME || null;
+    } catch {
+      return null;
+    }
+  },
+  getExpectedEngineHash(): string | null {
+    try {
+      return ENGINE_HASH || null;
+    } catch {
+      return null;
+    }
+  },
 
   async getDecryptedSignature() {
     return decryptEES();

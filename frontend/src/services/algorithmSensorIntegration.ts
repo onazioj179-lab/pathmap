@@ -29,7 +29,7 @@ export interface SensorAdjustments {
 
 /**
  * V36 Integration: ShadowPath + Sensor Fusion
- * 
+ *
  * Enhancements:
  * - Use heading + motion to anticipate next node
  * - Predict user's next likely movement direction
@@ -65,11 +65,17 @@ export function enhanceShadowPathWithSensors(
 
       // Predict next position based on heading and speed
       const predictedDistance = fusedPosition.speed * 3; // 3 seconds ahead
-      const nextLat = fusedPosition.lat + (predictedDistance / 111000) * Math.cos(fusedPosition.heading * Math.PI / 180);
-      const nextLon = fusedPosition.lon + (predictedDistance / 111000) * Math.sin(fusedPosition.heading * Math.PI / 180);
-      
+      const nextLat =
+        fusedPosition.lat +
+        (predictedDistance / 111000) * Math.cos((fusedPosition.heading * Math.PI) / 180);
+      const nextLon =
+        fusedPosition.lon +
+        (predictedDistance / 111000) * Math.sin((fusedPosition.heading * Math.PI) / 180);
+
       adjustments.adjustments.next_node_prediction = [nextLat, nextLon];
-      adjustments.reasoning.push(`Predicted position: ${predictedDistance.toFixed(1)}m ahead at ${Math.round(fusedPosition.heading)}°`);
+      adjustments.reasoning.push(
+        `Predicted position: ${predictedDistance.toFixed(1)}m ahead at ${Math.round(fusedPosition.heading)}°`
+      );
     }
   }
 
@@ -94,7 +100,7 @@ export function enhanceShadowPathWithSensors(
 
 /**
  * V36 Integration: HomeGuard + Sensor Fusion
- * 
+ *
  * Enhancements:
  * - Strengthen breadcrumb accuracy using motion state
  * - Improve night-mode safety with ambient-light readings
@@ -137,7 +143,7 @@ export function enhanceHomeGuardWithSensors(
   // Adjust safety based on ambient light
   if (sensorState.raw_sensor_data?.ambientLight !== undefined) {
     const lightLevel = sensorState.raw_sensor_data.ambientLight;
-    
+
     if (lightLevel < 10) {
       // Dark conditions
       adjustments.adjustments.breadcrumb_confidence_boost! *= 1.2;
@@ -175,7 +181,7 @@ export function enhanceHomeGuardWithSensors(
 
 /**
  * V36 Integration: PathfinderX + Sensor Fusion
- * 
+ *
  * Enhancements:
  * - Use device movement to start/stop exploration waves
  * - If user is running, reduce scan radius
@@ -243,7 +249,9 @@ export function enhancePathfinderXWithSensors(
   // Stop exploration waves if frequent direction changes (user is lost/confused)
   if (movementPattern.direction_changes_per_minute > 15) {
     adjustments.adjustments.scan_radius_multiplier = 0.3;
-    adjustments.reasoning.push('High direction changes - minimal exploration (user may be disoriented)');
+    adjustments.reasoning.push(
+      'High direction changes - minimal exploration (user may be disoriented)'
+    );
   }
 
   // Boost exploration if user is confidently moving in one direction
@@ -262,7 +270,7 @@ export function enhancePathfinderXWithSensors(
 
 /**
  * V36 Master Integration Function
- * 
+ *
  * Applies sensor-based adjustments to any algorithm
  */
 export function applySensorFusionToAlgorithm(
@@ -270,14 +278,14 @@ export function applySensorFusionToAlgorithm(
   routeOptions: SensorEnhancedRouteOptions
 ): SensorAdjustments {
   const sfl = getSensorFusionLayer();
-  
+
   // Ensure sensor fusion is active
   if (!sfl.getState().isActive) {
     console.warn('Sensor Fusion Layer not active - skipping enhancements');
     return {
       algorithm,
       adjustments: {},
-      reasoning: ['Sensor Fusion Layer inactive']
+      reasoning: ['Sensor Fusion Layer inactive'],
     };
   }
 
@@ -285,25 +293,25 @@ export function applySensorFusionToAlgorithm(
   switch (algorithm) {
     case 'ShadowPath':
       return enhanceShadowPathWithSensors(routeOptions);
-    
+
     case 'HomeGuard':
       return enhanceHomeGuardWithSensors(routeOptions);
-    
+
     case 'PathfinderX':
       return enhancePathfinderXWithSensors(routeOptions);
-    
+
     default:
       return {
         algorithm,
         adjustments: {},
-        reasoning: ['Unknown algorithm']
+        reasoning: ['Unknown algorithm'],
       };
   }
 }
 
 /**
  * Helper: Check if sensor fusion should override algorithm choice
- * 
+ *
  * Returns recommended algorithm based on sensor data
  */
 export function getSensorRecommendedAlgorithm(): {
@@ -324,12 +332,13 @@ export function getSensorRecommendedAlgorithm(): {
   if (
     movementPattern.erratic_movement ||
     fusedPosition.confidence_level < 0.3 ||
-    (sensorState.raw_sensor_data?.ambientLight !== undefined && sensorState.raw_sensor_data.ambientLight < 5)
+    (sensorState.raw_sensor_data?.ambientLight !== undefined &&
+      sensorState.raw_sensor_data.ambientLight < 5)
   ) {
     return {
       algorithm: 'HomeGuard',
       confidence: 0.9,
-      reasoning: 'Critical safety conditions detected - prioritizing safe routing'
+      reasoning: 'Critical safety conditions detected - prioritizing safe routing',
     };
   }
 
@@ -342,19 +351,16 @@ export function getSensorRecommendedAlgorithm(): {
     return {
       algorithm: 'PathfinderX',
       confidence: 0.75,
-      reasoning: 'Confident directional movement - optimal for exploration'
+      reasoning: 'Confident directional movement - optimal for exploration',
     };
   }
 
   // Standard conditions -> ShadowPath
-  if (
-    fusedPosition.confidence_level > 0.5 &&
-    fusedPosition.motion_state === 'walking'
-  ) {
+  if (fusedPosition.confidence_level > 0.5 && fusedPosition.motion_state === 'walking') {
     return {
       algorithm: 'ShadowPath',
       confidence: 0.7,
-      reasoning: 'Standard walking conditions - balanced routing recommended'
+      reasoning: 'Standard walking conditions - balanced routing recommended',
     };
   }
 

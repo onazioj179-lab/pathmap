@@ -92,6 +92,13 @@ interface AIRoute {
   safety: number;
 }
 
+const targetTypeBadgeClass: Record<MapTarget['type'], string> = {
+  person: 'target-type-badge--person',
+  place: 'target-type-badge--place',
+  object: 'target-type-badge--object',
+  custom: 'target-type-badge--custom',
+};
+
 const API_BASE = 'http://localhost:8000';
 
 // SVG Icons for target types
@@ -1618,11 +1625,11 @@ export default function Home() {
           <div className="route-header">
             <span className="route-algo">
               <svg
+                className="inline-icon"
                 viewBox="0 0 24 24"
                 width="16"
                 height="16"
                 fill="currentColor"
-                style={{ verticalAlign: 'middle', marginRight: '4px' }}
               >
                 <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
               </svg>
@@ -1673,7 +1680,7 @@ export default function Home() {
             </div>
             <div className="training-title">Training Device AI</div>
             <div className="training-bar">
-              <div className="training-fill" style={{ width: `${trainingProgress}%` }}></div>
+              <progress className="training-fill" value={trainingProgress} max={100} />
             </div>
             <div className="training-percent">{trainingProgress}%</div>
             <div className="training-text">Learning movement patterns...</div>
@@ -1685,6 +1692,7 @@ export default function Home() {
       <div className={`sheet ${sheetCollapsed ? 'collapsed' : ''}`}>
         <button
           className="sheet-toggle"
+          title={sheetCollapsed ? 'Expand controls' : 'Collapse controls'}
           aria-label={sheetCollapsed ? 'Expand controls' : 'Collapse controls'}
           onClick={() => setSheetCollapsed(!sheetCollapsed)}
         >
@@ -1772,8 +1780,7 @@ export default function Home() {
                           <div className="device-name">{target.name}</div>
                           <div className="device-meta">
                             <span
-                              className="target-type-badge"
-                              style={{ background: target.color }}
+                              className={`target-type-badge ${targetTypeBadgeClass[target.type] || 'target-type-badge--custom'}`}
                             >
                               {target.type}
                             </span>
@@ -1785,6 +1792,7 @@ export default function Home() {
                         <div className="target-actions">
                           <button
                             className="track-btn"
+                            title={`${activeTarget?.id === target.id ? 'Tracking' : 'Track'} ${target.name}`}
                             aria-label={`${activeTarget?.id === target.id ? 'Tracking' : 'Track'} ${target.name}`}
                             onClick={() => startTrackingTarget(target)}
                           >
@@ -1820,6 +1828,7 @@ export default function Home() {
                           </button>
                           <button
                             className="delete-btn"
+                            title={`Delete ${target.name}`}
                             aria-label={`Delete ${target.name}`}
                             onClick={() => deleteMapTarget(target.id)}
                           >
@@ -2112,7 +2121,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
                   </svg>
@@ -2253,7 +2262,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                   </svg>
@@ -2295,7 +2304,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                   </svg>
@@ -2362,7 +2371,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3z" />
                   </svg>
@@ -2414,7 +2423,7 @@ export default function Home() {
                       width="16"
                       height="16"
                       fill="currentColor"
-                      style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                      className="section-header-icon"
                     >
                       <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
                     </svg>
@@ -2458,9 +2467,7 @@ export default function Home() {
                         </svg>
                       </span>
                       <div className="setting-info">
-                        <div className="setting-name" style={{ color: '#f44336' }}>
-                          Delete All Data
-                        </div>
+                        <div className="setting-name setting-name--danger">Delete All Data</div>
                       </div>
                       <svg viewBox="0 0 24 24" width="20" height="20" fill="#999">
                         <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
@@ -2478,7 +2485,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z" />
                   </svg>
@@ -2528,7 +2535,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                   </svg>
@@ -2602,7 +2609,7 @@ export default function Home() {
                     width="16"
                     height="16"
                     fill="currentColor"
-                    style={{ verticalAlign: 'middle', marginRight: '6px' }}
+                    className="section-header-icon"
                   >
                     <path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z" />
                   </svg>
@@ -2612,9 +2619,7 @@ export default function Home() {
                   {connectedHardware.length === 0 ? (
                     <div className="setting-item">
                       <div className="setting-info">
-                        <div className="setting-name" style={{ opacity: 0.6 }}>
-                          No devices connected
-                        </div>
+                        <div className="setting-name setting-name--muted">No devices connected</div>
                         <div className="setting-detail">
                           Connect GPS receivers, smart speakers, or IoT devices
                         </div>
@@ -2705,7 +2710,12 @@ export default function Home() {
       {authScreen !== 'none' && (
         <div className="modal-overlay" onClick={() => setAuthScreen('none')}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setAuthScreen('none')}>
+            <button
+              className="modal-close"
+              title="Close dialog"
+              aria-label="Close dialog"
+              onClick={() => setAuthScreen('none')}
+            >
               <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
               </svg>
@@ -2817,7 +2827,12 @@ export default function Home() {
       )}
 
       {/* FAB */}
-      <button className="fab" onClick={() => devices[0] && startTracking(devices[0])}>
+      <button
+        className="fab"
+        title={tracking ? 'Focus current tracking target' : 'Start quick tracking'}
+        aria-label={tracking ? 'Focus current tracking target' : 'Start quick tracking'}
+        onClick={() => devices[0] && startTracking(devices[0])}
+      >
         {tracking ? (
           <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
             <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
@@ -2870,7 +2885,12 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
+        <button
+          className="modal-close"
+          title="Close dialog"
+          aria-label="Close dialog"
+          onClick={onClose}
+        >
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
             <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
           </svg>

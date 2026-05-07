@@ -1,6 +1,6 @@
 /**
  * PATHFINDER V57 — GPU STREAMING PIPELINE (GSP)
- * 
+ *
  * PURPOSE:
  *   Manages ultra-smooth tile streaming with zero blocking operations:
  *     - Staggered tile fetch between frames
@@ -8,7 +8,7 @@
  *     - Texture upload scheduling to GPU
  *     - Mesh generation for 3D buildings
  *     - Shadow map updates
- * 
+ *
  * GUARANTEES:
  *   - Map never freezes during movement
  *   - No white tiles or gaps
@@ -38,7 +38,7 @@ class GPUStreamingPipeline {
   private loadedTiles: Set<string> = new Set();
   private failedTiles: Map<string, number> = new Map(); // tile key -> retry count
   private tileCache: Map<string, any> = new Map();
-  
+
   private maxConcurrentRequests: number = 6;
   private activeRequests: number = 0;
   private maxRetries: number = 3;
@@ -140,7 +140,7 @@ class GPUStreamingPipeline {
     try {
       // Simulate tile load (in real implementation, fetch from tile server)
       // await fetch(`https://tile-server/${tile.z}/${tile.x}/${tile.y}.pbf`);
-      
+
       // For now, just simulate delay
       await this.simulateTileLoad(tile);
 
@@ -158,10 +158,9 @@ class GPUStreamingPipeline {
         this.loadTimes.shift();
       }
       this.metrics.avgLoadTime = this.loadTimes.reduce((a, b) => a + b, 0) / this.loadTimes.length;
-
     } catch (error) {
       console.warn(`[V57 GSP] Tile load failed: ${key}`, error);
-      
+
       // Increment fail count
       const failCount = (this.failedTiles.get(key) || 0) + 1;
       this.failedTiles.set(key, failCount);
@@ -186,7 +185,7 @@ class GPUStreamingPipeline {
   private async simulateTileLoad(tile: TileRequest): Promise<void> {
     // Simulate network delay (50-150ms)
     const delay = 50 + Math.random() * 100;
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    await new Promise(resolve => setTimeout(resolve, delay));
   }
 
   /**

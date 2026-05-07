@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { authService } from '../services/authService';
+import { Button, IconButton } from './Button';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -100,13 +101,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           <h2 className="text-2xl font-bold text-white">
             {mode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <button
+          <IconButton
             onClick={onClose}
             className="text-gray-400 hover:text-white p-2"
-            aria-label="Close modal"
-          >
+            label="Close modal"
+            icon={
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
+            }
+          />
         </div>
 
         {/* Error Message */}
@@ -147,13 +149,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               />
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              loading={isLoading}
+              fullWidth
+              variant="primary"
+              size="lg"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
-            </button>
+            </Button>
           </form>
         )}
 
@@ -232,13 +236,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               />
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              loading={isLoading}
+              fullWidth
+              variant="primary"
+              size="lg"
             >
               {isLoading ? 'Creating account...' : 'Create Account'}
-            </button>
+            </Button>
           </form>
         )}
 
@@ -247,28 +253,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           {mode === 'login' ? (
             <p className="text-gray-400">
               Don't have an account?{' '}
-              <button
+              <Button
                 onClick={() => {
                   setMode('register');
                   resetForm();
                 }}
+                variant="ghost"
+                size="sm"
                 className="text-blue-400 hover:text-blue-300 font-medium"
               >
                 Sign up
-              </button>
+              </Button>
             </p>
           ) : (
             <p className="text-gray-400">
               Already have an account?{' '}
-              <button
+              <Button
                 onClick={() => {
                   setMode('login');
                   resetForm();
                 }}
+                variant="ghost"
+                size="sm"
                 className="text-blue-400 hover:text-blue-300 font-medium"
               >
                 Sign in
-              </button>
+              </Button>
             </p>
           )}
         </div>

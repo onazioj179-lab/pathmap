@@ -1,7 +1,11 @@
 /* eslint-disable react/no-unknown-property */
 import { useEffect, useRef, useState, memo, useMemo, useCallback } from 'react';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { cinematicLighting, type LightConfig, type AtmosphericConfig } from '../services/cinematicLighting';
+import {
+  cinematicLighting,
+  type LightConfig,
+  type AtmosphericConfig,
+} from '../services/cinematicLighting';
 import { framePacingEngine } from '../services/framePacingEngine';
 import { locationFluidityEngine } from '../services/locationFluidityEngine';
 import { gpuStreamingPipeline } from '../services/gpuStreamingPipeline';
@@ -17,7 +21,12 @@ import { microRouteOptimizer } from '../services/microRouteOptimizer';
 import { realGPSBridge } from '../services/realGPSBridge';
 import { globalSafetyEngine } from '../services/globalSafetyEngine';
 import { arxController } from '../services/arxController';
-import { AUTHOR_NAME, WATERMARK_SHORT, ensureUIWatermark, enforceIntegrity } from '../services/watermark';
+import {
+  AUTHOR_NAME,
+  WATERMARK_SHORT,
+  ensureUIWatermark,
+  enforceIntegrity,
+} from '../services/watermark';
 import { movementAnalyticsEngine } from '../services/movementAnalyticsEngine';
 import { localHeatmapGenerator } from '../services/localHeatmapGenerator';
 import { travelPatternModel } from '../services/travelPatternModel';
@@ -65,7 +74,10 @@ interface MapView3DProps {
   visualizationMode: string;
   showAlgorithmBehavior: boolean;
   algorithm: AlgorithmType;
-  liveNavigation: { currentPosition?: { lat: number; lon: number; heading?: number; speedMps?: number }; breadcrumbTrail?: [number, number][] } | null;
+  liveNavigation: {
+    currentPosition?: { lat: number; lon: number; heading?: number; speedMps?: number };
+    breadcrumbTrail?: [number, number][];
+  } | null;
   isLiveNavActive: boolean;
   onMapClick: (lat: number, lng: number) => void;
 }
@@ -126,9 +138,13 @@ function MapView3D(props: MapView3DProps) {
   // V71: Initialize analytics stores on mount and start session
   useEffect(() => {
     // V73: Set scaling mode for 3D view
-    try { uiScaleEngine.setMode('3D'); } catch { }
+    try {
+      uiScaleEngine.setMode('3D');
+    } catch {}
     // V77: Initialize dark mode engine
-    try { fullDarkModeEngine.init(); } catch { }
+    try {
+      fullDarkModeEngine.init();
+    } catch {}
 
     (async () => {
       try {
@@ -137,10 +153,12 @@ function MapView3D(props: MapView3DProps) {
           travelPatternModel.load?.(),
           sessionMetricsLayer.load?.(),
         ]);
-      } catch { }
+      } catch {}
       sessionMetricsLayer.startSession();
     })();
-    return () => { sessionMetricsLayer.endSession().catch(() => { }); };
+    return () => {
+      sessionMetricsLayer.endSession().catch(() => {});
+    };
   }, []);
 
   // Map engine initializes automatically
@@ -163,11 +181,14 @@ function MapView3D(props: MapView3DProps) {
       try {
         if (window.location.hostname === 'localhost') {
           const r = await bfisCheck();
-          if (!r.ok) console.warn('[V82:BFIS] Backend not ready or version mismatch; using public tile sources');
+          if (!r.ok)
+            console.warn(
+              '[V82:BFIS] Backend not ready or version mismatch; using public tile sources'
+            );
         } else {
           (window as any).__pfBackendReady = false;
         }
-      } catch { }
+      } catch {}
 
       try {
         const token: string | undefined = (import.meta as any).env?.VITE_MAPBOX_TOKEN;
@@ -190,20 +211,20 @@ function MapView3D(props: MapView3DProps) {
 
       if (cancelled) return;
 
-      const initialCenter: [number, number] = startPoint || [40.7128, -74.0060];
+      const initialCenter: [number, number] = startPoint || [40.7128, -74.006];
 
       // Robust style selection with fallbacks for blue-screen issues
       async function pickStyleUrl(): Promise<string> {
         if (isMapbox) return 'mapbox://styles/mapbox/dark-v11';
         const candidates = [
           'https://demotiles.maplibre.org/style.json',
-          'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+          'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         ];
         for (const url of candidates) {
           try {
             const res = await fetch(url, { method: 'HEAD' });
             if (res.ok) return url;
-          } catch { }
+          } catch {}
         }
         return candidates[candidates.length - 1];
       }
@@ -228,7 +249,7 @@ function MapView3D(props: MapView3DProps) {
         maxPitch: 85,
         refreshExpiredTiles: false,
         maxTileCacheSize: 100,
-        performanceMetricsCollection: false
+        performanceMetricsCollection: false,
       };
 
       // V93/V94: EXTREME TILE FORCE-LOAD - Map boot with guaranteed tile availability
@@ -290,7 +311,9 @@ function MapView3D(props: MapView3DProps) {
         try {
           providerRebindingEngine.attachToMap(map);
           console.log('[V86] Provider rebinding complete - terrain/imagery/satellite attached');
-        } catch (e) { console.warn('[V86] Provider rebinding failed', e); }
+        } catch (e) {
+          console.warn('[V86] Provider rebinding failed', e);
+        }
 
         // V75: Initialize Earth-scale engines (ESTE, SIL, ARM)
         try {
@@ -306,17 +329,25 @@ function MapView3D(props: MapView3DProps) {
                 map.setPaintProperty('v75-satellite', 'raster-brightness-max', adj.brightness);
                 map.setPaintProperty('v75-satellite', 'raster-contrast', adj.contrast - 1.0);
               }
-            } catch { }
-            try { darkAdaptiveAtmosphere.apply(map); } catch { }
+            } catch {}
+            try {
+              darkAdaptiveAtmosphere.apply(map);
+            } catch {}
           }
-        } catch (e) { console.warn('[V75] Earth-scale init partial', e); }
+        } catch (e) {
+          console.warn('[V75] Earth-scale init partial', e);
+        }
 
         // V76: Start Global Offline Terrain Cache (GOTC) & AQSS
-        try { globalOfflineTerrainCache.start({ maxBytes: 400 * 1024 * 1024 }); } catch { }
-        try { automaticQualityScalingSystem.start(); } catch { }
+        try {
+          globalOfflineTerrainCache.start({ maxBytes: 400 * 1024 * 1024 });
+        } catch {}
+        try {
+          automaticQualityScalingSystem.start();
+        } catch {}
 
         // Start frame pacing engine with V56 lighting + V57 fluidity
-        framePacingEngine.start((deltaMs) => {
+        framePacingEngine.start(deltaMs => {
           // V56: Cinematic lighting (update every 30s)
           if (performance.now() % 30000 < deltaMs) {
             cinematicLighting.update(30000);
@@ -334,8 +365,8 @@ function MapView3D(props: MapView3DProps) {
                 type: 'Feature',
                 geometry: {
                   type: 'Point',
-                  coordinates: [loc.lon, loc.lat]
-                }
+                  coordinates: [loc.lon, loc.lat],
+                },
               };
               (map.getSource('current-position') as any).setData(geojson);
             }
@@ -346,15 +377,24 @@ function MapView3D(props: MapView3DProps) {
             earthScaleTerrainEngine.adaptWithZoom(map);
             atmosphericRenderingModel.adaptWithZoom(map);
             globalElevationTerrainMorphingEngine.tick(map, deltaMs);
-          } catch { }
+          } catch {}
           // V78: Update global lighting and shadows
           try {
             const cpos = map.getCenter();
-            const lig = aiGlobalLightingEngine.compute({ lat: cpos.lat, lon: cpos.lng, time: new Date() });
+            const lig = aiGlobalLightingEngine.compute({
+              lat: cpos.lat,
+              lon: cpos.lng,
+              time: new Date(),
+            });
             const sunColor = cinematicLighting.colorTemperatureToRGB(5400);
-            map.setLight({ anchor: 'viewport', color: sunColor, intensity: 0.5 + 0.5 * lig.surfaceLightValue, position: [1.15, lig.sunAzimuth, lig.sunElevation] } as any);
+            map.setLight({
+              anchor: 'viewport',
+              color: sunColor,
+              intensity: 0.5 + 0.5 * lig.surfaceLightValue,
+              position: [1.15, lig.sunAzimuth, lig.sunElevation],
+            } as any);
             realTimeShadowSystem.update(map, map.getZoom?.() ?? 12);
-          } catch { }
+          } catch {}
         });
 
         // V56: Cinematic lighting with real-time sun simulation
@@ -409,7 +449,7 @@ function MapView3D(props: MapView3DProps) {
           (window as any).pfEarthZoom = async (lat: number, lon: number) => {
             await earthZoomPipeline.fly(map, { lat, lon });
           };
-        } catch { }
+        } catch {}
 
         // V57: GPU streaming pipeline - prefetch tiles
         const center = map.getCenter();
@@ -417,7 +457,15 @@ function MapView3D(props: MapView3DProps) {
         // Convert lng/lat to tile coordinates (simplified)
         const scale = Math.pow(2, zoom);
         const tileX = Math.floor(((center.lng + 180) / 360) * scale);
-        const tileY = Math.floor(((1 - Math.log(Math.tan((center.lat * Math.PI) / 180) + 1 / Math.cos((center.lat * Math.PI) / 180)) / Math.PI) / 2) * scale);
+        const tileY = Math.floor(
+          ((1 -
+            Math.log(
+              Math.tan((center.lat * Math.PI) / 180) + 1 / Math.cos((center.lat * Math.PI) / 180)
+            ) /
+              Math.PI) /
+            2) *
+            scale
+        );
         gpuStreamingPipeline.prefetchArea(zoom, tileX, tileY, 2);
 
         // V56: 3D building extrusion with shadows, glass facades, and ambient occlusion
@@ -429,36 +477,53 @@ function MapView3D(props: MapView3DProps) {
           if (!map.getLayer('building-extrusion')) {
             const lightCfg = cinematicLighting.getLightConfig();
 
-            map.addLayer({
-              id: 'building-extrusion',
-              type: 'fill-extrusion',
-              source: sourceId,
-              'source-layer': sourceLayer,
-              minzoom: 15,
-              paint: {
-                // V56: Dynamic building color based on material type
-                'fill-extrusion-color': [
-                  'case',
-                  ['==', ['get', 'type'], 'glass'], '#b0c4de', // Glass facade
-                  ['==', ['get', 'material'], 'glass'], '#b0c4de',
-                  '#9ca3af' // Default concrete/brick
-                ],
-                'fill-extrusion-height': ['coalesce', ['get', 'height'], ['get', 'render_height'], 20],
-                'fill-extrusion-base': ['coalesce', ['get', 'min_height'], ['get', 'render_min_height'], 0],
-                // V56: Glass transparency
-                'fill-extrusion-opacity': [
-                  'case',
-                  ['==', ['get', 'type'], 'glass'], 0.7,
-                  ['==', ['get', 'material'], 'glass'], 0.75,
-                  0.92
-                ],
-                // V56: Ambient occlusion for realism
-                'fill-extrusion-ambient-occlusion-intensity': 0.45,
-                'fill-extrusion-ambient-occlusion-radius': 8,
-                // V56: Dynamic shadows
-                'fill-extrusion-vertical-gradient': true,
-              }
-            } as any, buildingLayerId);
+            map.addLayer(
+              {
+                id: 'building-extrusion',
+                type: 'fill-extrusion',
+                source: sourceId,
+                'source-layer': sourceLayer,
+                minzoom: 15,
+                paint: {
+                  // V56: Dynamic building color based on material type
+                  'fill-extrusion-color': [
+                    'case',
+                    ['==', ['get', 'type'], 'glass'],
+                    '#b0c4de', // Glass facade
+                    ['==', ['get', 'material'], 'glass'],
+                    '#b0c4de',
+                    '#9ca3af', // Default concrete/brick
+                  ],
+                  'fill-extrusion-height': [
+                    'coalesce',
+                    ['get', 'height'],
+                    ['get', 'render_height'],
+                    20,
+                  ],
+                  'fill-extrusion-base': [
+                    'coalesce',
+                    ['get', 'min_height'],
+                    ['get', 'render_min_height'],
+                    0,
+                  ],
+                  // V56: Glass transparency
+                  'fill-extrusion-opacity': [
+                    'case',
+                    ['==', ['get', 'type'], 'glass'],
+                    0.7,
+                    ['==', ['get', 'material'], 'glass'],
+                    0.75,
+                    0.92,
+                  ],
+                  // V56: Ambient occlusion for realism
+                  'fill-extrusion-ambient-occlusion-intensity': 0.45,
+                  'fill-extrusion-ambient-occlusion-radius': 8,
+                  // V56: Dynamic shadows
+                  'fill-extrusion-vertical-gradient': true,
+                },
+              } as any,
+              buildingLayerId
+            );
           }
 
           // V56: Add roof detail layer for photorealistic rooftops
@@ -473,7 +538,7 @@ function MapView3D(props: MapView3DProps) {
                 'fill-color': '#4a5568',
                 'fill-opacity': 0.15,
                 'fill-pattern': 'roof-texture', // Falls back gracefully if not in style
-              }
+              },
             } as any);
           }
         } catch (e) {
@@ -482,7 +547,10 @@ function MapView3D(props: MapView3DProps) {
 
         // Route source/layers
         if (!map.getSource('route')) {
-          map.addSource('route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+          map.addSource('route', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] },
+          });
           map.addLayer({
             id: 'route-line',
             type: 'line',
@@ -490,15 +558,18 @@ function MapView3D(props: MapView3DProps) {
             paint: {
               'line-color': '#10b981',
               'line-width': 5,
-              'line-opacity': 0.95
-            }
+              'line-opacity': 0.95,
+            },
           });
         }
 
         // Segment layers for colored safety/traffic
         ['seg-safe', 'seg-traffic', 'seg-unsafe'].forEach((id, idx) => {
           if (!map.getSource(id)) {
-            map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+            map.addSource(id, {
+              type: 'geojson',
+              data: { type: 'FeatureCollection', features: [] },
+            });
             map.addLayer({
               id: id + '-line',
               type: 'line',
@@ -506,8 +577,8 @@ function MapView3D(props: MapView3DProps) {
               paint: {
                 'line-color': idx === 0 ? '#10b981' : idx === 1 ? '#f59e0b' : '#ef4444',
                 'line-width': 5,
-                'line-opacity': 0.95
-              }
+                'line-opacity': 0.95,
+              },
             });
           }
         });
@@ -555,7 +626,9 @@ function MapView3D(props: MapView3DProps) {
         if ((m as any)._lightInterval) {
           clearInterval((m as any)._lightInterval);
         }
-        try { m.remove(); } catch { }
+        try {
+          m.remove();
+        } catch {}
       }
       mapRef.current = null;
       if ((window as any).glMap) delete (window as any).glMap;
@@ -566,7 +639,9 @@ function MapView3D(props: MapView3DProps) {
   // V67: Ensure UI watermark exists and integrity is enforced
   useEffect(() => {
     // Try to mount into the map root
-    const root = containerRef.current?.parentElement || document.querySelector('.glmap-root') as HTMLElement | null;
+    const root =
+      containerRef.current?.parentElement ||
+      (document.querySelector('.glmap-root') as HTMLElement | null);
     ensureUIWatermark(root || undefined);
     enforceIntegrity(document);
   }, []);
@@ -579,7 +654,9 @@ function MapView3D(props: MapView3DProps) {
     // Start
     if (startPoint) {
       if (!startMarkerRef.current) {
-        startMarkerRef.current = new M.Marker({ element: markerEl(startSVG) }).setLngLat([startPoint[1], startPoint[0]]).addTo(map);
+        startMarkerRef.current = new M.Marker({ element: markerEl(startSVG) })
+          .setLngLat([startPoint[1], startPoint[0]])
+          .addTo(map);
       } else {
         startMarkerRef.current.setLngLat([startPoint[1], startPoint[0]]);
       }
@@ -590,7 +667,9 @@ function MapView3D(props: MapView3DProps) {
     // End
     if (endPoint) {
       if (!endMarkerRef.current) {
-        endMarkerRef.current = new M.Marker({ element: markerEl(endSVG) }).setLngLat([endPoint[1], endPoint[0]]).addTo(map);
+        endMarkerRef.current = new M.Marker({ element: markerEl(endSVG) })
+          .setLngLat([endPoint[1], endPoint[0]])
+          .addTo(map);
       } else {
         endMarkerRef.current.setLngLat([endPoint[1], endPoint[0]]);
       }
@@ -657,14 +736,19 @@ function MapView3D(props: MapView3DProps) {
 
         // SVG icons for different types
         const typeIcons: Record<string, string> = {
-          person: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
-          place: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
-          object: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>',
-          custom: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
+          person:
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>',
+          place:
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+          object:
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>',
+          custom:
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>',
           home: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>',
           work: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>',
           safe: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>',
-          alert: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>'
+          alert:
+            '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="white" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>',
         };
         inner.innerHTML = typeIcons[landmark.type] || typeIcons.place;
         el.appendChild(inner);
@@ -678,19 +762,23 @@ function MapView3D(props: MapView3DProps) {
           home: 'linear-gradient(135deg, #22c55e, #16a34a)',
           work: 'linear-gradient(135deg, #3b82f6, #2563eb)',
           safe: 'linear-gradient(135deg, #22c55e, #15803d)',
-          alert: 'linear-gradient(135deg, #ef4444, #dc2626)'
+          alert: 'linear-gradient(135deg, #ef4444, #dc2626)',
         };
         el.style.background = typeColors[landmark.type] || typeColors.place;
 
         // Hover effect
-        el.onmouseenter = () => { el.style.transform = 'rotate(-45deg) scale(1.1)'; };
-        el.onmouseleave = () => { el.style.transform = 'rotate(-45deg) scale(1)'; };
+        el.onmouseenter = () => {
+          el.style.transform = 'rotate(-45deg) scale(1.1)';
+        };
+        el.onmouseleave = () => {
+          el.style.transform = 'rotate(-45deg) scale(1)';
+        };
 
         // Create popup with name
         const popup = new M.Popup({
           offset: 25,
           closeButton: false,
-          className: 'landmark-popup'
+          className: 'landmark-popup',
         }).setHTML(`
           <div style="padding: 8px 12px; font-weight: 600; font-size: 14px;">
             ${landmark.name}
@@ -715,7 +803,9 @@ function MapView3D(props: MapView3DProps) {
     const pos = liveNavigation?.currentPosition;
     if (isLiveNavActive && pos) {
       if (!currentMarkerRef.current) {
-        currentMarkerRef.current = new M.Marker({ element: markerEl(currentDotSVG) }).setLngLat([pos.lon, pos.lat]).addTo(map);
+        currentMarkerRef.current = new M.Marker({ element: markerEl(currentDotSVG) })
+          .setLngLat([pos.lon, pos.lat])
+          .addTo(map);
       } else {
         currentMarkerRef.current.setLngLat([pos.lon, pos.lat]);
       }
@@ -728,21 +818,51 @@ function MapView3D(props: MapView3DProps) {
         speedMps: pos.speedMps ?? 0,
       });
       const now = Date.now();
-      motionClassificationEngine.update({ t: now, lat: pos.lat, lon: pos.lon, heading: pos.heading ?? 0, speed: pos.speedMps ?? 0 });
-      environmentDetectionEngine.update({ t: now, lat: pos.lat, lon: pos.lon, heading: pos.heading ?? 0, speed: pos.speedMps ?? 0, accuracy: pos ? undefined : 50 });
+      motionClassificationEngine.update({
+        t: now,
+        lat: pos.lat,
+        lon: pos.lon,
+        heading: pos.heading ?? 0,
+        speed: pos.speedMps ?? 0,
+      });
+      environmentDetectionEngine.update({
+        t: now,
+        lat: pos.lat,
+        lon: pos.lon,
+        heading: pos.heading ?? 0,
+        speed: pos.speedMps ?? 0,
+        accuracy: pos ? undefined : 50,
+      });
       deadZoneRecoverySystem.update(pos.lat, pos.lon, pos.heading, pos.speedMps);
 
       const suggestion = aiCameraEngine.suggest(routeData, 800);
       // V62: refine camera by motion mode, lane hint, micro-route optimizer
       const motion = motionClassificationEngine.getState();
       const view = getViewSettings(motion.mode);
-      const lane = routeData?.path && pos.heading !== undefined ? computeLaneHint(routeData.path, 1, pos.heading) : null;
+      const lane =
+        routeData?.path && pos.heading !== undefined
+          ? computeLaneHint(routeData.path, 1, pos.heading)
+          : null;
       const micro = microRouteOptimizer(routeData, pos.speedMps ?? 0);
       const eoe = experienceOptimizationEngine.getAdjustments();
-      const bearingAdj = (suggestion?.bearing ?? (pos.heading ?? 0)) + (lane?.bearingOffset ?? 0);
-      let pitchAdj = (suggestion ? Math.round((suggestion.pitch * 0.6 + view.targetPitch * 0.4)) : view.targetPitch) + eoe.pitchBias;
-      const center = suggestion?.center ? [suggestion.center.lon, suggestion.center.lat] as [number, number] : [pos.lon, pos.lat] as [number, number];
-      let zoomTarget = Math.max(12, Math.min(20, (map.getZoom?.() ?? view.targetZoom) * 0.8 + view.targetZoom * 0.2 + (micro.preferZoomDelta ?? 0) + eoe.zoomBias));
+      const bearingAdj = (suggestion?.bearing ?? pos.heading ?? 0) + (lane?.bearingOffset ?? 0);
+      let pitchAdj =
+        (suggestion
+          ? Math.round(suggestion.pitch * 0.6 + view.targetPitch * 0.4)
+          : view.targetPitch) + eoe.pitchBias;
+      const center = suggestion?.center
+        ? ([suggestion.center.lon, suggestion.center.lat] as [number, number])
+        : ([pos.lon, pos.lat] as [number, number]);
+      let zoomTarget = Math.max(
+        12,
+        Math.min(
+          20,
+          (map.getZoom?.() ?? view.targetZoom) * 0.8 +
+            view.targetZoom * 0.2 +
+            (micro.preferZoomDelta ?? 0) +
+            eoe.zoomBias
+        )
+      );
 
       // V64: Safety-aware camera adjustments
       const gse = globalSafetyEngine.getState();
@@ -758,14 +878,25 @@ function MapView3D(props: MapView3DProps) {
       }
 
       // V71: Movement analytics + heatmap + path scoring + session metrics
-      movementAnalyticsEngine.update({ lat: pos.lat, lon: pos.lon, speedMps: pos.speedMps, heading: pos.heading }, now);
+      movementAnalyticsEngine.update(
+        { lat: pos.lat, lon: pos.lon, speedMps: pos.speedMps, heading: pos.heading },
+        now
+      );
       localHeatmapGenerator.addSample(pos.lat, pos.lon, 100, now);
       travelPatternModel.tick(new Date(now), pos.heading);
-      pathQualityAnalyzer.updateWithPosition({ lat: pos.lat, lon: pos.lon, speedMps: pos.speedMps, heading: pos.heading });
+      pathQualityAnalyzer.updateWithPosition({
+        lat: pos.lat,
+        lon: pos.lon,
+        speedMps: pos.speedMps,
+        heading: pos.heading,
+      });
       sessionMetricsLayer.recordNavTick(pos.lat, pos.lon, gse.hazard_flags.length);
 
       const durations = ultraSmoothAnimationEngine.getTransitionDurations();
-      const cameraDuration = Math.max(durations.cameraEaseBase, duration + (eoe.durationBiasMs || 0));
+      const cameraDuration = Math.max(
+        durations.cameraEaseBase,
+        duration + (eoe.durationBiasMs || 0)
+      );
 
       if (suggestion) {
         // V74 FMI: interpolate between last and next camera poses per-frame
@@ -773,7 +904,13 @@ function MapView3D(props: MapView3DProps) {
         const currentBearing = map.getBearing ? map.getBearing() : 0;
         const currentPitch = map.getPitch ? map.getPitch() : 60;
         motionInterpolationEngine.setTarget(
-          { lat: currentCenter.lat, lon: currentCenter.lng, bearing: currentBearing, pitch: currentPitch, zoom: map.getZoom?.() },
+          {
+            lat: currentCenter.lat,
+            lon: currentCenter.lng,
+            bearing: currentBearing,
+            pitch: currentPitch,
+            zoom: map.getZoom?.(),
+          },
           { lat: center[1], lon: center[0], bearing: bearingAdj, pitch: pitchAdj, zoom: zoomTarget }
         );
         const bezier = ultraSmoothAnimationEngine.cubicBezier(0.16, 0.84, 0.44, 1);
@@ -783,22 +920,37 @@ function MapView3D(props: MapView3DProps) {
           onUpdate: (_t, dt) => {
             const pose = motionInterpolationEngine.update(dt, cameraDuration);
             if (!pose) return;
-            map.jumpTo({ center: [pose.lon, pose.lat], bearing: pose.bearing, pitch: pose.pitch, zoom: pose.zoom ?? map.getZoom?.() });
-          }
+            map.jumpTo({
+              center: [pose.lon, pose.lat],
+              bearing: pose.bearing,
+              pitch: pose.pitch,
+              zoom: pose.zoom ?? map.getZoom?.(),
+            });
+          },
         });
         // Note: cancel handle available if needed
       } else {
         // Fallback to simple follow
         const speed = pos.speedMps ?? 0;
         const pitch = speed > 5 ? view.targetPitch : Math.min(view.targetPitch, 40);
-        const bearing = (pos.heading ?? 0) % 360 + (lane?.bearingOffset ?? 0);
+        const bearing = ((pos.heading ?? 0) % 360) + (lane?.bearingOffset ?? 0);
         // Respect safety state here too
         const gse2 = globalSafetyEngine.getState();
         let dur = cameraDuration;
         if (gse2.visibility_level !== 'clear') dur = 520;
         if (gse2.risk_level === 'high') dur = 560;
         const bezier = ultraSmoothAnimationEngine.cubicBezier(0.16, 0.84, 0.44, 1);
-        map.easeTo({ center: [pos.lon, pos.lat], pitch, bearing, zoom: view.targetZoom, duration: dur, easing: bezier }, { animate: true });
+        map.easeTo(
+          {
+            center: [pos.lon, pos.lat],
+            pitch,
+            bearing,
+            zoom: view.targetZoom,
+            duration: dur,
+            easing: bezier,
+          },
+          { animate: true }
+        );
       }
     } else if (startPoint) {
       // Recenter to start when not live navigating
@@ -812,8 +964,12 @@ function MapView3D(props: MapView3DProps) {
 
   // V64: Keep GSE route in sync for scoring/hazards
   useEffect(() => {
-    try { globalSafetyEngine.setRoute(routeData || null); } catch { }
-    try { pathQualityAnalyzer.setRoute(routeData || null); } catch { }
+    try {
+      globalSafetyEngine.setRoute(routeData || null);
+    } catch {}
+    try {
+      pathQualityAnalyzer.setRoute(routeData || null);
+    } catch {}
   }, [routeData]);
 
   // Route and segments update
@@ -824,8 +980,8 @@ function MapView3D(props: MapView3DProps) {
     function toLineString(coords: [number, number][]) {
       return {
         type: 'Feature',
-        geometry: { type: 'LineString', coordinates: coords.map((c) => [c[1], c[0]]) },
-        properties: {}
+        geometry: { type: 'LineString', coordinates: coords.map(c => [c[1], c[0]]) },
+        properties: {},
       } as const;
     }
 
@@ -842,9 +998,9 @@ function MapView3D(props: MapView3DProps) {
           const status = (seg.status || seg.safety || '').toString().toLowerCase();
           const path = seg.path
             ? seg.path
-            : (seg.indices && Array.isArray(seg.indices) && seg.indices.length === 2
+            : seg.indices && Array.isArray(seg.indices) && seg.indices.length === 2
               ? routeData.path.slice(seg.indices[0], seg.indices[1] + 1)
-              : routeData.path);
+              : routeData.path;
           const feature = toLineString(path);
           if (status === 'unsafe') unsafe.features.push(feature);
           else if (status === 'traffic') traffic.features.push(feature);
@@ -856,7 +1012,7 @@ function MapView3D(props: MapView3DProps) {
       (map.getSource('seg-unsafe') as any)?.setData(unsafe);
     } else {
       const empty = { type: 'FeatureCollection', features: [] } as any;
-      ['route', 'seg-safe', 'seg-traffic', 'seg-unsafe'].forEach((id) => {
+      ['route', 'seg-safe', 'seg-traffic', 'seg-unsafe'].forEach(id => {
         if (map.getSource(id)) (map.getSource(id) as any).setData(empty);
       });
     }
@@ -874,18 +1030,7 @@ function MapView3D(props: MapView3DProps) {
   }
 
   return (
-    <div
-      id="map"
-      className="glmap-root"
-      style={{
-        minHeight: '100vh',
-        height: '100vh',
-        width: '100vw',
-        display: 'block',
-        visibility: 'visible',
-        opacity: 1
-      }}
-    >
+    <div id="map" className="glmap-root map-surface-root">
       <div ref={containerRef} className="glmap-canvas" />
 
       {/* V67: Global Author Watermark (UIWO) */}
@@ -894,9 +1039,7 @@ function MapView3D(props: MapView3DProps) {
       </div>
 
       {/* V94: Version Tag (Auto-updating) */}
-      <div className="v94-version-tag">
-        V94 EXTREME
-      </div>
+      <div className="v94-version-tag">V94 EXTREME</div>
 
       {/* V95: Left floating controls - Search + AR balanced on left side */}
       {!isLiveNavActive && (
@@ -1020,12 +1163,18 @@ const ARModeButton = memo(function ARModeButton({ routeData }: { routeData: any 
         const ok = await arxController.start(routeData);
         setActive(ok);
       }
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }, [busy, active, routeData]);
 
   return (
-    <button onClick={onClick} aria-label={active ? 'Stop AR' : 'Start AR'} title="AR"
-      className="v58-control-btn">
+    <button
+      onClick={onClick}
+      aria-label={active ? 'Stop AR' : 'Start AR'}
+      title="AR"
+      className="v58-control-btn"
+    >
       {busy ? '…' : 'AR'}
     </button>
   );
@@ -1055,8 +1204,7 @@ const EnableGPSButton = memo(function EnableGPSButton() {
   if (enabled) return null;
 
   return (
-    <button onClick={onClick} aria-label="Enable GPS" title="GPS"
-      className="v58-control-btn">
+    <button onClick={onClick} aria-label="Enable GPS" title="GPS" className="v58-control-btn">
       {busy ? '…' : 'GPS'}
     </button>
   );
@@ -1064,4 +1212,3 @@ const EnableGPSButton = memo(function EnableGPSButton() {
 
 // V97: Memoized export of MapView3D for parent component optimization
 export default memo(MapView3D);
-

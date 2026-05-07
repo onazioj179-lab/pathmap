@@ -8,7 +8,13 @@ export interface DZREstimate {
 
 class DeadZoneRecoverySystem {
   private static _instance: DeadZoneRecoverySystem;
-  private lastGood: { t: number; lat: number; lon: number; heading?: number; speed?: number } | null = null;
+  private lastGood: {
+    t: number;
+    lat: number;
+    lon: number;
+    heading?: number;
+    speed?: number;
+  } | null = null;
 
   static get instance() {
     if (!this._instance) this._instance = new DeadZoneRecoverySystem();

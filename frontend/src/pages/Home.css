@@ -1183,10 +1183,28 @@ body {
 }
 
 .training-fill {
+  appearance: none;
+  -webkit-appearance: none;
   height: 100%;
+  width: 100%;
   background: #0066ff;
   border-radius: 4px;
   transition: width 0.3s ease;
+  border: 0;
+}
+
+.training-fill::-webkit-progress-bar {
+  background: transparent;
+}
+
+.training-fill::-webkit-progress-value {
+  background: #0066ff;
+  border-radius: 4px;
+}
+
+.training-fill::-moz-progress-bar {
+  background: #0066ff;
+  border-radius: 4px;
 }
 
 .training-percent {
@@ -1584,6 +1602,14 @@ body {
   color: #ff3b30;
 }
 
+.setting-name--danger {
+  color: #ff3b30;
+}
+
+.setting-name--muted {
+  opacity: 0.6;
+}
+
 /* Modal */
 .modal-overlay {
   position: fixed;
@@ -1932,6 +1958,34 @@ body {
   font-weight: 700;
   color: #fff;
   text-transform: uppercase;
+}
+
+.target-type-badge--person {
+  background: #3b82f6;
+}
+
+.target-type-badge--place {
+  background: #10b981;
+}
+
+.target-type-badge--object {
+  background: #f59e0b;
+}
+
+.target-type-badge--custom {
+  background: #8b5cf6;
+}
+
+.setting-icon-svg--primary {
+  fill: #0066ff;
+}
+
+.setting-icon-svg--danger {
+  fill: #f44336;
+}
+
+.setting-icon-svg--muted {
+  fill: #666;
 }
 
 .target-actions {

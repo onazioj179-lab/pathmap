@@ -1,0 +1,94 @@
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000000;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+}
+
+.error-boundary__card {
+  background-color: #111111;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  border: 1px solid #222222;
+}
+
+.error-boundary__icon-container {
+  margin-bottom: 24px;
+}
+
+.error-boundary__title {
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+.error-boundary__message {
+  color: #888888;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.error-boundary__details {
+  background-color: #1a1a1a;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.error-boundary__summary {
+  color: #0066ff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.error-boundary__stack {
+  color: #ff6b6b;
+  font-size: 12px;
+  overflow: auto;
+  max-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 12px 0 0;
+  padding: 12px;
+  background-color: #0d0d0d;
+  border-radius: 4px;
+}
+
+.error-boundary__button-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-boundary__button {
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.error-boundary__button--primary {
+  background-color: #0066ff;
+  color: #ffffff;
+  border: none;
+}
+
+.error-boundary__button--secondary {
+  background-color: transparent;
+  color: #0066ff;
+  border: 1px solid #0066ff;
+}

@@ -26,6 +26,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
+import { Button } from '../components/Button';
 import './Settings.css';
 
 type ThemePreference = 'dark' | 'light' | 'system';
@@ -238,10 +239,16 @@ const Settings: React.FC = () => {
 
       <main className="settings-main">
         <header className="settings-header">
-          <button className="settings-back" type="button" onClick={() => navigate('/')}>
-            <ArrowLeft size={18} aria-hidden="true" />
-            <span>{t('nav.home')}</span>
-          </button>
+          <Button
+            className="settings-back"
+            type="button"
+            variant="ghost"
+            size="md"
+            leftIcon={<ArrowLeft size={18} aria-hidden="true" />}
+            onClick={() => navigate('/')}
+          >
+            {t('nav.home')}
+          </Button>
 
           <div className="settings-heading">
             <div className="settings-kicker">{t('nav.settings')}</div>
@@ -408,19 +415,25 @@ const Settings: React.FC = () => {
         </section>
 
         <div className="settings-actions" role="group" aria-label="Settings actions">
-          <button className="settings-reset" type="button" onClick={handleReset}>
+          <Button className="settings-reset" type="button" variant="ghost" size="md" onClick={handleReset}>
             {t('settings.reset')}
-          </button>
+          </Button>
           {saved && (
             <span className="settings-saved" role="status">
               <Check size={16} aria-hidden="true" />
               {t('settings.saved', 'Saved')}
             </span>
           )}
-          <button className="settings-save" type="button" onClick={handleSave}>
-            <Save size={17} aria-hidden="true" />
+          <Button
+            className="settings-save"
+            type="button"
+            variant="primary"
+            size="md"
+            leftIcon={<Save size={17} aria-hidden="true" />}
+            onClick={handleSave}
+          >
             {t('settings.save')}
-          </button>
+          </Button>
         </div>
       </main>
     </div>

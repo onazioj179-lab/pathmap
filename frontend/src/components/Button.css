@@ -1,0 +1,112 @@
+.pm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.pm-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pm-btn--sm {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.pm-btn--md {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.pm-btn--lg {
+  min-height: 52px;
+  padding: 0 20px;
+  font-size: 16px;
+}
+
+.pm-btn--full {
+  width: 100%;
+}
+
+.pm-btn--primary {
+  background: #0066ff;
+  color: #ffffff;
+}
+
+.pm-btn--primary:hover:not(:disabled) {
+  background: #0056dd;
+}
+
+.pm-btn--secondary {
+  background: #10141d;
+  color: #d7e3f7;
+  border-color: #2a3448;
+}
+
+.pm-btn--secondary:hover:not(:disabled) {
+  background: #171d2a;
+}
+
+.pm-btn--ghost {
+  background: transparent;
+  color: #b4c3de;
+  border-color: #2a3448;
+}
+
+.pm-btn--ghost:hover:not(:disabled) {
+  color: #e2ecff;
+  border-color: #3a4966;
+}
+
+.pm-btn__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 999px;
+  animation: pm-btn-spin 0.9s linear infinite;
+}
+
+@keyframes pm-btn-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pm-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #2a3448;
+  background: #10141d;
+  color: #d7e3f7;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.pm-icon-btn:hover:not(:disabled) {
+  background: #171d2a;
+  color: #ffffff;
+}
+
+.pm-icon-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

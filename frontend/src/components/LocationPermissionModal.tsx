@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin, AlertCircle, CheckCircle } from 'lucide-react';
 import { deviceLocationService, LocationPermissionStatus } from '../services/deviceLocationService';
+import { Button } from './Button';
 
 interface LocationPermissionModalProps {
   onPermissionGranted: () => void;
@@ -134,33 +135,34 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
 
         {/* Actions */}
         <div className="space-y-3">
-          <button
+          <Button
             onClick={handleRequestPermission}
-            disabled={isRequesting}
-            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 text-white font-semibold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 touch-manipulation text-lg"
+            loading={isRequesting}
+            fullWidth
+            variant="primary"
+            size="lg"
+            className="touch-manipulation"
           >
-            {isRequesting ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Requesting...
-              </>
-            ) : (
+            {isRequesting ? 'Requesting...' : (
               <>
                 <MapPin className="w-5 h-5" />
                 Allow Location Access
               </>
             )}
-          </button>
+          </Button>
 
           {permissionStatus?.denied && (
-            <button
+            <Button
               onClick={() => {
                 window.open('https://support.google.com/chrome/answer/142065', '_blank');
               }}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-lg transition-colors"
+              fullWidth
+              variant="secondary"
+              size="md"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700"
             >
               How to Enable Location
-            </button>
+            </Button>
           )}
         </div>
 

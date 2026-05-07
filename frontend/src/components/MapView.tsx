@@ -27,39 +27,45 @@ interface MapViewProps {
 
 // Retro-style markers
 const startIcon = new Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+  iconUrl:
+    'data:image/svg+xml;base64,' +
+    btoa(`
     <svg width="30" height="40" xmlns="http://www.w3.org/2000/svg">
       <path d="M15 0 L30 40 L15 35 L0 40 Z" fill="#00ff88" stroke="#003322" stroke-width="2"/>
       <circle cx="15" cy="15" r="6" fill="#0a0a0a" stroke="#00ff88" stroke-width="2"/>
     </svg>
   `),
   iconSize: [30, 40],
-  iconAnchor: [15, 40]
+  iconAnchor: [15, 40],
 });
 
 const endIcon = new Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+  iconUrl:
+    'data:image/svg+xml;base64,' +
+    btoa(`
     <svg width="30" height="40" xmlns="http://www.w3.org/2000/svg">
       <path d="M15 0 L30 40 L15 35 L0 40 Z" fill="#ff3366" stroke="#330011" stroke-width="2"/>
       <circle cx="15" cy="15" r="6" fill="#0a0a0a" stroke="#ff3366" stroke-width="2"/>
     </svg>
   `),
   iconSize: [30, 40],
-  iconAnchor: [15, 40]
+  iconAnchor: [15, 40],
 });
 
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   useMapEvents({
-    click: (e) => {
+    click: e => {
       onMapClick(e.latlng.lat, e.latlng.lng);
-    }
+    },
   });
   return null;
 }
 
 // V31: Current location icon (pulsing blue dot)
 const currentLocationIcon = new Icon({
-  iconUrl: 'data:image/svg+xml;base64,' + btoa(`
+  iconUrl:
+    'data:image/svg+xml;base64,' +
+    btoa(`
     <svg width="30" height="30" xmlns="http://www.w3.org/2000/svg">
       <circle cx="15" cy="15" r="8" fill="#3b82f6" opacity="0.3">
         <animate attributeName="r" from="8" to="14" dur="1.5s" repeatCount="indefinite"/>
@@ -70,7 +76,7 @@ const currentLocationIcon = new Icon({
     </svg>
   `),
   iconSize: [30, 30],
-  iconAnchor: [15, 15]
+  iconAnchor: [15, 15],
 });
 
 // V39: Map recenter component
@@ -91,7 +97,11 @@ function MapInstanceBinder() {
     (window as any).map = map;
     return () => {
       if ((window as any).map === map) {
-        try { delete (window as any).map; } catch { (window as any).map = undefined; }
+        try {
+          delete (window as any).map;
+        } catch {
+          (window as any).map = undefined;
+        }
       }
     };
   }, [map]);
@@ -110,10 +120,10 @@ export default function MapView({
   algorithm,
   liveNavigation,
   isLiveNavActive,
-  onMapClick
+  onMapClick,
 }: MapViewProps) {
   // Map center defaults
-  const [mapCenter, setMapCenter] = useState<[number, number]>([40.7128, -74.0060]);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([40.7128, -74.006]);
   const defaultZoom = 15;
 
   // Scan overlay removed for clarity
@@ -125,7 +135,9 @@ export default function MapView({
 
   // V73: Ensure UI scale mode reflects 2D map when this view mounts
   useEffect(() => {
-    try { uiScaleEngine.setMode('2D'); } catch { }
+    try {
+      uiScaleEngine.setMode('2D');
+    } catch {}
   }, []);
 
   // Map engine initializes automatically
@@ -138,25 +150,13 @@ export default function MapView({
 
   // Override map center if navigation is active and we have a position
   const effectiveCenter = liveNavigation?.currentPosition
-    ? [liveNavigation.currentPosition.lat, liveNavigation.currentPosition.lon] as [number, number]
+    ? ([liveNavigation.currentPosition.lat, liveNavigation.currentPosition.lon] as [number, number])
     : startPoint
       ? startPoint
       : mapCenter;
 
   return (
-    <div
-      id="map"
-      className="relative w-full h-full"
-      style={{
-        minHeight: '100vh',
-        height: '100vh',
-        width: '100vw',
-        display: 'block',
-        visibility: 'visible',
-        opacity: 1
-      }}
-    >
-
+    <div id="map" className="relative w-full h-full map-surface-root">
       <MapContainer
         center={effectiveCenter}
         zoom={defaultZoom}
@@ -168,7 +168,7 @@ export default function MapView({
         {/* Retro dark map tiles with optimized loading */}
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+          attribution="&copy; OpenStreetMap contributors &copy; CARTO"
           maxZoom={19}
           minZoom={3}
           keepBuffer={2}
@@ -199,15 +199,22 @@ export default function MapView({
             {Array.isArray(routeData.segments) && routeData.segments.length > 0 ? (
               routeData.segments.map((seg: any, idx: number) => {
                 const status = (seg.status || seg.safety || '').toString().toLowerCase();
-                const color = status === 'unsafe' ? '#ef4444' : status === 'traffic' ? '#f59e0b' : '#10b981';
+                const color =
+                  status === 'unsafe' ? '#ef4444' : status === 'traffic' ? '#f59e0b' : '#10b981';
                 const weight = 5;
                 const positions = seg.path
                   ? seg.path
-                  : (seg.indices && Array.isArray(seg.indices) && seg.indices.length === 2
+                  : seg.indices && Array.isArray(seg.indices) && seg.indices.length === 2
                     ? routeData.path.slice(seg.indices[0], seg.indices[1] + 1)
-                    : routeData.path);
+                    : routeData.path;
                 return (
-                  <Polyline key={`seg-${idx}`} positions={positions} color={color} weight={weight} opacity={0.95} />
+                  <Polyline
+                    key={`seg-${idx}`}
+                    positions={positions}
+                    color={color}
+                    weight={weight}
+                    opacity={0.95}
+                  />
                 );
               })
             ) : (
@@ -261,18 +268,20 @@ export default function MapView({
         )}
 
         {/* V31: Breadcrumb trail from live navigation */}
-        {isLiveNavActive && liveNavigation?.breadcrumbTrail && liveNavigation.breadcrumbTrail.length > 1 && (
-          <Polyline
-            positions={liveNavigation.breadcrumbTrail}
-            color="#10b981"
-            weight={3}
-            dashArray="5,10"
-            opacity={0.7}
-          />
-        )}
+        {isLiveNavActive &&
+          liveNavigation?.breadcrumbTrail &&
+          liveNavigation.breadcrumbTrail.length > 1 && (
+            <Polyline
+              positions={liveNavigation.breadcrumbTrail}
+              color="#10b981"
+              weight={3}
+              dashArray="5,10"
+              opacity={0.7}
+            />
+          )}
 
         {/* Landmarks */}
-        {landmarks.map((landmark) => (
+        {landmarks.map(landmark => (
           <Marker key={landmark.id} position={landmark.position} />
         ))}
       </MapContainer>

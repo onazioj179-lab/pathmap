@@ -394,10 +394,7 @@ export class BehaviorPredictionEngine {
     const home_zone_proximity = 0;
 
     // Friend proximity
-    const friend_proximity = this.getNearestFriendDistance(
-      fusedPosition.lat,
-      fusedPosition.lon
-    );
+    const friend_proximity = this.getNearestFriendDistance(fusedPosition.lat, fusedPosition.lon);
 
     // Safety level (from ambient mode or default)
     const ambientConditions = ambientModeEngine.getConditions();

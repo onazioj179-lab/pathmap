@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useRef, useEffect, memo } from 'react';
+import './OptimizedImage.css';
 
 interface OptimizedImageProps {
   src: string;
@@ -109,83 +110,43 @@ export const OptimizedImage = memo(function OptimizedImage({
     onError?.();
   };
 
-  // Generate placeholder based on type
-  const getPlaceholderStyle = (): React.CSSProperties => {
-    if (placeholder === 'blur' && blurDataURL) {
-      return {
-        backgroundImage: `url(${blurDataURL})`,
-        backgroundSize: 'cover',
-        filter: 'blur(10px)',
-      };
-    }
-    if (placeholder === 'skeleton') {
-      return {
-        background: 'linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%)',
-        backgroundSize: '200% 100%',
-        animation: 'shimmer 1.5s infinite',
-      };
-    }
-    return { backgroundColor: '#1a1a1a' };
-  };
+  const placeholderTypeClass =
+    placeholder === 'blur' && blurDataURL
+      ? 'optimized-image__placeholder--blur'
+      : placeholder === 'skeleton'
+        ? 'optimized-image__placeholder--skeleton'
+        : 'optimized-image__placeholder--empty';
 
-  // Container styles
-  const containerStyle: React.CSSProperties = {
-    position: 'relative',
-    overflow: 'hidden',
-    width: width ? `${width}px` : '100%',
-    height: height ? `${height}px` : 'auto',
-    aspectRatio: width && height ? `${width}/${height}` : undefined,
-  };
-
-  // Image styles
-  const imageStyle: React.CSSProperties = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    opacity: isLoaded ? 1 : 0,
-    transition: 'opacity 0.3s ease-in-out',
-  };
-
-  // Placeholder styles
-  const placeholderStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    opacity: isLoaded ? 0 : 1,
-    transition: 'opacity 0.3s ease-in-out',
-    ...getPlaceholderStyle(),
-  };
+  const mergedClassName = ['optimized-image', className].filter(Boolean).join(' ');
 
   if (isError) {
     return (
       <div
         ref={containerRef}
-        style={{ ...containerStyle, backgroundColor: '#2a2a2a' }}
-        className={className}
+        className={`${mergedClassName} optimized-image--error`}
         aria-label={`Failed to load: ${alt}`}
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            color: '#666',
-            fontSize: '12px',
-          }}
-        >
-          ⚠️ Image unavailable
-        </div>
+        <div className="optimized-image__error-text">⚠️ Image unavailable</div>
       </div>
     );
   }
 
   return (
-    <div ref={containerRef} style={containerStyle} className={className}>
+    <div ref={containerRef} className={mergedClassName}>
       {/* Placeholder */}
-      <div style={placeholderStyle} aria-hidden="true" />
+      <div
+        className={`optimized-image__placeholder ${placeholderTypeClass} ${isLoaded ? 'optimized-image__placeholder--hidden' : ''}`}
+        aria-hidden="true"
+      >
+        {placeholder === 'blur' && blurDataURL && (
+          <img
+            src={blurDataURL}
+            alt=""
+            className="optimized-image__blur-layer"
+            aria-hidden="true"
+          />
+        )}
+      </div>
 
       {/* Actual image (only render when in view) */}
       {isInView && (
@@ -199,7 +160,7 @@ export const OptimizedImage = memo(function OptimizedImage({
           decoding="async"
           onLoad={handleLoad}
           onError={handleError}
-          style={imageStyle}
+          className={`optimized-image__img ${isLoaded ? 'is-loaded' : ''}`}
           sizes={sizes}
           srcSet={srcSet}
         />
