@@ -3041,396 +3041,404 @@ body {
   background: rgba(3, 7, 9, 0.6);
 }
 
+
 /* =====================================================
-   PATHMAP HUD — futuristic command overlay (v2)
+   PATHMAP — System UI (rounded, compact, professional)
 ===================================================== */
 
 .app.holo-mode {
-  --hud-cyan: #7ce7ff;
-  --hud-amber: #f2a93b;
-  --hud-red: #ff4d6d;
-  --hud-bg: #02060a;
-  --hud-line: rgba(124, 231, 255, 0.55);
-  --hud-line-soft: rgba(124, 231, 255, 0.18);
-  background: var(--hud-bg) !important;
+  --sys-bg: #0b0e12;
+  --sys-surface: rgba(18, 22, 28, 0.92);
+  --sys-surface-2: rgba(24, 30, 38, 0.92);
+  --sys-border: rgba(255, 255, 255, 0.08);
+  --sys-border-strong: rgba(255, 255, 255, 0.14);
+  --sys-text: #e6ebf2;
+  --sys-text-dim: rgba(230, 235, 242, 0.62);
+  --sys-text-faint: rgba(230, 235, 242, 0.42);
+  --sys-accent: #5dd2ff;
+  --sys-accent-soft: rgba(93, 210, 255, 0.14);
+  --sys-action: #f5b14a;
+  --sys-action-hover: #ffc25e;
+  --sys-success: #4ade80;
+  --sys-warn: #fbbf24;
+  --sys-radius: 14px;
+  --sys-radius-sm: 10px;
+  --sys-radius-pill: 999px;
+  --sys-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3);
+  background: var(--sys-bg) !important;
+  font-feature-settings: 'cv11', 'ss01', 'ss02';
 }
 
-/* Map subtle dark tint, NEVER hide it */
 .app.holo-mode .leaflet-tile {
-  filter: brightness(0.55) contrast(1.15) saturate(0.9) hue-rotate(-12deg);
+  filter: brightness(0.62) contrast(1.08) saturate(0.85);
 }
 
-/* Reticle + scan grid above map, below UI */
-.app.holo-mode > .hud-grid,
-.app.holo-mode::before {
-  content: '';
+/* === Top system bar === */
+.app.holo-mode .sys-bar {
   position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 5;
-  background-image:
-    linear-gradient(rgba(124, 231, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 231, 255, 0.06) 1px, transparent 1px);
-  background-size: 56px 56px, 56px 56px;
-  mix-blend-mode: screen;
-}
-
-/* Vignette + corner glow */
-.app.holo-mode::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 6;
-  background:
-    radial-gradient(circle at 50% 50%, transparent 55%, rgba(0, 0, 0, 0.55) 100%),
-    radial-gradient(circle at 0% 0%, rgba(124, 231, 255, 0.10), transparent 35%),
-    radial-gradient(circle at 100% 0%, rgba(242, 169, 59, 0.08), transparent 35%),
-    radial-gradient(circle at 100% 100%, rgba(124, 231, 255, 0.08), transparent 35%),
-    radial-gradient(circle at 0% 100%, rgba(255, 77, 109, 0.06), transparent 35%);
-}
-
-/* HUD top status bar (always-visible telemetry strip) */
-.app.holo-mode .hud-top {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 12px;
+  left: 12px;
+  right: 12px;
   height: 44px;
-  z-index: 25;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 14px;
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--hud-cyan);
-  background: linear-gradient(180deg, rgba(2, 6, 10, 0.96), rgba(2, 6, 10, 0.6));
-  border-bottom: 1px solid var(--hud-line);
-  box-shadow: 0 0 24px rgba(124, 231, 255, 0.12);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  backdrop-filter: blur(14px) saturate(1.2);
-  pointer-events: none;
-  white-space: nowrap;
-  overflow: hidden;
+  border-radius: var(--sys-radius);
+  border: 1px solid var(--sys-border);
+  background: var(--sys-surface);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  backdrop-filter: blur(20px) saturate(1.4);
+  box-shadow: var(--sys-shadow);
+  color: var(--sys-text);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
 }
 
-.app.holo-mode .hud-top .left,
-.app.holo-mode .hud-top .right {
+.app.holo-mode .sys-bar-left,
+.app.holo-mode .sys-bar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
-  pointer-events: auto;
-  flex-shrink: 1;
+  gap: 10px;
   min-width: 0;
-  overflow: hidden;
 }
 
-.app.holo-mode .hud-top .pill {
+.app.holo-mode .sys-brand {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 8px;
-  border: 1px solid var(--hud-line-soft);
-  border-radius: 2px;
-  background: rgba(124, 231, 255, 0.06);
-  color: rgba(232, 247, 252, 0.85);
+  gap: 8px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--sys-text);
+}
+
+.app.holo-mode .sys-mark {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background:
+    conic-gradient(from 220deg at 50% 50%, var(--sys-action), var(--sys-accent), var(--sys-action));
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--sys-border-strong);
+}
+
+.app.holo-mode .sys-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--sys-radius-pill);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--sys-border);
+  font-size: 11.5px;
+  color: var(--sys-text-dim);
   white-space: nowrap;
-  flex-shrink: 0;
-  line-height: 1.4;
 }
 
-@media (max-width: 720px) {
-  .app.holo-mode .hud-top { font-size: 9px; padding: 0 10px; height: 40px; }
-  .app.holo-mode .hud-top .pill.opt { display: none; }
-  .app.holo-mode .hud-top .left,
-  .app.holo-mode .hud-top .right { gap: 6px; }
-}
-
-.app.holo-mode .hud-top .pill .dot {
+.app.holo-mode .sys-stat-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--hud-cyan);
-  box-shadow: 0 0 8px var(--hud-cyan);
-  animation: hud-pulse 1.6s ease-in-out infinite;
+  background: var(--sys-text-faint);
 }
 
-.app.holo-mode .hud-top .pill.warn .dot { background: var(--hud-amber); box-shadow: 0 0 8px var(--hud-amber); }
-.app.holo-mode .hud-top .pill.crit .dot { background: var(--hud-red);   box-shadow: 0 0 8px var(--hud-red); }
-
-@keyframes hud-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.45; transform: scale(0.85); }
+.app.holo-mode .sys-stat[data-state='live'] {
+  color: var(--sys-text);
+  background: rgba(74, 222, 128, 0.10);
+  border-color: rgba(74, 222, 128, 0.30);
+}
+.app.holo-mode .sys-stat[data-state='live'] .sys-stat-dot {
+  background: var(--sys-success);
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.18);
+  animation: sys-pulse 1.6s ease-in-out infinite;
 }
 
-/* Corner brackets (target frame) */
-.app.holo-mode .hud-corner {
-  position: fixed;
-  width: 44px;
-  height: 44px;
-  z-index: 24;
-  pointer-events: none;
-  border: 0 solid var(--hud-cyan);
-  filter: drop-shadow(0 0 6px rgba(124, 231, 255, 0.55));
-}
-.app.holo-mode .hud-corner.tl { top: 56px;  left: 12px;  border-top-width: 2px;    border-left-width: 2px; }
-.app.holo-mode .hud-corner.tr { top: 56px;  right: 12px; border-top-width: 2px;    border-right-width: 2px; }
-.app.holo-mode .hud-corner.bl { bottom: 12px; left: 12px;  border-bottom-width: 2px; border-left-width: 2px; }
-.app.holo-mode .hud-corner.br { bottom: 12px; right: 12px; border-bottom-width: 2px; border-right-width: 2px; }
-
-/* Center crosshair on map */
-.app.holo-mode .hud-reticle {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 120px;
-  height: 120px;
-  margin: -60px 0 0 -60px;
-  z-index: 7;
-  pointer-events: none;
-  border: 1px solid rgba(124, 231, 255, 0.35);
-  border-radius: 50%;
-  box-shadow:
-    inset 0 0 24px rgba(124, 231, 255, 0.1),
-    0 0 14px rgba(124, 231, 255, 0.18);
-}
-.app.holo-mode .hud-reticle::before,
-.app.holo-mode .hud-reticle::after {
-  content: '';
-  position: absolute;
-  background: rgba(124, 231, 255, 0.55);
-}
-.app.holo-mode .hud-reticle::before { top: 50%; left: -16px; right: -16px; height: 1px; }
-.app.holo-mode .hud-reticle::after  { left: 50%; top: -16px; bottom: -16px; width: 1px; }
-
-/* Scanline sweep */
-.app.holo-mode .hud-scan {
-  position: fixed;
-  inset: 0;
-  z-index: 6;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(124, 231, 255, 0.08) 48%,
-    rgba(124, 231, 255, 0.18) 50%,
-    rgba(124, 231, 255, 0.08) 52%,
-    transparent 100%
-  );
-  mix-blend-mode: screen;
-  animation: hud-scan 5.5s linear infinite;
+@keyframes sys-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
 }
 
-@keyframes hud-scan {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  10%  { opacity: 1; }
-  90%  { opacity: 1; }
-  100% { transform: translateY(100%); opacity: 0; }
+.app.holo-mode .sys-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--sys-radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--sys-border);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--sys-text);
+  white-space: nowrap;
 }
 
-/* Sheet → angular HUD console */
+.app.holo-mode .sys-metric em {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--sys-text-faint);
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .app.holo-mode .sys-bar { height: 40px; padding: 0 10px; font-size: 12px; }
+  .app.holo-mode .sys-bar-left,
+  .app.holo-mode .sys-bar-right { gap: 6px; }
+  .app.holo-mode .sys-metric { padding: 3px 8px; font-size: 11.5px; }
+  .app.holo-mode .sys-metric em { font-size: 9.5px; }
+  .app.holo-mode .sys-stat { padding: 3px 8px; font-size: 11px; }
+}
+
+@media (max-width: 520px) {
+  .app.holo-mode .sys-metric:nth-of-type(3) { display: none; }
+}
+
+/* === Map controls (rounded, refined) === */
+.app.holo-mode .leaflet-control-zoom {
+  border: 1px solid var(--sys-border) !important;
+  border-radius: var(--sys-radius-sm) !important;
+  overflow: hidden;
+  box-shadow: var(--sys-shadow);
+}
+.app.holo-mode .leaflet-control-zoom a {
+  background: var(--sys-surface) !important;
+  color: var(--sys-text) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--sys-border) !important;
+  font-weight: 500;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+}
+.app.holo-mode .leaflet-control-zoom a:last-child { border-bottom: none !important; }
+.app.holo-mode .leaflet-control-zoom a:hover {
+  background: var(--sys-accent-soft) !important;
+  color: var(--sys-accent) !important;
+}
+
+.app.holo-mode .leaflet-control-attribution {
+  background: var(--sys-surface) !important;
+  color: var(--sys-text-faint) !important;
+  font-size: 10px !important;
+  border: 1px solid var(--sys-border) !important;
+  border-radius: var(--sys-radius-sm) !important;
+  padding: 3px 8px !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.app.holo-mode .leaflet-control-attribution a { color: var(--sys-accent) !important; }
+
+/* === Bottom sheet (compact, rounded console) === */
 .app.holo-mode .sheet {
-  background:
-    linear-gradient(180deg, rgba(8, 18, 26, 0.94), rgba(2, 8, 12, 0.97)) !important;
-  border: 1px solid var(--hud-line) !important;
+  background: var(--sys-surface) !important;
+  border: 1px solid var(--sys-border) !important;
   border-bottom: none !important;
-  border-radius: 0 !important;
-  clip-path: polygon(
-    0 18px, 18px 0,
-    calc(100% - 18px) 0, 100% 18px,
-    100% 100%, 0 100%
-  );
-  box-shadow:
-    0 -8px 40px rgba(124, 231, 255, 0.18),
-    inset 0 1px 0 rgba(124, 231, 255, 0.25) !important;
-  backdrop-filter: blur(22px) saturate(1.25);
-  -webkit-backdrop-filter: blur(22px) saturate(1.25);
-}
-
-.app.holo-mode .sheet::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent, var(--hud-cyan) 20%, var(--hud-amber) 50%, var(--hud-cyan) 80%, transparent
-  );
-  filter: drop-shadow(0 0 6px var(--hud-cyan));
-  z-index: 1;
+  border-radius: var(--sys-radius) var(--sys-radius) 0 0 !important;
+  box-shadow: var(--sys-shadow) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
 }
 
 .app.holo-mode .sheet .handle {
-  background: var(--hud-amber) !important;
-  box-shadow: 0 0 8px rgba(242, 169, 59, 0.6);
+  width: 36px !important;
+  height: 4px !important;
+  margin: 6px auto 4px !important;
+  background: var(--sys-border-strong) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
 }
 
 .app.holo-mode .sheet-toggle {
-  background: rgba(8, 18, 26, 0.95) !important;
-  border: 1px solid var(--hud-line) !important;
+  background: var(--sys-surface) !important;
+  border: 1px solid var(--sys-border) !important;
   border-bottom: none !important;
-  border-radius: 0 !important;
-  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 100%, 0 100%);
-  box-shadow: 0 -4px 14px rgba(124, 231, 255, 0.25) !important;
+  border-radius: 10px 10px 0 0 !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3) !important;
+  width: 48px !important;
+  height: 14px !important;
 }
 .app.holo-mode .sheet-toggle svg {
-  color: var(--hud-cyan) !important;
-  filter: drop-shadow(0 0 4px var(--hud-cyan));
+  color: var(--sys-text-dim) !important;
+  width: 14px !important;
+  height: 14px !important;
 }
 
-/* Tabs → terminal segmented */
+/* Tabs */
 .app.holo-mode .tabs {
-  background: rgba(2, 8, 12, 0.7) !important;
-  border-top: 1px solid var(--hud-line-soft);
-  border-bottom: 1px solid var(--hud-line-soft);
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  background: transparent !important;
+  border-bottom: 1px solid var(--sys-border) !important;
+  padding: 0 6px !important;
+  gap: 2px;
 }
 
 .app.holo-mode .tabs button {
-  color: rgba(232, 247, 252, 0.55) !important;
+  background: transparent !important;
+  color: var(--sys-text-dim) !important;
+  border: none !important;
   border-bottom: 2px solid transparent !important;
-  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
-}
-
-.app.holo-mode .tabs button:hover {
-  color: var(--hud-cyan) !important;
-  background: rgba(124, 231, 255, 0.05) !important;
-}
-
-.app.holo-mode .tabs button.active {
-  color: var(--hud-cyan) !important;
-  border-bottom-color: var(--hud-cyan) !important;
-  background:
-    linear-gradient(180deg, transparent, rgba(124, 231, 255, 0.12)) !important;
-  text-shadow: 0 0 8px rgba(124, 231, 255, 0.55);
-}
-
-.app.holo-mode .tabs button svg {
-  filter: drop-shadow(0 0 4px currentColor);
-}
-
-/* Tap hint → glass briefing card */
-.app.holo-mode .tap-hint {
-  background:
-    linear-gradient(135deg, rgba(124, 231, 255, 0.10), rgba(2, 8, 12, 0.55)) !important;
-  border: 1px solid var(--hud-line-soft) !important;
-  border-left: 2px solid var(--hud-cyan) !important;
   border-radius: 0 !important;
-  position: relative;
+  padding: 10px 8px 9px !important;
+  min-height: 0 !important;
+  font-size: 11.5px !important;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  text-transform: none;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.app.holo-mode .tabs button:hover { color: var(--sys-text) !important; }
+.app.holo-mode .tabs button.active {
+  color: var(--sys-accent) !important;
+  border-bottom-color: var(--sys-accent) !important;
+}
+.app.holo-mode .tabs button svg,
+.app.holo-mode .tab-icon svg {
+  width: 16px !important;
+  height: 16px !important;
 }
 
-.app.holo-mode .tap-hint::after {
-  content: 'INTEL';
-  position: absolute;
-  top: -10px;
-  right: 10px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.32em;
-  color: var(--hud-amber);
-  background: var(--hud-bg);
-  padding: 0 6px;
+/* Content */
+.app.holo-mode .content {
+  padding: 14px 14px 18px !important;
+  color: var(--sys-text);
+  font-size: 13px;
 }
 
-.app.holo-mode .hint-text strong { color: #e8f7fc !important; }
-.app.holo-mode .hint-text span   { color: rgba(232, 247, 252, 0.7) !important; }
+.app.holo-mode .section { margin-bottom: 14px !important; }
 
-/* Primary CTA → arc reactor amber */
+.app.holo-mode .section h3,
+.app.holo-mode .section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sys-text-faint);
+  margin: 0 0 8px;
+  padding: 0;
+  border: none;
+}
+
+/* Briefing card */
+.app.holo-mode .tap-hint {
+  background: var(--sys-surface-2) !important;
+  border: 1px solid var(--sys-border) !important;
+  border-radius: var(--sys-radius-sm) !important;
+  padding: 12px 14px !important;
+  gap: 12px !important;
+  align-items: center;
+}
+.app.holo-mode .hint-icon {
+  font-size: 22px !important;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sys-accent-soft);
+  border-radius: 8px;
+  color: var(--sys-accent);
+}
+.app.holo-mode .hint-text strong {
+  color: var(--sys-text) !important;
+  font-size: 13.5px !important;
+  font-weight: 600;
+  line-height: 1.3 !important;
+}
+.app.holo-mode .hint-text span {
+  color: var(--sys-text-dim) !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+/* Primary action */
 .app.holo-mode .location-btn,
 .app.holo-mode .btn-primary.full {
-  background:
-    linear-gradient(180deg, #ffce6f, var(--hud-amber)) !important;
-  color: #1a0c00 !important;
-  border: 1px solid rgba(255, 220, 140, 0.7) !important;
-  border-radius: 0 !important;
-  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace !important;
-  letter-spacing: 0.22em !important;
-  text-transform: uppercase !important;
-  font-weight: 700 !important;
-  box-shadow:
-    0 0 22px rgba(242, 169, 59, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.25) !important;
-  transition: filter 0.18s ease, transform 0.12s ease;
+  background: var(--sys-action) !important;
+  color: #1a1106 !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  border-radius: var(--sys-radius-sm) !important;
+  min-height: 42px !important;
+  height: 42px;
+  padding: 0 16px !important;
+  font-size: 13.5px !important;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  text-transform: none;
+  box-shadow: 0 4px 14px -4px rgba(245, 177, 74, 0.55) !important;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  clip-path: none !important;
 }
 .app.holo-mode .location-btn:hover,
 .app.holo-mode .btn-primary.full:hover {
-  filter: brightness(1.1) saturate(1.15);
+  background: var(--sys-action-hover) !important;
+  box-shadow: 0 6px 18px -4px rgba(245, 177, 74, 0.7) !important;
 }
 .app.holo-mode .location-btn:active,
-.app.holo-mode .btn-primary.full:active {
-  transform: translateY(1px);
-}
+.app.holo-mode .btn-primary.full:active { transform: translateY(1px); }
 
-/* Device card → asset readout */
+/* Device card */
 .app.holo-mode .device-card {
-  background:
-    linear-gradient(180deg, rgba(8, 18, 26, 0.85), rgba(2, 8, 12, 0.92)) !important;
-  border: 1px solid var(--hud-line-soft) !important;
-  border-left: 2px solid var(--hud-cyan) !important;
-  border-radius: 0 !important;
-  position: relative;
+  background: var(--sys-surface-2) !important;
+  border: 1px solid var(--sys-border) !important;
+  border-radius: var(--sys-radius-sm) !important;
+  padding: 12px !important;
+  gap: 12px;
 }
-.app.holo-mode .device-card::before {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 0; height: 0;
-  border-style: solid;
-  border-width: 0 12px 12px 0;
-  border-color: transparent var(--hud-cyan) transparent transparent;
+.app.holo-mode .device-card::before { display: none !important; }
+.app.holo-mode .device-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 10px !important;
+  background: var(--sys-accent-soft);
+  color: var(--sys-accent);
 }
-.app.holo-mode .device-name { color: #e8f7fc !important; letter-spacing: 0.04em; }
-
-/* Section headings */
-.app.holo-mode .section h3,
-.app.holo-mode .section-title {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.28em;
-  color: var(--hud-cyan);
-  font-size: 11px;
-  border-bottom: 1px dashed var(--hud-line-soft);
-  padding-bottom: 6px;
-  margin-bottom: 10px;
+.app.holo-mode .device-name {
+  color: var(--sys-text) !important;
+  font-size: 14px !important;
+  font-weight: 600;
+  letter-spacing: -0.005em;
 }
 
-/* Toast/floating chrome */
+/* Toasts */
 .app.holo-mode .pm-toast-stack > * {
-  background: rgba(2, 8, 12, 0.92) !important;
-  border: 1px solid var(--hud-line) !important;
-  border-radius: 0 !important;
-  color: #e8f7fc !important;
-  box-shadow: 0 0 18px rgba(124, 231, 255, 0.18);
+  background: var(--sys-surface) !important;
+  border: 1px solid var(--sys-border) !important;
+  border-radius: var(--sys-radius-sm) !important;
+  color: var(--sys-text) !important;
+  box-shadow: var(--sys-shadow) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
-/* Hide leaflet attribution that breaks the mood (link still legally rendered minimally) */
-.app.holo-mode .leaflet-control-attribution {
-  background: rgba(2, 8, 12, 0.55) !important;
-  color: rgba(232, 247, 252, 0.5) !important;
-  font-size: 9px !important;
-  border: 1px solid var(--hud-line-soft);
-  border-radius: 0 !important;
-  padding: 2px 6px !important;
-}
-.app.holo-mode .leaflet-control-attribution a {
-  color: var(--hud-cyan) !important;
+/* Reserve top space so map UI / sheet account for the system bar */
+.app.holo-mode #map { top: 68px !important; height: calc(100vh - 68px) !important; }
+@media (max-width: 720px) {
+  .app.holo-mode #map { top: 60px !important; height: calc(100vh - 60px) !important; }
 }
 
-/* Zoom controls */
-.app.holo-mode .leaflet-control-zoom a {
-  background: rgba(2, 8, 12, 0.85) !important;
-  color: var(--hud-cyan) !important;
-  border: 1px solid var(--hud-line) !important;
-  border-radius: 0 !important;
-  text-shadow: 0 0 6px rgba(124, 231, 255, 0.6);
+/* Refinements */
+.app.holo-mode .location-btn,
+.app.holo-mode .btn-primary.full {
+  box-shadow: 0 2px 8px -2px rgba(245, 177, 74, 0.45) !important;
 }
-.app.holo-mode .leaflet-control-zoom a:hover {
-  background: rgba(124, 231, 255, 0.15) !important;
+.app.holo-mode .location-btn:hover,
+.app.holo-mode .btn-primary.full:hover {
+  box-shadow: 0 4px 12px -3px rgba(245, 177, 74, 0.55) !important;
 }
+.app.holo-mode .sheet-toggle {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.app.holo-mode .sheet:not(.collapsed) .sheet-toggle { display: none !important; }
+
+/* Sheet toggle — minimal pill */
+.app.holo-mode .sheet-toggle {
+  width: 40px !important;
+  height: 6px !important;
+  background: var(--sys-border-strong) !important;
+  border: none !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  top: -10px !important;
+}
+.app.holo-mode .sheet-toggle svg { display: none !important; }

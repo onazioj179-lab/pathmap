@@ -1430,29 +1430,32 @@ export default function Home() {
 
   return (
     <div className="app holo-mode">
-      {/* HUD overlay — futuristic command frame */}
-      <div className="hud-grid" aria-hidden="true" />
-      <div className="hud-scan" aria-hidden="true" />
-      <div className="hud-reticle" aria-hidden="true" />
-      <div className="hud-corner tl" aria-hidden="true" />
-      <div className="hud-corner tr" aria-hidden="true" />
-      <div className="hud-corner bl" aria-hidden="true" />
-      <div className="hud-corner br" aria-hidden="true" />
-      <div className="hud-top" aria-hidden="true">
-        <div className="left">
-          <span className="brand">PATHMAP</span>
-          <span className="pill"><span className="dot" />ONLINE</span>
-          <span className="pill opt">LAT {deviceData?.location?.lat?.toFixed(2) ?? '--'}</span>
-          <span className="pill opt">LON {deviceData?.location?.lng?.toFixed(2) ?? '--'}</span>
-        </div>
-        <div className="right">
-          <span className="pill opt">SAT {satelliteData.satellites.length || 0}</span>
-          <span className={`pill ${tracking ? '' : 'warn'}`}>
-            <span className="dot" />{tracking ? 'TRACK' : 'STDBY'}
+      <header className="sys-bar" role="banner">
+        <div className="sys-bar-left">
+          <span className="sys-brand">
+            <span className="sys-mark" aria-hidden="true" />
+            PathMap
           </span>
-          <span className="pill opt">{new Date().toISOString().slice(11, 19)}Z</span>
+          <span className="sys-stat" data-state={tracking ? 'live' : 'idle'}>
+            <span className="sys-stat-dot" />
+            {tracking ? 'Live tracking' : 'Standby'}
+          </span>
         </div>
-      </div>
+        <div className="sys-bar-right">
+          <span className="sys-metric" title="Latitude">
+            <em>LAT</em>
+            {deviceData?.location?.lat?.toFixed(4) ?? '—'}
+          </span>
+          <span className="sys-metric" title="Longitude">
+            <em>LON</em>
+            {deviceData?.location?.lng?.toFixed(4) ?? '—'}
+          </span>
+          <span className="sys-metric" title="Satellites">
+            <em>SAT</em>
+            {satelliteData.satellites.length || 0}
+          </span>
+        </div>
+      </header>
       <MapView3D
         startPoint={
           deviceData?.location ? [deviceData.location.lat, deviceData.location.lng] : null
