@@ -58,7 +58,9 @@ describe('Settings Page', () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: 'settings.save' }));
     expect(screen.getByText('settings.saved')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Dismiss settings.saveSuccess' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Dismiss settings.saveSuccess' })
+    ).toBeInTheDocument();
   });
 
   test('renders a user avatar in the sidebar', () => {
@@ -93,6 +95,8 @@ describe('Settings Page', () => {
     expect(screen.getByText('settings.saved')).toBeInTheDocument();
     fireEvent.click(resetBtn);
     expect(screen.queryByText('settings.saved')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Dismiss settings.resetSuccess' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Dismiss settings.resetSuccess' })
+    ).toBeInTheDocument();
   });
 });

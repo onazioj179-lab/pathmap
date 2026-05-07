@@ -56,12 +56,20 @@ export const Dialog: React.FC<DialogProps> = ({
         onMouseDown={event => event.stopPropagation()}
       >
         <header className="pm-dialog__header">
-          <h2 className="pm-dialog__title" id={titleId}>{title}</h2>
+          <h2 className="pm-dialog__title" id={titleId}>
+            {title}
+          </h2>
           <IconButton
             label={closeLabel}
             onClick={onClose}
             icon={
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="currentColor"
+                aria-hidden="true"
+              >
                 <path d="M18.3 5.71 12 12l6.3 6.29-1.41 1.41L10.59 13.41 4.29 19.7 2.88 18.29 9.17 12 2.88 5.71 4.29 4.3l6.3 6.29 6.3-6.29 1.41 1.41z" />
               </svg>
             }

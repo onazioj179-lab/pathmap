@@ -2039,67 +2039,69 @@ export default function Home() {
                         </svg>
                       }
                     />
-                  ) : devices.map(device => (
-                    <button
-                      key={device.id}
-                      className={`device-card ${selectedDevice?.id === device.id ? 'selected' : ''}`}
-                      onClick={() => startTracking(device)}
-                    >
-                      <span className="device-icon">{getDeviceIcon(device.type)}</span>
-                      <div className="device-info">
-                        <div className="device-name">
-                          {device.name}
-                          {device.trained && <span className="trained-badge">AI</span>}
-                        </div>
-                        <div className="device-meta">
-                          {device.online && <span className="online-dot"></span>}
-                          <span>{device.lastSeen}</span>
-                          {device.data.battery && (
-                            <span className="battery-badge">
-                              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                                <path d="M17 5H3a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2zm0 12H3V7h14v10zm4-9v6h-2V8h2z" />
-                              </svg>{' '}
-                              {device.data.battery.level}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  ) : (
+                    devices.map(device => (
                       <button
-                        className="train-btn"
-                        onClick={e => {
-                          e.stopPropagation();
-                          trainDevice(device);
-                        }}
+                        key={device.id}
+                        className={`device-card ${selectedDevice?.id === device.id ? 'selected' : ''}`}
+                        onClick={() => startTracking(device)}
                       >
-                        {device.trained ? (
-                          <>
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                            </svg>{' '}
-                            Trained
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              viewBox="0 0 24 24"
-                              width="14"
-                              height="14"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                              />
-                            </svg>{' '}
-                            Train
-                          </>
-                        )}
+                        <span className="device-icon">{getDeviceIcon(device.type)}</span>
+                        <div className="device-info">
+                          <div className="device-name">
+                            {device.name}
+                            {device.trained && <span className="trained-badge">AI</span>}
+                          </div>
+                          <div className="device-meta">
+                            {device.online && <span className="online-dot"></span>}
+                            <span>{device.lastSeen}</span>
+                            {device.data.battery && (
+                              <span className="battery-badge">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                  <path d="M17 5H3a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2zm0 12H3V7h14v10zm4-9v6h-2V8h2z" />
+                                </svg>{' '}
+                                {device.data.battery.level}%
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          className="train-btn"
+                          onClick={e => {
+                            e.stopPropagation();
+                            trainDevice(device);
+                          }}
+                        >
+                          {device.trained ? (
+                            <>
+                              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                              </svg>{' '}
+                              Trained
+                            </>
+                          ) : (
+                            <>
+                              <svg
+                                viewBox="0 0 24 24"
+                                width="14"
+                                height="14"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                                />
+                              </svg>{' '}
+                              Train
+                            </>
+                          )}
+                        </button>
                       </button>
-                    </button>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </>
