@@ -196,7 +196,7 @@ class GPUStreamingPipeline {
     // Remove oldest if cache full
     if (this.tileCache.size >= this.maxCacheSize) {
       const firstKey = this.tileCache.keys().next().value;
-      this.tileCache.delete(firstKey);
+      if (firstKey !== undefined) this.tileCache.delete(firstKey);
     }
 
     this.tileCache.set(key, data);

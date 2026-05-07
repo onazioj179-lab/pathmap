@@ -1,3 +1,8 @@
+/**
+ * PATHMAP — Settings page tests
+ * © 2026 onazi Treasure Oj. All rights reserved.
+ */
+
 import { fireEvent, render, screen } from '@testing-library/react';
 import Settings from './Settings';
 import { BrowserRouter } from 'react-router-dom';
@@ -53,5 +58,39 @@ describe('Settings Page', () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: 'settings.save' }));
     expect(screen.getByRole('status')).toHaveTextContent('settings.saved');
+  });
+
+  test('renders a user avatar in the sidebar', () => {
+    renderSettings();
+    // UserAvatar renders an img role
+    const avatar = screen.getByRole('img', { name: 'User avatar' });
+    expect(avatar).toBeInTheDocument();
+  });
+
+  test('renders the license footer with attribution', () => {
+    renderSettings();
+    expect(screen.getByText(/onazi Treasure Oj/)).toBeInTheDocument();
+  });
+
+  test('navigates back when the back button is clicked', () => {
+    renderSettings();
+    const backBtn = screen.getByRole('button', { name: /nav\.home/i });
+    expect(backBtn).toBeInTheDocument();
+  });
+
+  test('shows reset button', () => {
+    renderSettings();
+    const resetBtn = screen.getByRole('button', { name: 'settings.reset' });
+    expect(resetBtn).toBeInTheDocument();
+  });
+
+  test('save-then-reset clears the saved indicator', () => {
+    renderSettings();
+    const saveBtn = screen.getByRole('button', { name: 'settings.save' });
+    const resetBtn = screen.getByRole('button', { name: 'settings.reset' });
+    fireEvent.click(saveBtn);
+    expect(screen.getByRole('status')).toBeInTheDocument();
+    fireEvent.click(resetBtn);
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

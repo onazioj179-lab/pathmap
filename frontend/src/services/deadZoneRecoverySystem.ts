@@ -18,7 +18,7 @@ class DeadZoneRecoverySystem {
   update(lat: number, lon: number, heading?: number, speedMps?: number) {
     const t = Date.now();
     this.lastGood = { t, lat, lon, heading, speed: speedMps };
-    aiMovementModel.update({ lat, lon, headingDeg: heading ?? 0, speedMps: speedMps ?? 0, t });
+    aiMovementModel.update({ lat, lon, headingDeg: heading ?? 0, speedMps: speedMps ?? 0 });
   }
 
   estimate(maxHorizonMs = 1200): DZREstimate | null {

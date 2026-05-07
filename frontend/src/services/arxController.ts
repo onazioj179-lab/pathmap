@@ -7,7 +7,7 @@ import { setARMode, ensureUIWatermark } from './watermark';
 import type { RouteLikeV64 } from './types';
 import { uiScaleEngine } from './uiScaleEngine';
 
-type XRSession = any; type XRReferenceSpace = any; type XRFrame = any;
+type XRSession = any; type XRReferenceSpace = any;
 
 class ARXController {
   private static _instance: ARXController;

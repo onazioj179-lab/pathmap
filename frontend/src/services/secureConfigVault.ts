@@ -9,22 +9,20 @@ import { ENGINE_SIGNATURE, AUTHOR_NAME, WATERMARK_SHORT } from './watermark';
 // @ts-ignore
 import { EES_CIPHERTEXT, EES_IV, BUILD_TIME, ENGINE_HASH } from './ees.generated';
 
-type ByteArray = Uint8Array;
-
-function enc(str: string): ByteArray {
+function enc(str: string): Uint8Array {
   return new TextEncoder().encode(str);
 }
 
 async function sha256Str(str: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', enc(str));
+  const buf = await crypto.subtle.digest('SHA-256', enc(str) as unknown as BufferSource);
   const arr = Array.from(new Uint8Array(buf));
   return arr.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 async function deriveKey(secret: string, salt: string) {
-  const base = await crypto.subtle.importKey('raw', enc(secret), { name: 'PBKDF2' }, false, ['deriveKey']);
+  const base = await crypto.subtle.importKey('raw', enc(secret) as unknown as BufferSource, { name: 'PBKDF2' }, false, ['deriveKey']);
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: enc(salt), iterations: 100000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: enc(salt) as unknown as BufferSource, iterations: 100000, hash: 'SHA-256' },
     base,
     { name: 'AES-GCM', length: 256 },
     false,

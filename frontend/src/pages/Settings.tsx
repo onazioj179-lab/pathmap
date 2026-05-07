@@ -1,3 +1,9 @@
+/**
+ * PATHMAP — Settings
+ * User preference control surface.
+ *
+ * © 2026 onazi Treasure Oj. All rights reserved.
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +25,7 @@ import {
   Sun,
   WifiOff,
 } from 'lucide-react';
+import UserAvatar from '../components/UserAvatar';
 import './Settings.css';
 
 type ThemePreference = 'dark' | 'light' | 'system';
@@ -76,7 +83,9 @@ const Settings: React.FC = () => {
   const [settings, setSettings] = useState<SettingsState>(loadSettings);
   const [saved, setSaved] = useState(false);
 
-  const activeLanguage = (i18n.resolvedLanguage || settings.language).startsWith('es') ? 'es' : 'en';
+  const activeLanguage = (i18n.resolvedLanguage || settings.language).startsWith('es')
+    ? 'es'
+    : 'en';
 
   const statusItems = useMemo(
     () => [
@@ -97,7 +106,8 @@ const Settings: React.FC = () => {
       },
       {
         label: t('settings.unitSystem'),
-        value: settings.units === 'metric' ? t('settings.unitsMetric') : t('settings.unitsImperial'),
+        value:
+          settings.units === 'metric' ? t('settings.unitsMetric') : t('settings.unitsImperial'),
         icon: Ruler,
       },
       {
@@ -201,11 +211,29 @@ const Settings: React.FC = () => {
           </div>
         </div>
 
+        <div className="settings-sidebar-user">
+          <UserAvatar size="md" />
+          <div className="settings-sidebar-user-copy">
+            <div className="settings-sidebar-user-name">{t('settings.user', 'You')}</div>
+            <div className="settings-sidebar-user-role">
+              {t('settings.userRole', 'Local account')}
+            </div>
+          </div>
+        </div>
+
         <nav className="settings-sidebar-nav" aria-label="Settings sections">
           <a href="#experience">{t('settings.experience', 'Experience')}</a>
           <a href="#navigation">{t('settings.navigation', 'Navigation')}</a>
           <a href="#privacy">{t('settings.privacy', 'Privacy')}</a>
         </nav>
+
+        <footer className="settings-sidebar-footer">
+          <span>PathMap</span>
+          <span className="settings-sidebar-footer-sep" aria-hidden="true">
+            ·
+          </span>
+          <span>© 2026 onazi Treasure Oj</span>
+        </footer>
       </aside>
 
       <main className="settings-main">
@@ -218,7 +246,12 @@ const Settings: React.FC = () => {
           <div className="settings-heading">
             <div className="settings-kicker">{t('nav.settings')}</div>
             <h1>{t('settings.title')}</h1>
-            <p>{t('settings.subtitle', 'Tune the map, tracking, alerts, and diagnostics from one quiet control surface.')}</p>
+            <p>
+              {t(
+                'settings.subtitle',
+                'Tune the map, tracking, alerts, and diagnostics from one quiet control surface.'
+              )}
+            </p>
           </div>
         </header>
 
@@ -245,7 +278,9 @@ const Settings: React.FC = () => {
             <div className="settings-row stacked">
               <div className="settings-row-copy">
                 <div className="settings-row-title">{t('settings.language')}</div>
-                <div className="settings-row-detail">{t('settings.languageDetail', 'Interface labels and regional defaults.')}</div>
+                <div className="settings-row-detail">
+                  {t('settings.languageDetail', 'Interface labels and regional defaults.')}
+                </div>
               </div>
               {renderSegment<LanguagePreference>(
                 t('settings.language'),
@@ -261,7 +296,9 @@ const Settings: React.FC = () => {
             <div className="settings-row stacked">
               <div className="settings-row-copy">
                 <div className="settings-row-title">{t('settings.theme')}</div>
-                <div className="settings-row-detail">{t('settings.themeDetail', 'Display mode for map controls and panels.')}</div>
+                <div className="settings-row-detail">
+                  {t('settings.themeDetail', 'Display mode for map controls and panels.')}
+                </div>
               </div>
               {renderSegment<ThemePreference>(
                 t('settings.theme'),
@@ -269,7 +306,11 @@ const Settings: React.FC = () => {
                 [
                   { label: t('settings.themeDark'), value: 'dark', icon: Moon },
                   { label: t('settings.themeLight'), value: 'light', icon: Sun },
-                  { label: t('settings.themeSystem', 'System'), value: 'system', icon: SlidersHorizontal },
+                  {
+                    label: t('settings.themeSystem', 'System'),
+                    value: 'system',
+                    icon: SlidersHorizontal,
+                  },
                 ],
                 value => updateSetting('theme', value)
               )}
@@ -286,7 +327,9 @@ const Settings: React.FC = () => {
             <div className="settings-row stacked">
               <div className="settings-row-copy">
                 <div className="settings-row-title">{t('settings.unitSystem')}</div>
-                <div className="settings-row-detail">{t('settings.unitsDetail', 'Distance, speed, altitude, and route summaries.')}</div>
+                <div className="settings-row-detail">
+                  {t('settings.unitsDetail', 'Distance, speed, altitude, and route summaries.')}
+                </div>
               </div>
               {renderSegment<UnitPreference>(
                 t('settings.unitSystem'),
@@ -301,7 +344,10 @@ const Settings: React.FC = () => {
 
             {renderSwitch(
               t('settings.precisionMode', 'High precision tracking'),
-              t('settings.precisionModeDetail', 'Use tighter GPS sampling when navigation is active.'),
+              t(
+                'settings.precisionModeDetail',
+                'Use tighter GPS sampling when navigation is active.'
+              ),
               settings.precisionMode,
               checked => updateSetting('precisionMode', checked),
               Compass
@@ -309,7 +355,10 @@ const Settings: React.FC = () => {
 
             {renderSwitch(
               t('settings.offlineMode'),
-              t('settings.offlineModeDetail', 'Keep recent routes and map data available during weak signal.'),
+              t(
+                'settings.offlineModeDetail',
+                'Keep recent routes and map data available during weak signal.'
+              ),
               settings.offline,
               checked => updateSetting('offline', checked),
               WifiOff
@@ -325,7 +374,10 @@ const Settings: React.FC = () => {
           <div className="settings-panel">
             {renderSwitch(
               t('settings.safetyAlerts', 'Safety alerts'),
-              t('settings.safetyAlertsDetail', 'Notify when routes, zones, or device status need attention.'),
+              t(
+                'settings.safetyAlertsDetail',
+                'Notify when routes, zones, or device status need attention.'
+              ),
               settings.safetyAlerts,
               checked => updateSetting('safetyAlerts', checked),
               Bell
@@ -333,7 +385,10 @@ const Settings: React.FC = () => {
 
             {renderSwitch(
               t('settings.reducedMotion', 'Reduced motion'),
-              t('settings.reducedMotionDetail', 'Lower panel animation and visual motion across the app.'),
+              t(
+                'settings.reducedMotionDetail',
+                'Lower panel animation and visual motion across the app.'
+              ),
               settings.reducedMotion,
               checked => updateSetting('reducedMotion', checked),
               SlidersHorizontal
@@ -341,7 +396,10 @@ const Settings: React.FC = () => {
 
             {renderSwitch(
               t('settings.debugMode'),
-              t('settings.debugModeDetail', 'Show diagnostics, logs, and engine status while testing.'),
+              t(
+                'settings.debugModeDetail',
+                'Show diagnostics, logs, and engine status while testing.'
+              ),
               settings.debug,
               checked => updateSetting('debug', checked),
               Bug

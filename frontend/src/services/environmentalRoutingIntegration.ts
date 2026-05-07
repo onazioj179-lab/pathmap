@@ -1,13 +1,16 @@
 /**
  * PATHFINDER V38 — ENVIRONMENTAL ALGORITHM INTEGRATION
- * 
+ *
  * Wires World Model Engine into routing algorithms to make them
  * react intelligently to real-world environmental conditions.
  */
 
 import { worldModelEngine, WorldModelState, EnvironmentalAdjustments } from './worldModelEngine';
 import { intentRoutingIntegration } from './intentRoutingIntegration';
-import { sensorFusionLayer } from './sensorFusionLayer';
+import { getSensorFusionLayer } from './sensorFusionLayer';
+
+// Engine instance
+const sensorFusionLayer = getSensorFusionLayer();
 
 // =====================================================================
 // INTERFACES
@@ -18,16 +21,16 @@ export interface EnvironmentalRouteOptions {
   environmental_enabled: boolean;
   world_state: WorldModelState | null;
   environmental_adjustments: EnvironmentalAdjustments | null;
-  
+
   // Combined adjustments (intent + environmental)
   combined_adjustments: {
-    node_cost_multiplier: number;        // 0.5-3.0, affects all path costs
-    eta_multiplier: number;              // 0.7-2.0, affects time estimates
-    safety_priority_boost: number;       // 1.0-3.0, increases safety weight
+    node_cost_multiplier: number; // 0.5-3.0, affects all path costs
+    eta_multiplier: number; // 0.7-2.0, affects time estimates
+    safety_priority_boost: number; // 1.0-3.0, increases safety weight
     exploration_radius_modifier: number; // 0.3-1.5, affects search radius
-    recalculation_urgency: number;       // 0-1, triggers more frequent updates
+    recalculation_urgency: number; // 0-1, triggers more frequent updates
   };
-  
+
   reasoning: string[];
 }
 
@@ -46,7 +49,7 @@ export interface EnvironmentalMetrics {
 
 export class EnvironmentalRoutingIntegration {
   private static instance: EnvironmentalRoutingIntegration;
-  
+
   private metrics: EnvironmentalMetrics = {
     adjustments_applied: 0,
     algorithm_switches_due_to_weather: 0,
@@ -128,11 +131,7 @@ export class EnvironmentalRoutingIntegration {
     }
 
     // Calculate combined adjustments
-    const combined = this.calculateCombinedAdjustments(
-      intentOptions,
-      envAdjustments,
-      worldState
-    );
+    const combined = this.calculateCombinedAdjustments(intentOptions, envAdjustments, worldState);
 
     options.combined_adjustments = combined.adjustments;
     options.reasoning = combined.reasoning;
@@ -161,12 +160,14 @@ export class EnvironmentalRoutingIntegration {
     worldState: WorldModelState
   ): { adjustments: EnvironmentalRouteOptions['combined_adjustments']; reasoning: string[] } {
     const reasoning: string[] = [];
-    
+
     // Node cost multiplier (environmental friction + hazard avoidance)
     let nodeCostMultiplier = envAdjustments.shadowpath_adjustments.environmental_friction;
     if (envAdjustments.homeguard_adjustments.hazard_avoidance > 0) {
-      nodeCostMultiplier *= (1 + envAdjustments.homeguard_adjustments.hazard_avoidance * 0.1);
-      reasoning.push(`Hazard zones detected: +${Math.round(envAdjustments.homeguard_adjustments.hazard_avoidance * 10)}% path cost`);
+      nodeCostMultiplier *= 1 + envAdjustments.homeguard_adjustments.hazard_avoidance * 0.1;
+      reasoning.push(
+        `Hazard zones detected: +${Math.round(envAdjustments.homeguard_adjustments.hazard_avoidance * 10)}% path cost`
+      );
     }
     if (worldState.weather.type === 'rain') {
       reasoning.push('Rain detected: reduced walkability');
@@ -194,7 +195,9 @@ export class EnvironmentalRoutingIntegration {
       explorationModifier *= 1.1; // slight boost if intent is exploration
     }
     if (worldState.walkability.overall_score < 0.5) {
-      reasoning.push(`Poor walkability (${Math.round(worldState.walkability.overall_score * 100)}%): reduced exploration`);
+      reasoning.push(
+        `Poor walkability (${Math.round(worldState.walkability.overall_score * 100)}%): reduced exploration`
+      );
     }
 
     // Recalculation urgency (emergency conditions + time pressure)
@@ -242,8 +245,10 @@ export class EnvironmentalRoutingIntegration {
     }
 
     // Severe weather → HomeGuard
-    if (worldState.weather.weather_severity === 'extreme' ||
-        worldState.weather.type === 'thunder') {
+    if (
+      worldState.weather.weather_severity === 'extreme' ||
+      worldState.weather.type === 'thunder'
+    ) {
       return 'HomeGuard';
     }
 
@@ -253,8 +258,10 @@ export class EnvironmentalRoutingIntegration {
     }
 
     // Good conditions + high exploration favorability → PathfinderX
-    if (worldState.environmental_scores.exploration_favorability > 0.7 &&
-        worldState.weather.type === 'clear') {
+    if (
+      worldState.environmental_scores.exploration_favorability > 0.7 &&
+      worldState.weather.type === 'clear'
+    ) {
       return 'PathfinderX';
     }
 
@@ -284,13 +291,10 @@ export class EnvironmentalRoutingIntegration {
 
       // Penalty for hazard proximity
       hazards.forEach(hazard => {
-        const distance = this.calculateDistance(
-          node.lat, node.lon,
-          hazard.lat, hazard.lon
-        );
+        const distance = this.calculateDistance(node.lat, node.lon, hazard.lat, hazard.lon);
         if (distance < hazard.radius) {
-          const proximity = 1 - (distance / hazard.radius);
-          node.cost *= (1 + proximity * hazard.avoidance_penalty);
+          const proximity = 1 - distance / hazard.radius;
+          node.cost *= 1 + proximity * hazard.avoidance_penalty;
         }
       });
 
@@ -323,7 +327,7 @@ export class EnvironmentalRoutingIntegration {
     let adjustedSafety = baseSafetyScore * safety_priority_boost;
 
     // Weight by environmental safety
-    adjustedSafety = (adjustedSafety * 0.7) + (overall_safety * 0.3);
+    adjustedSafety = adjustedSafety * 0.7 + overall_safety * 0.3;
 
     return Math.min(1.0, adjustedSafety);
   }
@@ -357,10 +361,7 @@ export class EnvironmentalRoutingIntegration {
   // ETA CALCULATION
   // =====================================================================
 
-  calculateEnvironmentalETA(
-    baseETA: number,
-    options: EnvironmentalRouteOptions
-  ): number {
+  calculateEnvironmentalETA(baseETA: number, options: EnvironmentalRouteOptions): number {
     if (!options.environmental_enabled) {
       return baseETA;
     }
@@ -373,10 +374,7 @@ export class EnvironmentalRoutingIntegration {
   // RECALCULATION TIMING
   // =====================================================================
 
-  shouldRecalculateRoute(
-    timeSinceLastCalc: number,
-    options: EnvironmentalRouteOptions
-  ): boolean {
+  shouldRecalculateRoute(timeSinceLastCalc: number, options: EnvironmentalRouteOptions): boolean {
     if (!options.environmental_enabled) {
       // Default: recalculate every 5 seconds
       return timeSinceLastCalc > 5000;
@@ -409,35 +407,35 @@ export class EnvironmentalRoutingIntegration {
 
   isLocationInHazardZone(lat: number, lon: number): boolean {
     const worldState = worldModelEngine.getCurrentState();
-    
+
     for (const hazard of worldState.hazards) {
       if (!hazard.active) continue;
-      
+
       const distance = this.calculateDistance(lat, lon, hazard.lat, hazard.lon);
       if (distance < hazard.radius) {
         return true;
       }
     }
-    
+
     return false;
   }
 
   getNearestHazard(lat: number, lon: number): any | null {
     const worldState = worldModelEngine.getCurrentState();
-    
+
     let nearestHazard = null;
     let minDistance = Infinity;
-    
+
     for (const hazard of worldState.hazards) {
       if (!hazard.active) continue;
-      
+
       const distance = this.calculateDistance(lat, lon, hazard.lat, hazard.lon);
       if (distance < minDistance) {
         minDistance = distance;
         nearestHazard = { ...hazard, distance };
       }
     }
-    
+
     return nearestHazard;
   }
 
@@ -447,24 +445,24 @@ export class EnvironmentalRoutingIntegration {
 
   getLocationWalkabilityScore(lat: number, lon: number): number {
     const worldState = worldModelEngine.getCurrentState();
-    
+
     // Start with global walkability
     let score = worldState.walkability.overall_score;
-    
+
     // Reduce if in hazard zone
     if (this.isLocationInHazardZone(lat, lon)) {
       score *= 0.3;
     }
-    
+
     // Reduce if in high congestion area
     for (const congestion of worldState.crowd.congestion_areas) {
       const distance = this.calculateDistance(lat, lon, congestion.lat, congestion.lon);
       if (distance < congestion.radius) {
-        const proximity = 1 - (distance / congestion.radius);
-        score *= (1 - proximity * congestion.severity * 0.3);
+        const proximity = 1 - distance / congestion.radius;
+        score *= 1 - proximity * congestion.severity * 0.3;
       }
     }
-    
+
     return Math.max(0, Math.min(1, score));
   }
 
@@ -474,7 +472,7 @@ export class EnvironmentalRoutingIntegration {
 
   shouldSeekShelter(): boolean {
     const worldState = worldModelEngine.getCurrentState();
-    
+
     return (
       worldState.weather.type === 'thunder' ||
       worldState.weather.weather_severity === 'extreme' ||
@@ -507,12 +505,14 @@ export class EnvironmentalRoutingIntegration {
 
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371000; // Earth radius in meters
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -546,19 +546,19 @@ export class EnvironmentalRoutingIntegration {
     const worldState = worldModelEngine.getCurrentState();
     const envAdjustments = worldModelEngine.getEnvironmentalAdjustments();
     const wmeConfig = worldModelEngine.getConfiguration();
-    
+
     // If environmental routing disabled, use intent-based selection
     if (!wmeConfig.auto_adjust_routing) {
-      return intentRoutingIntegration.selectAlgorithmWithIntent(userPreference);
+      return intentRoutingIntegration.selectBestAlgorithm(userPreference);
     }
-    
+
     // Check if we should switch due to environment
     if (this.shouldSwitchAlgorithm(worldState, envAdjustments)) {
       return this.selectEnvironmentalAlgorithm(worldState, envAdjustments);
     }
-    
+
     // Otherwise use intent-based selection
-    return intentRoutingIntegration.selectAlgorithmWithIntent(userPreference);
+    return intentRoutingIntegration.selectBestAlgorithm(userPreference);
   }
 }
 
@@ -573,7 +573,10 @@ export function applyShadowPathEnvironmentalAdjustments(
   baseNodes: any[],
   options: EnvironmentalRouteOptions
 ): any[] {
-  return environmentalRoutingIntegration.applyShadowPathEnvironmentalAdjustments(baseNodes, options);
+  return environmentalRoutingIntegration.applyShadowPathEnvironmentalAdjustments(
+    baseNodes,
+    options
+  );
 }
 
 /**
@@ -583,7 +586,10 @@ export function applyHomeGuardEnvironmentalAdjustments(
   safetyScore: number,
   options: EnvironmentalRouteOptions
 ): number {
-  return environmentalRoutingIntegration.applyHomeGuardEnvironmentalAdjustments(safetyScore, options);
+  return environmentalRoutingIntegration.applyHomeGuardEnvironmentalAdjustments(
+    safetyScore,
+    options
+  );
 }
 
 /**
@@ -593,7 +599,10 @@ export function applyPathfinderXEnvironmentalAdjustments(
   baseScanRadius: number,
   options: EnvironmentalRouteOptions
 ): number {
-  return environmentalRoutingIntegration.applyPathfinderXEnvironmentalAdjustments(baseScanRadius, options);
+  return environmentalRoutingIntegration.applyPathfinderXEnvironmentalAdjustments(
+    baseScanRadius,
+    options
+  );
 }
 
 // =====================================================================

@@ -1,8 +1,8 @@
 /**
  * PATHFINDER V43 — SCAN ANIMATION ENGINE (SAE)
- * 
+ *
  * GPU-accelerated canvas overlay for visual path discovery.
- * 
+ *
  * Features:
  *   - 60fps animation target
  *   - 3 scan modes: ROUTE-SCAN, SAFE-RETURN-SCAN, EXPLORATION-SCAN
@@ -11,12 +11,10 @@
  *   - <15% CPU usage, <25% GPU usage
  */
 
-import { PipelineState, PipelineAction } from './ActionPipeline';
-
 export enum ScanMode {
   ROUTE = 'ROUTE-SCAN',
   SAFE_RETURN = 'SAFE-RETURN-SCAN',
-  EXPLORATION = 'EXPLORATION-SCAN'
+  EXPLORATION = 'EXPLORATION-SCAN',
 }
 
 interface ScanConfig {
@@ -27,12 +25,6 @@ interface ScanConfig {
   intensity?: number;
   color?: string;
   duration?: number;
-}
-
-interface AnimationFrame {
-  timestamp: number;
-  progress: number;
-  fps: number;
 }
 
 class ScanAnimationEngine {
@@ -46,7 +38,6 @@ class ScanAnimationEngine {
   private lastFrameTime: number = 0;
   private frameCount: number = 0;
   private fpsHistory: number[] = [];
-  private readonly TARGET_FPS = 60;
   private readonly FPS_HISTORY_SIZE = 30;
   private isFadingOut: boolean = false;
   private fadeStartTime: number = 0;
@@ -68,7 +59,7 @@ class ScanAnimationEngine {
 
     this.ctx = this.canvas.getContext('2d', {
       alpha: true,
-      desynchronized: true // Better performance
+      desynchronized: true, // Better performance
     });
 
     container.appendChild(this.canvas);
@@ -175,7 +166,7 @@ class ScanAnimationEngine {
 
     // Render scan based on mode
     this.ctx.globalAlpha = opacity;
-    
+
     switch (this.config.mode) {
       case ScanMode.ROUTE:
         this.renderRouteScan(elapsed);
@@ -208,10 +199,7 @@ class ScanAnimationEngine {
 
     // Radial pulse
     const radius = maxRadius * progress;
-    const gradient = this.ctx.createRadialGradient(
-      centerX, centerY, 0,
-      centerX, centerY, radius
-    );
+    const gradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
 
     const color = this.config.color || '#3b82f6'; // blue-500
     gradient.addColorStop(0, `${color}00`);
@@ -260,8 +248,12 @@ class ScanAnimationEngine {
 
     // Safe zone glow
     const gradient = this.ctx.createRadialGradient(
-      centerX, centerY, 0,
-      centerX, centerY, radius * 0.3
+      centerX,
+      centerY,
+      0,
+      centerX,
+      centerY,
+      radius * 0.3
     );
     gradient.addColorStop(0, `${color}40`);
     gradient.addColorStop(1, `${color}00`);
@@ -286,12 +278,14 @@ class ScanAnimationEngine {
 
     // Multiple expanding rings
     for (let i = 0; i < 3; i++) {
-      const offset = (i * 800); // Stagger rings
+      const offset = i * 800; // Stagger rings
       const progress = ((elapsed + offset) % 2400) / 2400; // 2.4 second cycle
       const radius = maxRadius * progress;
       const alpha = Math.max(0, 1 - progress);
 
-      this.ctx.strokeStyle = `${color}${Math.floor(alpha * 100).toString(16).padStart(2, '0')}`;
+      this.ctx.strokeStyle = `${color}${Math.floor(alpha * 100)
+        .toString(16)
+        .padStart(2, '0')}`;
       this.ctx.lineWidth = 2;
       this.ctx.beginPath();
       this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
@@ -303,8 +297,12 @@ class ScanAnimationEngine {
     const sparkRadius = 8 + Math.sin(sparkProgress * Math.PI * 2) * 4;
 
     const sparkGradient = this.ctx.createRadialGradient(
-      centerX, centerY, 0,
-      centerX, centerY, sparkRadius
+      centerX,
+      centerY,
+      0,
+      centerX,
+      centerY,
+      sparkRadius
     );
     sparkGradient.addColorStop(0, `${color}FF`);
     sparkGradient.addColorStop(1, `${color}00`);
@@ -354,7 +352,7 @@ class ScanAnimationEngine {
       currentMode: this.currentMode,
       frameCount: this.frameCount,
       averageFPS: this.getCurrentFPS(),
-      isFadingOut: this.isFadingOut
+      isFadingOut: this.isFadingOut,
     };
   }
 
@@ -363,7 +361,7 @@ class ScanAnimationEngine {
    */
   public destroy(): void {
     this.forceStop();
-    
+
     if (this.canvas && this.canvas.parentElement) {
       this.canvas.parentElement.removeChild(this.canvas);
     }

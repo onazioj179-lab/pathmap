@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
@@ -31,39 +30,10 @@ export interface AppState {
 }
 
 function App() {
-  const [state, setState] = useState<AppState>({
-    algorithm: 'ShadowPath',
-    activePanel: null,
-    startPoint: null,
-    endPoint: null,
-    routeData: null,
-    compareMode: null,
-    comparisonResults: null,
-    isTracking: false,
-    trackingHistory: [],
-    landmarks: [],
-    safeReturnRoutes: null,
-    showHeatmap: false,
-    visualizationSpeed: 1.0,
-    contextData: null,
-    safetyScore: 100,
-    visualizationMode: 'full-reveal', // V30: Default to full reveal
-    showAlgorithmBehavior: true, // V30: Default to showing algorithm behavior
-    liveNavigation: null, // V31: Real-time navigation state
-    isLiveNavActive: false, // V31: Live navigation disabled by default
-    // V93: Social features
-    showSocialHub: false,
-    showAuthModal: false,
-  });
-
-  const updateState = (updates: Partial<AppState>) => {
-    setState(prev => ({ ...prev, ...updates }));
-  };
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home state={state} updateState={updateState} />} />
+        <Route path="/" element={<Home />} />
         <Route path="/settings" element={<Settings />} />
       </Routes>
     </BrowserRouter>

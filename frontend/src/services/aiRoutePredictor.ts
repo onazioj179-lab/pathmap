@@ -29,7 +29,7 @@ export function predictAlongRoute(
   // Find nearest segment
   let bestIdx = 0;
   let bestDist = Number.POSITIVE_INFINITY;
-  const cur: [number, number] = [current[0] ?? current.lat, current[1] ?? current.lon] as any;
+  const cur: [number, number] = [current.lat, current.lon];
 
   for (let i = 0; i < route.path.length - 1; i++) {
     const a = route.path[i];

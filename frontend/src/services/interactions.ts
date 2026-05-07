@@ -1,6 +1,6 @@
 /**
  * PATHFINDER V59 — MICRO-INTERACTIONS + HAPTICS + ANIMATION POLISH
- * 
+ *
  * Micro-Interaction Engine (MIE)
  * Haptic Feedback Engine (HFE)
  * Animation Polish Layer (APL)
@@ -36,12 +36,13 @@ export class MicroInteractionEngine {
 
     element.style.transform = `scale(${scale})`;
     element.style.opacity = String(opacity);
-    element.style.transition = 'transform 100ms cubic-bezier(0.25, 0.1, 0.25, 1.0), opacity 100ms ease-out';
+    element.style.transition =
+      'transform 100ms cubic-bezier(0.25, 0.1, 0.25, 1.0), opacity 100ms ease-out';
 
     // Clear any existing timeout
     const key = element.dataset.mieKey || `mie-${Date.now()}`;
     element.dataset.mieKey = key;
-    
+
     if (this.activeInteractions.has(key)) {
       clearTimeout(this.activeInteractions.get(key)!);
     }
@@ -80,7 +81,7 @@ export class MicroInteractionEngine {
 
     const ripple = document.createElement('div');
     ripple.className = 'v59-ripple';
-    
+
     const rect = element.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
     const relX = x - rect.left - size / 2;
@@ -121,7 +122,7 @@ export class HapticFeedbackEngine {
 
   private constructor() {
     this.supportsVibration = 'vibrate' in navigator;
-    
+
     // Check localStorage for user preference
     const savedPref = localStorage.getItem('v59-haptics-enabled');
     if (savedPref !== null) {
@@ -146,11 +147,11 @@ export class HapticFeedbackEngine {
       light: 10,
       medium: 20,
       rigid: [15, 10, 15],
-      selection: 5
+      selection: 5,
     };
 
     const pattern = patterns[intensity];
-    
+
     if (typeof pattern === 'number') {
       navigator.vibrate(pattern);
     } else {
@@ -185,7 +186,7 @@ export const AnimationCurves = {
   panelSlide: 'cubic-bezier(0.20, 0.6, 0.2, 1)',
   mapCameraEase: 'cubic-bezier(0.16, 0.84, 0.44, 1)',
   panelFade: 'ease-out',
-  searchReveal: 'ease-in-out'
+  searchReveal: 'ease-in-out',
 } as const;
 
 export const AnimationDurations = {
@@ -193,7 +194,7 @@ export const AnimationDurations = {
   quick: 150,
   base: 220,
   smooth: 260,
-  slow: 320
+  slow: 320,
 } as const;
 
 export class AnimationPolishLayer {
@@ -206,7 +207,7 @@ export class AnimationPolishLayer {
     duration: number,
     curve: string
   ): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       element.style.transition = Object.keys(properties)
         .map(prop => `${this.camelToKebab(prop)} ${duration}ms ${curve}`)
         .join(', ');
@@ -254,9 +255,7 @@ export class AnimationPolishLayer {
     const startTime = performance.now();
 
     const easeInOutCubic = (t: number): number => {
-      return t < 0.5
-        ? 4 * t * t * t
-        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     };
 
     const scroll = (currentTime: number) => {
@@ -281,7 +280,7 @@ export class AnimationPolishLayer {
  * ================================================================
  */
 
-export function useButtonInteraction(element: HTMLElement | null): void {
+export function useButtonInteraction(element: HTMLElement | null): (() => void) | void {
   if (!element) return;
 
   const mie = MicroInteractionEngine.getInstance();
@@ -290,7 +289,7 @@ export function useButtonInteraction(element: HTMLElement | null): void {
   const handlePointerDown = (e: PointerEvent) => {
     mie.applyPressEffect(element, 'medium');
     hfe.trigger('light');
-    
+
     if (e.pointerType === 'touch') {
       mie.applyRipple(element, e.clientX, e.clientY);
     }
@@ -316,7 +315,10 @@ export function useButtonInteraction(element: HTMLElement | null): void {
   };
 }
 
-export function useTabInteraction(element: HTMLElement | null, isActive: boolean): void {
+export function useTabInteraction(
+  element: HTMLElement | null,
+  isActive: boolean
+): (() => void) | void {
   if (!element) return;
 
   const hfe = HapticFeedbackEngine.getInstance();

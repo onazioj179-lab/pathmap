@@ -55,58 +55,58 @@ export const NavigationUI: React.FC = () => {
       speed_kmh: 0,
       distance_traveled_m: 0,
       average_accuracy: 0,
-      update_count: 0
+      update_count: 0,
     },
     mode3D: false,
     previewActive: false,
-    gestureOverride: false
+    gestureOverride: false,
   });
 
   const [showStats, setShowStats] = useState(false);
-  const [scaleFactor, setScaleFactor] = useState(1.0);
+  const [_scaleFactor, setScaleFactor] = useState(1.0);
 
   useEffect(() => {
     if (!mapContainer.current || leafletMap.current) return;
 
     adaptiveUI.current = new AdaptiveUIEngine();
-    adaptiveUI.current.subscribe((profile, rules) => {
+    adaptiveUI.current.subscribe((profile, _rules) => {
       setScaleFactor(profile.scaleFactor);
     });
 
     leafletMap.current = L.map(mapContainer.current).setView([40.7128, -74.006], 13);
-    
+
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap'
+      attribution: '© OpenStreetMap',
     }).addTo(leafletMap.current);
 
     gestureEngine.current = new GestureControlEngine(leafletMap.current, {
-      onPan: (delta) => {
+      onPan: delta => {
         console.log('Pan gesture:', delta);
       },
-      onZoom: (delta, center) => {
+      onZoom: (delta, _center) => {
         const zoom = leafletMap.current!.getZoom();
         leafletMap.current!.setZoom(zoom + delta * 0.01);
       },
-      onRotate: (angle) => {
+      onRotate: angle => {
         if (nav3DEngine.current) {
           nav3DEngine.current.adjustBearing(angle);
         }
       },
-      onTilt: (pitch) => {
+      onTilt: pitch => {
         if (nav3DEngine.current && navState.mode3D) {
           nav3DEngine.current.adjustPitch(pitch);
         }
       },
-      onDoubleTap: (pos) => {
+      onDoubleTap: _pos => {
         leafletMap.current!.zoomIn();
       },
-      onLongPress: (pos) => {
+      onLongPress: pos => {
         console.log('Long press at:', pos);
       },
-      onNavigationLockOverride: (active) => {
+      onNavigationLockOverride: active => {
         setNavState(prev => ({ ...prev, gestureOverride: active }));
-      }
+      },
     });
 
     nav3DEngine.current = new Navigation3DEngine(leafletMap.current);
@@ -119,14 +119,14 @@ export const NavigationUI: React.FC = () => {
       },
       onPreviewComplete: () => {
         setNavState(prev => ({ ...prev, previewActive: false }));
-      }
+      },
     });
 
     // V52 Offline Engines
     offlineTiles.current = new OfflineTileEngine();
     routeCache.current = new LocalRouteCache();
     predictivePreload.current = new PredictivePreloadSystem(offlineTiles.current);
-    
+
     console.log('[V52] Offline engines initialized');
 
     actionEngine.current = new ActionEngine();
@@ -135,7 +135,7 @@ export const NavigationUI: React.FC = () => {
         if (mapUpdateEngine.current) {
           mapUpdateEngine.current.updatePosition(position);
         }
-        
+
         if (nav3DEngine.current && position.speed) {
           nav3DEngine.current.updateSpeed(position.speed * 3.6);
         }
@@ -151,10 +151,10 @@ export const NavigationUI: React.FC = () => {
             lon: position.longitude,
             heading: position.heading || 0,
             speed: position.speed,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           });
         }
-        
+
         if (stats) {
           setNavState(prev => ({
             ...prev,
@@ -162,28 +162,28 @@ export const NavigationUI: React.FC = () => {
               speed_kmh: stats.speed_kmh || 0,
               distance_traveled_m: stats.distance_traveled_m || 0,
               average_accuracy: stats.average_accuracy || 0,
-              update_count: stats.update_count || 0
-            }
+              update_count: stats.update_count || 0,
+            },
           }));
         }
       },
-      onError: (error) => {
+      onError: error => {
         console.error('Location error:', error);
-      }
+      },
     });
 
     mapUpdateEngine.current = new MapUpdateEngine({
       map: leafletMap.current,
       autoCenter: true,
       showBreadcrumbs: true,
-      smoothMarkerMovement: true
+      smoothMarkerMovement: true,
     });
 
-    actionEngine.current.subscribe((state) => {
+    actionEngine.current.subscribe(state => {
       setNavState(prev => ({
         ...prev,
         currentAction: state.current,
-        actionStatus: state.status
+        actionStatus: state.status,
       }));
     });
 
@@ -191,12 +191,12 @@ export const NavigationUI: React.FC = () => {
       gestureEngine.current?.destroy();
       nav3DEngine.current?.destroy();
       previewEngine.current?.destroy();
-      
+
       // V52 Cleanup
       if (predictivePreload.current) {
         predictivePreload.current.stop();
       }
-      
+
       if (leafletMap.current) {
         leafletMap.current.remove();
         leafletMap.current = null;
@@ -251,7 +251,7 @@ export const NavigationUI: React.FC = () => {
       await fetch('http://localhost:8000/api/map/layer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ layer })
+        body: JSON.stringify({ layer }),
       });
     } catch (error) {
       console.error('Layer switch failed:', error);
@@ -266,7 +266,7 @@ export const NavigationUI: React.FC = () => {
       const query = {
         origin: [40.7128, -74.006] as [number, number],
         destination: [40.7218, -73.999] as [number, number],
-        profile: 'driving' as const
+        profile: 'driving' as const,
       };
 
       const cached = await routeCache.current.getRoute(query);
@@ -277,13 +277,13 @@ export const NavigationUI: React.FC = () => {
     }
 
     const result = await actionEngine.current.executeAction('route');
-    
+
     // Cache route result
     if (result.success && result.data && routeCache.current) {
       const query = {
         origin: [40.7128, -74.006] as [number, number],
         destination: [40.7218, -73.999] as [number, number],
-        profile: 'driving' as const
+        profile: 'driving' as const,
       };
       await routeCache.current.cacheRoute(query, result.data);
       console.log('[V52] Route cached for future use');
@@ -302,7 +302,7 @@ export const NavigationUI: React.FC = () => {
 
   const handleRecenter = async () => {
     if (!leafletMap.current || !locationClient.current) return;
-    
+
     const state = await locationClient.current.getState();
     if (state && state.last_position) {
       leafletMap.current.setView(
@@ -316,7 +316,7 @@ export const NavigationUI: React.FC = () => {
   const handle3DToggle = () => {
     const new3DMode = !navState.mode3D;
     setNavState(prev => ({ ...prev, mode3D: new3DMode }));
-    
+
     if (gestureEngine.current) {
       gestureEngine.current.setAllow3DGestures(new3DMode);
     }
@@ -341,9 +341,9 @@ export const NavigationUI: React.FC = () => {
         L.latLng(40.7128, -74.006),
         L.latLng(40.7158, -74.003),
         L.latLng(40.7188, -74.001),
-        L.latLng(40.7218, -73.999)
+        L.latLng(40.7218, -73.999),
       ];
-      
+
       await previewEngine.current.startPreview(demoRoute);
       setNavState(prev => ({ ...prev, previewActive: true }));
     }
@@ -354,7 +354,7 @@ export const NavigationUI: React.FC = () => {
   return (
     <div className="navigation-container">
       <div ref={mapContainer} className="map-container" />
-      
+
       <div className="controls-overlay">
         <div className="layer-controls">
           <button
@@ -397,7 +397,7 @@ export const NavigationUI: React.FC = () => {
               Stop GPS
             </button>
           )}
-          
+
           <button onClick={handleRoute} disabled={isActionDisabled}>
             Route
           </button>
@@ -410,13 +410,10 @@ export const NavigationUI: React.FC = () => {
           <button onClick={handleRecenter} disabled={!navState.isTracking}>
             Recenter
           </button>
-          <button 
-            onClick={handle3DToggle} 
-            className={navState.mode3D ? 'active' : ''}
-          >
+          <button onClick={handle3DToggle} className={navState.mode3D ? 'active' : ''}>
             3D Mode
           </button>
-          <button 
+          <button
             onClick={handlePreviewToggle}
             className={navState.previewActive ? 'active' : ''}
             disabled={navState.isTracking}
@@ -425,17 +422,12 @@ export const NavigationUI: React.FC = () => {
           </button>
         </div>
 
-        <button
-          className="stats-toggle"
-          onClick={() => setShowStats(!showStats)}
-        >
+        <button className="stats-toggle" onClick={() => setShowStats(!showStats)}>
           Stats
         </button>
 
         {navState.gestureOverride && (
-          <div className="gesture-override-indicator">
-            Navigation unlocked - tap Recenter
-          </div>
+          <div className="gesture-override-indicator">Navigation unlocked - tap Recenter</div>
         )}
 
         {showStats && (
@@ -459,16 +451,16 @@ export const NavigationUI: React.FC = () => {
             {navState.currentAction && (
               <div className="stat">
                 <span className="stat-label">Action:</span>
-                <span className="stat-value">{navState.currentAction} ({navState.actionStatus})</span>
+                <span className="stat-value">
+                  {navState.currentAction} ({navState.actionStatus})
+                </span>
               </div>
             )}
           </div>
         )}
 
         {navState.actionStatus === 'processing' && (
-          <div className="processing-indicator">
-            Processing {navState.currentAction}...
-          </div>
+          <div className="processing-indicator">Processing {navState.currentAction}...</div>
         )}
       </div>
     </div>

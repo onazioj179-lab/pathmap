@@ -1,13 +1,16 @@
 /**
  * PATHFINDER V37 — ALGORITHM INTEGRATION WITH INTENT PREDICTION
- * 
+ *
  * Wires predicted intents into routing algorithm selection and behavior.
  * Provides helper functions to apply intent-based adjustments to algorithms.
  */
 
 import { intentModelingSystem, IntentBasedAdjustments } from './intentModelingSystem';
 import { behaviorPredictionEngine, PredictedIntent } from './behaviorPredictionEngine';
-import { sensorFusionLayer } from './sensorFusionLayer';
+import { getSensorFusionLayer } from './sensorFusionLayer';
+
+// Engine instance
+const sensorFusionLayer = getSensorFusionLayer();
 
 // =====================================================================
 // INTERFACES
@@ -18,20 +21,20 @@ export interface IntentEnhancedRouteOptions {
   intent_override_applied: boolean;
   predicted_intent: PredictedIntent | null;
   intent_adjustments: IntentBasedAdjustments | null;
-  
+
   // Algorithm-specific adjustments
   shadowpath_adjustments?: {
     reduce_recalculations: boolean;
     offer_faster_route: boolean;
     anticipation_factor: number; // 0-1, higher = more anticipation
   };
-  
+
   homeguard_adjustments?: {
     increase_breadcrumb_density: boolean;
     prepare_safe_return: boolean;
     safety_boost_factor: number; // 1.0-2.0, higher = more safety emphasis
   };
-  
+
   pathfinderx_adjustments?: {
     activate_waves: boolean;
     show_interest_nodes: boolean;
@@ -53,7 +56,7 @@ export interface IntentPredictionMetrics {
 
 export class IntentRoutingIntegration {
   private static instance: IntentRoutingIntegration;
-  
+
   private metrics: IntentPredictionMetrics = {
     prediction_count: 0,
     intent_distribution: {},
@@ -100,8 +103,9 @@ export class IntentRoutingIntegration {
 
     // Update average confidence
     const totalPredictions = this.metrics.prediction_count;
-    this.metrics.avg_confidence = 
-      (this.metrics.avg_confidence * (totalPredictions - 1) + prediction.confidence_level) / totalPredictions;
+    this.metrics.avg_confidence =
+      (this.metrics.avg_confidence * (totalPredictions - 1) + prediction.confidence_level) /
+      totalPredictions;
   }
 
   // =====================================================================
@@ -208,7 +212,7 @@ export class IntentRoutingIntegration {
       high: 1.6,
       critical: 2.0,
     };
-    
+
     return safetyNeedMap[prediction.safety_need] || 1.0;
   }
 
@@ -217,12 +221,12 @@ export class IntentRoutingIntegration {
     if (prediction.primary_intent === 'exploration') {
       return 1.0 + prediction.explore_likelihood * 0.5; // 1.0 to 1.5x
     }
-    
+
     // Lower radius for route intent (focused)
     if (prediction.primary_intent === 'route') {
       return 0.7;
     }
-    
+
     return 1.0; // default
   }
 
@@ -232,7 +236,7 @@ export class IntentRoutingIntegration {
 
   shouldRecalculateRoute(timeSinceLastCalc: number): boolean {
     const adjustments = intentModelingSystem.getCurrentAdjustments();
-    
+
     if (!adjustments) {
       // Default: recalculate every 5 seconds
       return timeSinceLastCalc > 5000;
@@ -258,7 +262,7 @@ export class IntentRoutingIntegration {
 
   getBreadcrumbInterval(): number {
     const adjustments = intentModelingSystem.getCurrentAdjustments();
-    
+
     if (!adjustments) {
       return 10000; // default: 10 seconds
     }
@@ -287,7 +291,7 @@ export class IntentRoutingIntegration {
 
   getWaveExpansionRate(): number {
     const prediction = behaviorPredictionEngine.getCurrentPrediction();
-    
+
     if (!prediction || prediction.primary_intent !== 'exploration') {
       return 1.0; // default
     }
@@ -307,7 +311,7 @@ export class IntentRoutingIntegration {
   getUIComplexityLevel(): 'full' | 'simplified' | 'minimal' {
     const prediction = behaviorPredictionEngine.getCurrentPrediction();
     const adjustments = intentModelingSystem.getCurrentAdjustments();
-    
+
     if (!prediction || !adjustments) {
       return 'full';
     }
@@ -336,7 +340,7 @@ export class IntentRoutingIntegration {
 
   getMeetupPrediction(): { lat: number; lon: number; confidence: number } | null {
     const prediction = behaviorPredictionEngine.getCurrentPrediction();
-    
+
     if (!prediction || prediction.primary_intent !== 'friend_meetup') {
       return null;
     }

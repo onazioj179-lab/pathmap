@@ -2,7 +2,7 @@
 // Enhances ShadowPath, HomeGuard, and PathfinderX with sensor fusion data
 
 import { getSensorFusionLayer } from './sensorFusionLayer';
-import type { FusedPosition, MotionState } from './sensorFusionLayer';
+import type { MotionState } from './sensorFusionLayer';
 
 export interface SensorEnhancedRouteOptions {
   algorithm: 'ShadowPath' | 'HomeGuard' | 'PathfinderX';

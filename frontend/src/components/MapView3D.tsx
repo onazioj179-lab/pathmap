@@ -172,7 +172,8 @@ function MapView3D(props: MapView3DProps) {
       try {
         const token: string | undefined = (import.meta as any).env?.VITE_MAPBOX_TOKEN;
         if (token) {
-          const mod = await import('mapbox-gl');
+          // @ts-ignore - mapbox-gl is optional, dynamically imported when token is present
+          const mod: any = await import(/* @vite-ignore */ 'mapbox-gl');
           MapLib = mod.default || mod;
           MapLib.accessToken = token;
           isMapbox = true;

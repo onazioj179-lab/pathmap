@@ -5,7 +5,7 @@
  * Includes automatic recovery from backend failures with failover mode.
  */
 
-import { mapEngineV95 } from './mapEngineV95';
+import { mapEngine } from './mapEngine';
 
 export type BootStep =
   | 'verifyPythonBackendOnline'
@@ -44,14 +44,14 @@ class MapBootPipeline {
     'attachTerrainEngine',
     'attachSatelliteLayer',
     'centerCamera',
-    'beginTileStream'
+    'beginTileStream',
   ];
 
   private config: MapBootConfig = {
     backendUrl: 'http://localhost:8000',
     retryInterval: 1000,
     maxRetries: 5,
-    testTileCoords: { z: 0, x: 0, y: 0 }
+    testTileCoords: { z: 0, x: 0, y: 0 },
   };
 
   private bootLog: BootStatus[] = [];
@@ -75,7 +75,7 @@ class MapBootPipeline {
 
     for (const step of this.pipeline) {
       const success = await this.executeStep(step);
-      
+
       if (!success) {
         console.error(`[V87:MBP] Boot failed at step: ${step}`);
         this.activateFailoverMode();
@@ -133,7 +133,7 @@ class MapBootPipeline {
       this.bootLog.push({
         step,
         success,
-        timestamp: Date.now() - startTime
+        timestamp: Date.now() - startTime,
       });
 
       return success;
@@ -142,7 +142,7 @@ class MapBootPipeline {
         step,
         success: false,
         error: error.message,
-        timestamp: Date.now() - startTime
+        timestamp: Date.now() - startTime,
       });
       return false;
     }
@@ -152,7 +152,7 @@ class MapBootPipeline {
     try {
       const response = await fetch(`${this.config.backendUrl}/api/v1/health`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' }
+        headers: { Accept: 'application/json' },
       });
       return response.ok;
     } catch {
@@ -174,7 +174,7 @@ class MapBootPipeline {
   private async pingTileServer(): Promise<boolean> {
     const { z, x, y } = this.config.testTileCoords;
     const url = `${this.config.backendUrl}/backend/tiles/carto_dark/${z}/${x}/${y}`;
-    
+
     try {
       const response = await fetch(url, { method: 'HEAD' });
       return response.ok;
@@ -186,7 +186,7 @@ class MapBootPipeline {
   private async fetchTestTile(): Promise<boolean> {
     const { z, x, y } = this.config.testTileCoords;
     const url = `${this.config.backendUrl}/backend/tiles/carto_dark/${z}/${x}/${y}`;
-    
+
     try {
       const response = await fetch(url);
       if (!response.ok) return false;
@@ -252,7 +252,7 @@ class MapBootPipeline {
 
   private loadFallbackTiles() {
     if (!this.map) return;
-    
+
     try {
       // Use public tile servers as fallback
       const fallbackSourceId = 'v87-fallback-source';
@@ -269,7 +269,7 @@ class MapBootPipeline {
         type: 'raster',
         tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
         tileSize: 256,
-        attribution: 'OpenStreetMap (fallback)'
+        attribution: 'OpenStreetMap (fallback)',
       });
 
       this.map.addLayer({
@@ -277,8 +277,8 @@ class MapBootPipeline {
         type: 'raster',
         source: fallbackSourceId,
         paint: {
-          'raster-opacity': 0.6
-        }
+          'raster-opacity': 0.6,
+        },
       });
 
       console.log('[V87:MBP] Fallback tiles loaded');
@@ -302,7 +302,8 @@ class MapBootPipeline {
       const newOverlay = document.createElement('div');
       newOverlay.id = 'v87-boot-overlay';
       newOverlay.textContent = message;
-      newOverlay.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;color:#fff;padding:20px;border-radius:8px;z-index:9999;font-family:sans-serif;';
+      newOverlay.style.cssText =
+        'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#000;color:#fff;padding:20px;border-radius:8px;z-index:9999;font-family:sans-serif;';
       document.body.appendChild(newOverlay);
     }
   }
@@ -323,7 +324,7 @@ class MapBootPipeline {
       console.log(`[V87:MBP] Retry attempt ${retryCount}/${this.config.maxRetries}`);
 
       const success = await this.onBoot(this.map);
-      
+
       if (success) {
         this.stopRetryTimer();
         this.hideOverlay();

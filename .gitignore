@@ -79,3 +79,7 @@ coverage/
 .claude/
 .ruff_cache/
 .mypy_cache/
+
+# Build integrity verification artifacts (generated per build)
+buildlogs/biv_*.json
+frontend/src/services/ees.generated.ts

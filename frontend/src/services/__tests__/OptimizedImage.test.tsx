@@ -42,7 +42,7 @@ describe('OptimizedImage', () => {
 
     it('should render with lazy loading by default', async () => {
       // Trigger intersection
-      MockObserver.mockImplementation((callback: any) => {
+      MockObserver.mockImplementation(((callback: any) => {
         // Immediately simulate intersection
         setTimeout(() => callback([{ isIntersecting: true }]), 0);
 
@@ -51,7 +51,7 @@ describe('OptimizedImage', () => {
           unobserve: vi.fn(),
           disconnect: vi.fn(),
         };
-      });
+      }) as any);
 
       render(<OptimizedImage src="/test.jpg" alt="Test image" />);
 

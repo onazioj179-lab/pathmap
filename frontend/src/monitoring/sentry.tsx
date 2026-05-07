@@ -31,7 +31,7 @@ export function initSentry(): void {
     dsn: SENTRY_DSN,
     environment: ENVIRONMENT,
     release: `pathmap-frontend@${RELEASE_VERSION}`,
-    
+
     // Integrations
     integrations: [
       // React Router integration
@@ -42,31 +42,31 @@ export function initSentry(): void {
         createRoutesFromChildren,
         matchRoutes,
       }),
-      
+
       // Replay for session recording
       Sentry.replayIntegration({
         maskAllText: true,
         blockAllMedia: true,
       }),
     ],
-    
+
     // Sampling
     tracesSampleRate: ENVIRONMENT === 'production' ? 0.1 : 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
-    
+
     // Options
     sendDefaultPii: false,
     maxBreadcrumbs: 50,
     debug: ENVIRONMENT === 'development',
-    
+
     // Before send filter
     beforeSend(event, hint) {
       // Don't send in development unless explicitly enabled
       if (ENVIRONMENT === 'development' && !import.meta.env.VITE_SENTRY_DEV_ENABLED) {
         return null;
       }
-      
+
       // Filter specific errors
       const error = hint?.originalException;
       if (error instanceof Error) {
@@ -74,16 +74,16 @@ export function initSentry(): void {
         if (error.message.includes('NetworkError') && ENVIRONMENT !== 'production') {
           return null;
         }
-        
+
         // Ignore cancelled requests
         if (error.message.includes('AbortError')) {
           return null;
         }
       }
-      
+
       return event;
     },
-    
+
     // Before sending transactions
     beforeSendTransaction(event) {
       // Don't trace health checks
@@ -93,18 +93,14 @@ export function initSentry(): void {
       return event;
     },
   });
-  
+
   console.log(`Sentry initialized for ${ENVIRONMENT}`);
 }
 
 /**
  * Set user context for error tracking.
  */
-export function setUser(user: {
-  id: string;
-  username?: string;
-  email?: string;
-}): void {
+export function setUser(user: { id: string; username?: string; email?: string }): void {
   Sentry.setUser({
     id: user.id,
     username: user.username,
@@ -153,10 +149,7 @@ export function setExtra(key: string, value: any): void {
 /**
  * Capture exception with context.
  */
-export function captureException(
-  error: Error,
-  context?: Record<string, any>
-): string {
+export function captureException(error: Error, context?: Record<string, any>): string {
   return Sentry.captureException(error, {
     extra: context,
   });
@@ -179,10 +172,7 @@ export function captureMessage(
 /**
  * Start a performance transaction.
  */
-export function startTransaction(
-  name: string,
-  op: string = 'task'
-): Sentry.Span | undefined {
+export function startTransaction(name: string, op: string = 'task'): Sentry.Span | undefined {
   return Sentry.startInactiveSpan({
     name,
     op,
@@ -202,7 +192,10 @@ export const withSentryProfiler = Sentry.withProfiler;
 /**
  * Custom error boundary fallback component.
  */
-export function ErrorFallback({ error, resetError }: {
+export function ErrorFallback({
+  error,
+  resetError,
+}: {
   error: Error;
   resetError: () => void;
 }): JSX.Element {
@@ -210,9 +203,7 @@ export function ErrorFallback({ error, resetError }: {
     <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-4">
       <div className="max-w-md text-center">
         <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
-        <p className="text-gray-400 mb-4">
-          We've been notified and are working to fix this issue.
-        </p>
+        <p className="text-gray-400 mb-4">We've been notified and are working to fix this issue.</p>
         <pre className="text-sm bg-gray-800 p-4 rounded mb-4 overflow-auto text-left">
           {error.message}
         </pre>
@@ -234,7 +225,10 @@ export function SentryProvider({ children }: { children: React.ReactNode }): JSX
   return (
     <SentryErrorBoundary
       fallback={({ error, resetError }) => (
-        <ErrorFallback error={error} resetError={resetError} />
+        <ErrorFallback
+          error={error instanceof Error ? error : new Error(String(error))}
+          resetError={resetError}
+        />
       )}
       showDialog
     >

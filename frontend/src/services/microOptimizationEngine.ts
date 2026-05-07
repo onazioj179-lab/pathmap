@@ -1,6 +1,6 @@
 /**
  * PATHFINDER V35 — MICRO-OPTIMIZATION ENGINE (MOE)
- * 
+ *
  * Real-time micro-improvements to routes during navigation.
  * Performs edge weight adjustments, small detour testing, tight intersection
  * collision avoidance, and dynamic micro-rerouting (<100m).
@@ -11,19 +11,20 @@
 // ============================================================================
 
 export interface EdgeAdjustment {
+  type: 'edge_adjustment';
   edgeId: string;
   oldWeight: number;
   newWeight: number;
   reason: string;
-  confidence: number;      // 0-1
+  confidence: number; // 0-1
 }
 
 export interface DetourSuggestion {
   type: 'detour';
   originalPath: [number, number][];
   detourPath: [number, number][];
-  distance: number;        // extra meters
-  timeSavings: number;     // estimated seconds saved
+  distance: number; // extra meters
+  timeSavings: number; // estimated seconds saved
   reason: string;
 }
 
@@ -32,7 +33,7 @@ export interface IntersectionAvoidance {
   location: [number, number];
   reason: string;
   alternateRoute: [number, number][];
-  riskLevel: number;       // 0-1
+  riskLevel: number; // 0-1
 }
 
 export interface MicroRoute {
@@ -51,7 +52,7 @@ export interface MOEState {
   totalSuggestions: number;
   acceptedSuggestions: number;
   recentSuggestions: MOESuggestion[];
-  performanceGain: number;    // Estimated seconds saved per minute
+  performanceGain: number; // Estimated seconds saved per minute
   edgeWeightAdjustments: Map<string, number>;
 }
 
@@ -62,7 +63,7 @@ export interface MOEState {
 class MicroOptimizationEngine {
   private isRunning: boolean = false;
   private intervalId: NodeJS.Timeout | null = null;
-  
+
   private state: MOEState = {
     isActive: false,
     suggestionsPerCycle: 0,
@@ -134,7 +135,7 @@ class MicroOptimizationEngine {
       // Update state
       this.state.suggestionsPerCycle = suggestions.length;
       this.state.totalSuggestions += suggestions.length;
-      
+
       // Store recent suggestions
       this.state.recentSuggestions.push(...suggestions);
       if (this.state.recentSuggestions.length > this.MAX_SUGGESTIONS_STORED) {
@@ -147,7 +148,6 @@ class MicroOptimizationEngine {
         console.log(`[MOE] Generated ${suggestions.length} suggestions`);
         this.notifyListeners(suggestions);
       }
-
     } catch (error) {
       console.error('[MOE] Error in optimization cycle:', error);
     }
@@ -164,26 +164,30 @@ class MicroOptimizationEngine {
     for (const [edgeId, timing] of this.routeSegmentTimings.entries()) {
       const actualTime = timing.actual;
       const expectedTime = timing.expected;
-      
+
       if (actualTime > 0 && expectedTime > 0) {
         const ratio = actualTime / expectedTime;
-        
+
         // If actual time is significantly different from expected
-        if (Math.abs(ratio - 1.0) > 0.2) { // 20% difference
+        if (Math.abs(ratio - 1.0) > 0.2) {
+          // 20% difference
           const currentWeight = this.state.edgeWeightAdjustments.get(edgeId) || 1.0;
           let newWeight = currentWeight;
           let reason = '';
 
-          if (ratio > 1.2) { // 20% slower than expected
+          if (ratio > 1.2) {
+            // 20% slower than expected
             newWeight = currentWeight * 1.1; // Increase weight (make less attractive)
             reason = `Segment ${(ratio * 100).toFixed(0)}% slower than expected`;
-          } else if (ratio < 0.8) { // 20% faster than expected
+          } else if (ratio < 0.8) {
+            // 20% faster than expected
             newWeight = currentWeight * 0.95; // Decrease weight (make more attractive)
-            reason = `Segment ${((1/ratio) * 100).toFixed(0)}% faster than expected`;
+            reason = `Segment ${((1 / ratio) * 100).toFixed(0)}% faster than expected`;
           }
 
           if (newWeight !== currentWeight) {
             adjustments.push({
+              type: 'edge_adjustment',
               edgeId,
               oldWeight: currentWeight,
               newWeight,
@@ -231,16 +235,17 @@ class MicroOptimizationEngine {
     // Simplified detour finding - in production, query backend for alternate routes
     const start = segment[0];
     const end = segment[segment.length - 1];
-    
+
     // Create a simple detour by going slightly off-path
     const midpoint = [
       (start[0] + end[0]) / 2 + 0.001, // Slight offset
-      (start[1] + end[1]) / 2 + 0.001
+      (start[1] + end[1]) / 2 + 0.001,
     ] as [number, number];
 
     const detourPath = [start, midpoint, end];
     const originalDistance = this.calculateDistance(start, end);
-    const detourDistance = this.calculateDistance(start, midpoint) + this.calculateDistance(midpoint, end);
+    const detourDistance =
+      this.calculateDistance(start, midpoint) + this.calculateDistance(midpoint, end);
     const extraDistance = detourDistance - originalDistance;
 
     // Only suggest if detour is small
@@ -284,10 +289,14 @@ class MicroOptimizationEngine {
     return avoidances;
   }
 
-  private identifyRiskyIntersections(): Array<{location: [number, number]; reason: string; riskLevel: number}> {
+  private identifyRiskyIntersections(): Array<{
+    location: [number, number];
+    reason: string;
+    riskLevel: number;
+  }> {
     // Simplified risk identification
     // In production, would analyze traffic data, accident history, etc.
-    const risky: Array<{location: [number, number]; reason: string; riskLevel: number}> = [];
+    const risky: Array<{ location: [number, number]; reason: string; riskLevel: number }> = [];
 
     // Check current route for tight turns or complex intersections
     for (let i = 1; i < this.currentRoute.length - 1; i++) {
@@ -296,7 +305,7 @@ class MicroOptimizationEngine {
       const next = this.currentRoute[i + 1];
 
       const angle = this.calculateTurnAngle(prev, curr, next);
-      
+
       // Sharp turn = potential risk
       if (Math.abs(angle) > 90) {
         risky.push({
@@ -310,7 +319,9 @@ class MicroOptimizationEngine {
     return risky;
   }
 
-  private findAlternateAroundIntersection(intersection: [number, number]): [number, number][] | null {
+  private findAlternateAroundIntersection(
+    intersection: [number, number]
+  ): [number, number][] | null {
     // Simplified alternate route - just add a waypoint to go around
     const offset = 0.0005; // ~50m offset
     return [
@@ -333,7 +344,8 @@ class MicroOptimizationEngine {
       const distance = this.calculateDistance(segmentStart, segmentEnd);
 
       // Only optimize short segments
-      if (distance < 50) { // 50 meters
+      if (distance < 50) {
+        // 50 meters
         const optimization = this.optimizeShortSegment(segmentStart, segmentEnd);
         if (optimization) {
           microReroutes.push(optimization);
@@ -348,8 +360,9 @@ class MicroOptimizationEngine {
     // Simplified optimization - in production, would analyze road curvature, surfaces, etc.
     // For now, just suggest a slightly more direct path
     const directDistance = this.calculateDistance(start, end);
-    
-    if (directDistance > 30) { // Only for segments >30m
+
+    if (directDistance > 30) {
+      // Only for segments >30m
       return {
         type: 'micro_reroute',
         originalSegment: [start, end],
@@ -369,31 +382,36 @@ class MicroOptimizationEngine {
   private calculateDistance(point1: [number, number], point2: [number, number]): number {
     const [lat1, lon1] = point1;
     const [lat2, lon2] = point2;
-    
+
     const R = 6371e3; // Earth radius in meters
     const φ1 = (lat1 * Math.PI) / 180;
     const φ2 = (lat2 * Math.PI) / 180;
     const Δφ = ((lat2 - lat1) * Math.PI) / 180;
     const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-              Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
   }
 
-  private calculateTurnAngle(prev: [number, number], curr: [number, number], next: [number, number]): number {
+  private calculateTurnAngle(
+    prev: [number, number],
+    curr: [number, number],
+    next: [number, number]
+  ): number {
     // Calculate angle between three points
     const bearing1 = Math.atan2(curr[1] - prev[1], curr[0] - prev[0]);
     const bearing2 = Math.atan2(next[1] - curr[1], next[0] - curr[0]);
-    
+
     let angle = ((bearing2 - bearing1) * 180) / Math.PI;
-    
+
     // Normalize to -180 to 180
     while (angle > 180) angle -= 360;
     while (angle < -180) angle += 360;
-    
+
     return angle;
   }
 
@@ -406,9 +424,9 @@ class MicroOptimizationEngine {
   // ==========================================================================
 
   getState(): MOEState {
-    return { 
+    return {
       ...this.state,
-      edgeWeightAdjustments: new Map(this.state.edgeWeightAdjustments)
+      edgeWeightAdjustments: new Map(this.state.edgeWeightAdjustments),
     };
   }
 
@@ -416,7 +434,12 @@ class MicroOptimizationEngine {
     this.currentRoute = route;
   }
 
-  recordSegmentTiming(start: [number, number], end: [number, number], actualTime: number, expectedTime: number): void {
+  recordSegmentTiming(
+    start: [number, number],
+    end: [number, number],
+    actualTime: number,
+    expectedTime: number
+  ): void {
     const segmentId = this.createSegmentId(start, end);
     this.routeSegmentTimings.set(segmentId, { actual: actualTime, expected: expectedTime });
 

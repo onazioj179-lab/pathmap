@@ -4,6 +4,9 @@
  * Removes grey fallback layers, guarantees tile drawing, prevents blank render passes.
  */
 
+import { getTileDebugger } from './tileDebugger';
+
+const tileDebugger = getTileDebugger();
 export interface MapEngineSettings {
   loadTiles: boolean;
   useWorkerThreads: boolean;
@@ -31,7 +34,7 @@ class MapRendererFix {
     enableTileRetry: true,
     maxConcurrentTileRequests: 16,
     retryAttempts: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
   };
 
   private tileLoadQueue: Set<string> = new Set();
@@ -43,6 +46,10 @@ class MapRendererFix {
     console.log('[V84:MRF] Settings:', this.settings);
   }
 
+  attachToMap(_map: unknown): void {
+    this.init();
+  }
+
   onTileError(event: TileLoadEvent) {
     const tileKey = `${event.z}/${event.x}/${event.y}`;
     const retryCount = this.tileRetryCount.get(tileKey) || 0;
@@ -52,13 +59,17 @@ class MapRendererFix {
 
     if (retryCount < this.settings.retryAttempts) {
       this.tileRetryCount.set(tileKey, retryCount + 1);
-      console.log(`[V84:MRF] Retrying tile ${tileKey} (attempt ${retryCount + 1}/${this.settings.retryAttempts})`);
-      
+      console.log(
+        `[V84:MRF] Retrying tile ${tileKey} (attempt ${retryCount + 1}/${this.settings.retryAttempts})`
+      );
+
       setTimeout(() => {
         this.retryTile(event);
       }, this.settings.retryDelay);
     } else {
-      console.warn(`[V84:MRF] Tile ${tileKey} failed after ${this.settings.retryAttempts} attempts`);
+      console.warn(
+        `[V84:MRF] Tile ${tileKey} failed after ${this.settings.retryAttempts} attempts`
+      );
       this.tileRetryCount.delete(tileKey);
       this.tileLoadQueue.delete(tileKey);
     }
@@ -66,7 +77,7 @@ class MapRendererFix {
 
   onTileLoad(event: TileLoadEvent) {
     const tileKey = `${event.z}/${event.x}/${event.y}`;
-    
+
     if (event.success) {
       this.markTileAsLoaded(tileKey);
       this.tileLoadQueue.delete(tileKey);
@@ -79,7 +90,7 @@ class MapRendererFix {
   private retryTile(event: TileLoadEvent) {
     // Trigger tile reload in map engine
     const customEvent = new CustomEvent('v84-retry-tile', {
-      detail: event
+      detail: event,
     });
     window.dispatchEvent(customEvent);
   }
@@ -113,7 +124,7 @@ class MapRendererFix {
     return {
       tilesLoaded: this.tileLoadedSet.size,
       tilesInQueue: this.tileLoadQueue.size,
-      tilesRetrying: this.tileRetryCount.size
+      tilesRetrying: this.tileRetryCount.size,
     };
   }
 }

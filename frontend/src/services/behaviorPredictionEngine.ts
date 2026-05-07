@@ -1,14 +1,19 @@
 /**
  * PATHFINDER V37 — BEHAVIOR PREDICTION ENGINE (BPE)
- * 
+ *
  * Predicts user intent by analyzing movement patterns, location history,
  * speed changes, familiarity zones, environment context, and sensor data.
  * Enables proactive navigation assistance before explicit user input.
  */
 
-import { sensorFusionLayer, FusedPosition, SensorProfile } from './sensorFusionLayer';
-import { familiarityHeatmapEngine } from './familiarityHeatmapEngine';
-import { ambientModeEngine } from './ambientModeEngine';
+import { getSensorFusionLayer, FusedPosition, SensorProfile } from './sensorFusionLayer';
+import { getFamiliarityHeatmapEngine } from './familiarityHeatmapEngine';
+import { getAmbientModeEngine } from './ambientModeEngine';
+
+// Engine instances
+const sensorFusionLayer = getSensorFusionLayer();
+const familiarityHeatmapEngine = getFamiliarityHeatmapEngine();
+const ambientModeEngine = getAmbientModeEngine();
 
 // =====================================================================
 // INTERFACES
@@ -28,12 +33,12 @@ export interface PredictedIntent {
   reasoning: string[];
 }
 
-export type IntentCategory = 
-  | 'route' 
-  | 'safe_return' 
-  | 'exploration' 
-  | 'friend_meetup' 
-  | 'lost' 
+export type IntentCategory =
+  | 'route'
+  | 'safe_return'
+  | 'exploration'
+  | 'friend_meetup'
+  | 'lost'
   | 'stationary'
   | 'unknown';
 
@@ -93,7 +98,7 @@ export interface BPEConfiguration {
 
 export class BehaviorPredictionEngine {
   private static instance: BehaviorPredictionEngine;
-  
+
   private config: BPEConfiguration = {
     prediction_interval_ms: 2000, // predict every 2 seconds
     behavior_window_size: 30, // analyze last 30 samples (60 seconds at 2s interval)
@@ -187,8 +192,8 @@ export class BehaviorPredictionEngine {
 
     // Add current position
     this.behaviorWindow.positions.push({
-      lat: fusedPosition.latitude,
-      lon: fusedPosition.longitude,
+      lat: fusedPosition.lat,
+      lon: fusedPosition.lon,
       timestamp: now,
     });
 
@@ -218,16 +223,20 @@ export class BehaviorPredictionEngine {
     const movementPattern = this.analyzeMovementPattern();
     const locationContext = this.analyzeLocationContext();
     const intentScores = this.calculateIntentScores(movementPattern, locationContext);
-    
+
     // Smooth intent scores
     const smoothedScores = this.smoothIntentScores(intentScores);
-    
+
     // Determine primary intent
     const primaryIntent = this.determinePrimaryIntent(smoothedScores);
-    
+
     // Calculate overall confidence
-    const confidenceLevel = this.calculateOverallConfidence(smoothedScores, movementPattern, locationContext);
-    
+    const confidenceLevel = this.calculateOverallConfidence(
+      smoothedScores,
+      movementPattern,
+      locationContext
+    );
+
     // Build predicted intent
     const prediction: PredictedIntent = {
       likely_destination: this.predictDestination(primaryIntent, movementPattern),
@@ -240,7 +249,12 @@ export class BehaviorPredictionEngine {
       confidence_level: confidenceLevel,
       primary_intent: primaryIntent,
       intent_scores: smoothedScores,
-      reasoning: this.generateReasoning(primaryIntent, smoothedScores, movementPattern, locationContext),
+      reasoning: this.generateReasoning(
+        primaryIntent,
+        smoothedScores,
+        movementPattern,
+        locationContext
+      ),
     };
 
     this.currentPrediction = prediction;
@@ -289,7 +303,12 @@ export class BehaviorPredictionEngine {
     // Path straightness (how straight is the path)
     const startPos = positions[0];
     const endPos = positions[positions.length - 1];
-    const directDistance = this.calculateDistance(startPos.lat, startPos.lon, endPos.lat, endPos.lon);
+    const directDistance = this.calculateDistance(
+      startPos.lat,
+      startPos.lon,
+      endPos.lat,
+      endPos.lon
+    );
     let totalDistance = 0;
     for (let i = 1; i < positions.length; i++) {
       totalDistance += this.calculateDistance(
@@ -306,13 +325,16 @@ export class BehaviorPredictionEngine {
 
     // Stop count (speed < 0.5 m/s)
     const stopCount = speeds.filter(s => s < 0.5).length;
-    const durationMinutes = (this.behaviorWindow.timestamps[this.behaviorWindow.timestamps.length - 1] - 
-                              this.behaviorWindow.timestamps[0]) / 60000;
+    const durationMinutes =
+      (this.behaviorWindow.timestamps[this.behaviorWindow.timestamps.length - 1] -
+        this.behaviorWindow.timestamps[0]) /
+      60000;
     const stop_count_per_minute = durationMinutes > 0 ? stopCount / durationMinutes : 0;
 
     // Direction changes (heading change > 45 degrees)
     const directionChangeCount = headingChanges.filter(c => c > 45).length;
-    const direction_changes_per_minute = durationMinutes > 0 ? directionChangeCount / durationMinutes : 0;
+    const direction_changes_per_minute =
+      durationMinutes > 0 ? directionChangeCount / durationMinutes : 0;
 
     // Average speed
     const avg_speed = speeds.reduce((sum, s) => sum + s, 0) / speeds.length;
@@ -360,9 +382,9 @@ export class BehaviorPredictionEngine {
     }
 
     // Familiarity
-    const current_familiarity = familiarityHeatmapEngine.queryFamiliarity(
-      fusedPosition.latitude,
-      fusedPosition.longitude
+    const current_familiarity = familiarityHeatmapEngine.getFamiliarityAtLocation(
+      fusedPosition.lat,
+      fusedPosition.lon
     );
 
     // Recent zone visits (placeholder - would need history tracking)
@@ -372,14 +394,17 @@ export class BehaviorPredictionEngine {
     const home_zone_proximity = 0;
 
     // Friend proximity
-    const friend_proximity = this.getNearestFriendDistance(fusedPosition.latitude, fusedPosition.longitude);
+    const friend_proximity = this.getNearestFriendDistance(
+      fusedPosition.lat,
+      fusedPosition.lon
+    );
 
     // Safety level (from ambient mode or default)
-    const ambientSignals = ambientModeEngine.getCurrentSignals();
-    const safety_level = ambientSignals ? (ambientSignals.safety_index || 0.5) : 0.5;
+    const ambientConditions = ambientModeEngine.getConditions();
+    const safety_level = ambientConditions ? ambientConditions.areaSafetyLevel || 0.5 : 0.5;
 
     // Ambient light
-    const ambient_light = sensorProfile.ambient_light || 100;
+    const ambient_light = sensorProfile.ambient_light_available ? 50 : 100;
 
     // Battery level (placeholder - would need battery API)
     const battery_level = 100;
@@ -403,10 +428,7 @@ export class BehaviorPredictionEngine {
   // INTENT SCORE CALCULATION
   // =====================================================================
 
-  private calculateIntentScores(
-    movement: MovementPattern,
-    context: LocationContext
-  ): IntentScores {
+  private calculateIntentScores(movement: MovementPattern, context: LocationContext): IntentScores {
     const scores: IntentScores = {
       route: 0,
       safe_return: 0,
@@ -417,14 +439,14 @@ export class BehaviorPredictionEngine {
     };
 
     // ROUTE INTENT: consistent direction, stable heading, moderate speed, straight path
-    scores.route = 
+    scores.route =
       movement.direction_consistency * 0.3 +
       movement.heading_stability * 0.3 +
       movement.path_straightness * 0.2 +
       (movement.avg_speed > 0.5 && movement.avg_speed < 2.5 ? 0.2 : 0);
 
     // SAFE RETURN INTENT: high deviation, low safety, low battery, circular movement, low familiarity
-    scores.safe_return = 
+    scores.safe_return =
       (1 - movement.path_straightness) * 0.2 +
       (1 - context.safety_level) * 0.3 +
       (context.battery_level < 30 ? 0.2 : 0) +
@@ -432,7 +454,7 @@ export class BehaviorPredictionEngine {
       (1 - context.current_familiarity) * 0.1;
 
     // EXPLORATION INTENT: slow speed, frequent stops, cluster movement, high familiarity (exploring known area)
-    scores.exploration = 
+    scores.exploration =
       (movement.avg_speed < 1.0 ? 0.3 : 0) +
       (movement.stop_count_per_minute > 1 ? 0.2 : 0) +
       (movement.distance_from_start < 100 ? 0.2 : 0) +
@@ -444,7 +466,7 @@ export class BehaviorPredictionEngine {
     }
 
     // LOST INTENT: circular movement, high direction changes, low heading stability, high drift
-    scores.lost = 
+    scores.lost =
       (movement.circular_movement_detected ? 0.3 : 0) +
       (movement.direction_changes_per_minute > 3 ? 0.3 : 0) +
       (1 - movement.heading_stability) * 0.2 +
@@ -454,9 +476,8 @@ export class BehaviorPredictionEngine {
     scores.lost = Math.min(1, scores.lost * (1 + this.config.lost_detection_sensitivity));
 
     // STATIONARY INTENT: very low speed, high stop count
-    scores.stationary = 
-      (movement.avg_speed < 0.3 ? 0.5 : 0) +
-      (movement.stop_count_per_minute > 2 ? 0.5 : 0);
+    scores.stationary =
+      (movement.avg_speed < 0.3 ? 0.5 : 0) + (movement.stop_count_per_minute > 2 ? 0.5 : 0);
 
     // Normalize scores
     return this.normalizeIntentScores(scores);
@@ -465,7 +486,10 @@ export class BehaviorPredictionEngine {
   private normalizeIntentScores(scores: IntentScores): IntentScores {
     // Clamp each score to [0, 1]
     Object.keys(scores).forEach(key => {
-      scores[key as keyof IntentScores] = Math.max(0, Math.min(1, scores[key as keyof IntentScores]));
+      scores[key as keyof IntentScores] = Math.max(
+        0,
+        Math.min(1, scores[key as keyof IntentScores])
+      );
     });
     return scores;
   }
@@ -527,9 +551,9 @@ export class BehaviorPredictionEngine {
 
     const primaryScore = Math.max(...Object.values(scores));
     const movementClarity = (movement.direction_consistency + movement.heading_stability) / 2;
-    const sensorReliability = sensorFusionLayer.getFusedPosition()?.confidence || 0.5;
+    const sensorReliability = sensorFusionLayer.getFusedPosition()?.confidence_level || 0.5;
 
-    return (primaryScore * 0.5 + movementClarity * 0.3 + sensorReliability * 0.2);
+    return primaryScore * 0.5 + movementClarity * 0.3 + sensorReliability * 0.2;
   }
 
   private predictDestination(
@@ -560,7 +584,10 @@ export class BehaviorPredictionEngine {
     };
   }
 
-  private determineRouteType(intent: IntentCategory, context: LocationContext): PredictedIntent['route_type'] {
+  private determineRouteType(
+    intent: IntentCategory,
+    context: LocationContext
+  ): PredictedIntent['route_type'] {
     if (intent === 'route' && context.safety_level > 0.7) return 'direct';
     if (intent === 'safe_return') return 'return';
     if (intent === 'exploration') return 'exploratory';
@@ -572,7 +599,7 @@ export class BehaviorPredictionEngine {
     context: LocationContext,
     scores: IntentScores
   ): PredictedIntent['safety_need'] {
-    const safetyScore = 
+    const safetyScore =
       (1 - context.safety_level) * 0.4 +
       scores.lost * 0.3 +
       scores.safe_return * 0.2 +
@@ -594,13 +621,17 @@ export class BehaviorPredictionEngine {
     const reasons: string[] = [];
 
     if (primaryIntent === 'route') {
-      reasons.push(`Consistent directional movement (${(scores.route * 100).toFixed(0)}% confidence)`);
+      reasons.push(
+        `Consistent directional movement (${(scores.route * 100).toFixed(0)}% confidence)`
+      );
       if (movement.heading_stability > 0.7) reasons.push('Stable heading detected');
       if (movement.path_straightness > 0.6) reasons.push('Path appears direct');
     }
 
     if (primaryIntent === 'safe_return') {
-      reasons.push(`Safe return intent detected (${(scores.safe_return * 100).toFixed(0)}% confidence)`);
+      reasons.push(
+        `Safe return intent detected (${(scores.safe_return * 100).toFixed(0)}% confidence)`
+      );
       if (context.safety_level < 0.4) reasons.push('Low safety area');
       if (context.battery_level < 30) reasons.push('Low battery level');
       if (movement.circular_movement_detected) reasons.push('Circular movement pattern');
@@ -645,12 +676,14 @@ export class BehaviorPredictionEngine {
 
   private calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371000; // Earth radius in meters
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -757,7 +790,7 @@ export class BehaviorPredictionEngine {
 
   updateConfiguration(updates: Partial<BPEConfiguration>): void {
     this.config = { ...this.config, ...updates };
-    
+
     // Update behavior window size if changed
     if (updates.behavior_window_size) {
       this.behaviorWindow.maxSize = updates.behavior_window_size;

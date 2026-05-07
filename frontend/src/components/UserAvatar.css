@@ -1,0 +1,52 @@
+/**
+ * PATHMAP — UserAvatar styles
+ * © 2026 onazi Treasure Oj. All rights reserved.
+ */
+
+.user-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--avatar-bg, #111821);
+  border: 1.5px solid var(--avatar-border, #243040);
+  color: var(--avatar-fg, #c8d8ea);
+  flex-shrink: 0;
+  user-select: none;
+  font-family: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.user-avatar--sm {
+  width: 32px;
+  height: 32px;
+}
+
+.user-avatar--md {
+  width: 44px;
+  height: 44px;
+}
+
+.user-avatar--lg {
+  width: 64px;
+  height: 64px;
+}
+
+.user-avatar__initials {
+  font-size: 0.68em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.user-avatar__icon {
+  opacity: 0.65;
+}
+
+/* Hover affordance when the avatar is inside an interactive element */
+button:hover > .user-avatar,
+a:hover > .user-avatar {
+  border-color: #4e7fff;
+  box-shadow: 0 0 0 3px rgba(78, 127, 255, 0.18);
+}

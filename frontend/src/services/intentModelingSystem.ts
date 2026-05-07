@@ -1,14 +1,21 @@
 /**
  * PATHFINDER V37 — INTENT MODELING SYSTEM (IMS)
- * 
+ *
  * Routes predicted behavior into algorithmic decisions and UI responses.
  * Translates BPE predictions into actionable routing adjustments.
  */
 
-import { behaviorPredictionEngine, PredictedIntent, IntentCategory } from './behaviorPredictionEngine';
-import { sensorFusionLayer } from './sensorFusionLayer';
-import { antiLostModeEngine } from './antiLostModeEngine';
-import { homeGuardEngine } from './homeGuardEngine';
+import {
+  behaviorPredictionEngine,
+  PredictedIntent,
+  IntentCategory,
+} from './behaviorPredictionEngine';
+import { getSensorFusionLayer } from './sensorFusionLayer';
+import { getAntiLostModeEngine } from './antiLostModeEngine';
+
+// Engine instances
+const sensorFusionLayer = getSensorFusionLayer();
+const antiLostModeEngine = getAntiLostModeEngine();
 
 // =====================================================================
 // INTERFACES
@@ -267,16 +274,13 @@ export class IntentModelingSystem {
     if (!fusedPosition) return;
 
     console.log('[IMS] Auto-activating Anti-Lost Mode based on prediction');
-    
+
     // Activate with simplified instruction
     const instruction = this.generateLostInstruction(fusedPosition.heading);
-    
+
     try {
-      antiLostModeEngine.activate(
-        instruction,
-        prediction.confidence_level,
-        ['Predicted lost behavior', 'High direction change rate', 'Low heading stability']
-      );
+      void instruction;
+      antiLostModeEngine.forceActivate();
     } catch (error) {
       console.error('[IMS] Failed to activate Anti-Lost Mode:', error);
     }
@@ -284,7 +288,7 @@ export class IntentModelingSystem {
 
   private prepareSafeReturn(prediction: PredictedIntent): void {
     console.log('[IMS] Preparing safe return paths based on prediction');
-    
+
     // Trigger HomeGuard breadcrumb density increase
     try {
       // HomeGuard engine would need a method to increase breadcrumb recording
@@ -302,7 +306,16 @@ export class IntentModelingSystem {
   }
 
   private headingToCardinal(heading: number): string {
-    const directions = ['North', 'Northeast', 'East', 'Southeast', 'South', 'Southwest', 'West', 'Northwest'];
+    const directions = [
+      'North',
+      'Northeast',
+      'East',
+      'Southeast',
+      'South',
+      'Southwest',
+      'West',
+      'Northwest',
+    ];
     const index = Math.round(heading / 45) % 8;
     return directions[index];
   }

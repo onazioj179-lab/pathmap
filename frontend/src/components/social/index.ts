@@ -4,10 +4,10 @@
  */
 
 // Auth Components
-export { AuthModal } from './AuthModal';
+export { AuthModal } from '../AuthModal';
 
 // Friends Components
-export { FriendsList } from './FriendsList';
+export { FriendsList } from '../FriendsList';
 
 // Location Sharing Components
-export { LocationSharingPanel } from './LocationSharingPanel';
+export { LocationSharingPanel } from '../LocationSharingPanel';
