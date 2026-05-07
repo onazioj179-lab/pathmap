@@ -4,7 +4,7 @@
   justify-content: center;
   gap: 8px;
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -43,33 +43,34 @@
 }
 
 .pm-btn--primary {
-  background: #0066ff;
-  color: #ffffff;
+  background: var(--color-accent, #f2a93b);
+  color: #10100f;
+  box-shadow: 0 14px 34px rgba(242, 169, 59, 0.2);
 }
 
 .pm-btn--primary:hover:not(:disabled) {
-  background: #0056dd;
+  background: #ffc35d;
 }
 
 .pm-btn--secondary {
-  background: #10141d;
-  color: #d7e3f7;
-  border-color: #2a3448;
+  background: rgba(7, 13, 16, 0.86);
+  color: var(--color-text, #edf7fb);
+  border-color: var(--color-border, rgba(124, 231, 255, 0.16));
 }
 
 .pm-btn--secondary:hover:not(:disabled) {
-  background: #171d2a;
+  background: rgba(13, 28, 34, 0.94);
 }
 
 .pm-btn--ghost {
   background: transparent;
-  color: #b4c3de;
-  border-color: #2a3448;
+  color: var(--color-text-2, #c6dce4);
+  border-color: var(--color-border, rgba(124, 231, 255, 0.16));
 }
 
 .pm-btn--ghost:hover:not(:disabled) {
-  color: #e2ecff;
-  border-color: #3a4966;
+  color: #ffffff;
+  border-color: rgba(242, 169, 59, 0.42);
 }
 
 .pm-btn__spinner {
@@ -97,10 +98,10 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
-  border: 1px solid #2a3448;
-  background: #10141d;
-  color: #d7e3f7;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, rgba(124, 231, 255, 0.16));
+  background: rgba(7, 13, 16, 0.86);
+  color: var(--color-text, #edf7fb);
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -108,7 +109,7 @@
 }
 
 .pm-icon-btn:hover:not(:disabled) {
-  background: #171d2a;
+  background: rgba(13, 28, 34, 0.94);
   color: #ffffff;
 }
 

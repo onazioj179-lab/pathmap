@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(2, 4, 5, 0.76);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
@@ -14,10 +14,10 @@
   width: min(480px, 100%);
   max-height: min(760px, calc(100vh - 36px));
   overflow: auto;
-  border-radius: 18px;
-  border: 1px solid #263244;
-  background: #0b0f16;
-  color: #f7fbff;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 231, 255, 0.16);
+  background: rgba(7, 13, 16, 0.96);
+  color: #edf7fb;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.46);
 }
 

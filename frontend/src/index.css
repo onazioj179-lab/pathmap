@@ -18,20 +18,21 @@
   --font-mono: 'SF Mono', ui-monospace, 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
 
   /* Colour palette */
-  --color-bg: #000000;
-  --color-surface: #080b10;
-  --color-surface-2: #0c1118;
-  --color-surface-3: #111821;
-  --color-border: #1c2633;
-  --color-border-2: #243040;
+  --color-bg: #020405;
+  --color-surface: rgba(7, 13, 16, 0.86);
+  --color-surface-2: rgba(10, 18, 22, 0.92);
+  --color-surface-3: rgba(14, 28, 34, 0.9);
+  --color-border: rgba(124, 231, 255, 0.16);
+  --color-border-2: rgba(242, 169, 59, 0.32);
 
-  --color-text: #f7f9fc;
-  --color-text-2: #c8d8ea;
-  --color-text-muted: #7e8a9a;
-  --color-text-faint: #3d4d5e;
+  --color-text: #edf7fb;
+  --color-text-2: #c6dce4;
+  --color-text-muted: #91a8b0;
+  --color-text-faint: #5a737c;
 
-  --color-accent: #0a64ff;
-  --color-accent-glow: rgba(10, 100, 255, 0.22);
+  --color-accent: #f2a93b;
+  --color-accent-cool: #7ce7ff;
+  --color-accent-glow: rgba(242, 169, 59, 0.24);
 
   --color-success: #3ecf8e;
   --color-warning: #f5a623;
@@ -90,7 +91,9 @@ body {
   height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--color-bg);
+  background:
+    linear-gradient(110deg, rgba(2, 4, 5, 0.9), rgba(2, 4, 5, 1)),
+    #020405;
   color: var(--color-text);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;

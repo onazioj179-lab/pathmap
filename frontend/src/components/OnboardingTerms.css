@@ -1,0 +1,235 @@
+.onboarding-terms {
+  height: 100dvh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(420px, 0.95fr) minmax(420px, 0.72fr);
+  background:
+    linear-gradient(110deg, rgba(2, 4, 5, 0.72), rgba(2, 4, 5, 0.98) 58%),
+    url('../assets/pathmap-system-visual.svg') center / cover no-repeat,
+    #020405;
+  color: #edf7fb;
+  overflow: hidden;
+}
+
+.onboarding-terms__visual {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.onboarding-terms__visual::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(124, 231, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 231, 255, 0.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent);
+  mask-image: linear-gradient(90deg, #000 40%, transparent);
+  pointer-events: none;
+}
+
+.onboarding-terms__scan-card {
+  position: absolute;
+  left: 46px;
+  bottom: 46px;
+  display: grid;
+  gap: 7px;
+  min-width: 240px;
+  padding: 18px;
+  border: 1px solid rgba(124, 231, 255, 0.22);
+  border-radius: 8px;
+  background: rgba(5, 10, 12, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+}
+
+.onboarding-terms__scan-card span,
+.onboarding-terms__eyebrow {
+  color: #f2a93b;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.onboarding-terms__scan-card strong {
+  color: #ffffff;
+  font-size: 22px;
+}
+
+.onboarding-terms__scan-card small {
+  color: #8eb6c2;
+  font-size: 13px;
+}
+
+.onboarding-terms__panel {
+  align-self: center;
+  width: min(100% - 48px, 620px);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+  padding: 30px;
+  border: 1px solid rgba(124, 231, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(8, 12, 15, 0.86);
+  -webkit-backdrop-filter: blur(30px) saturate(1.16);
+  backdrop-filter: blur(30px) saturate(1.16);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.52);
+}
+
+.onboarding-terms__panel h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 44px;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.onboarding-terms__lead {
+  margin: 0;
+  color: #a9c0c8;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.onboarding-terms__rules {
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-terms__rules article {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(124, 231, 255, 0.11);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.onboarding-terms__rules article > span {
+  color: #7ce7ff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.onboarding-terms__rules h2 {
+  margin: 0;
+  color: #edf7fb;
+  font-size: 15px;
+}
+
+.onboarding-terms__rules p {
+  margin: 4px 0 0;
+  color: #91a8b0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.onboarding-terms__confirm {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  color: #c6d5db;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.onboarding-terms__confirm input {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: #f2a93b;
+}
+
+.onboarding-terms .pm-btn--primary {
+  background: #f2a93b;
+  color: #10100f;
+  box-shadow: 0 18px 38px rgba(242, 169, 59, 0.24);
+}
+
+.onboarding-terms .pm-btn--primary:hover:not(:disabled) {
+  background: #ffc35d;
+}
+
+@media (max-width: 900px) {
+  .onboarding-terms {
+    grid-template-columns: 1fr;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .onboarding-terms__visual {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+    opacity: 0.42;
+    pointer-events: none;
+  }
+
+  .onboarding-terms__scan-card {
+    display: none;
+  }
+
+  .onboarding-terms__panel {
+    width: calc(100% - 20px);
+    max-height: calc(100dvh - 20px);
+    margin: 0 auto;
+    gap: 10px;
+    padding: 14px;
+    overflow: hidden;
+  }
+
+  .onboarding-terms__panel h1 {
+    font-size: clamp(25px, 9vw, 34px);
+  }
+
+  .onboarding-terms__lead,
+  .onboarding-terms__confirm {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .onboarding-terms__rules {
+    gap: 6px;
+  }
+
+  .onboarding-terms__rules article {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .onboarding-terms__rules h2 {
+    font-size: 12px;
+  }
+
+  .onboarding-terms__rules p {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .onboarding-terms .pm-btn--lg {
+    min-height: 42px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 340px) {
+  .onboarding-terms__eyebrow {
+    font-size: 10px;
+  }
+
+  .onboarding-terms__panel {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .onboarding-terms__rules article {
+    padding: 7px;
+  }
+}

@@ -1,6 +1,8 @@
 # PathMap
 
-Real-time location tracking infrastructure with end-to-end encryption.
+Commercial encrypted location tracking infrastructure for private teams, field operations, and paid production deployments.
+
+PathMap is proprietary software by onazi Treasure Oj. It is not open-source freeware; local evaluation is allowed, and production, resale, hosted access, or commercial use requires a paid PathMap license plan.
 
 ## Problem Statement
 
@@ -17,26 +19,29 @@ PathMap targets technical teams who need both. It provides real-time location co
 ### Threat Model
 
 PathMap protects against:
+
 - **Passive server compromise** — Encrypted payloads are opaque to the backend
 - **Network eavesdropping** — TLS + application-layer encryption
 - **Credential theft** — Short-lived tokens, refresh rotation
 
 PathMap does NOT protect against:
+
 - **Compromised client devices** — If the endpoint is owned, location is exposed
 - **Traffic analysis** — Timing and packet sizes leak metadata (partial mitigation via obfuscation)
 - **Targeted key extraction** — No HSM integration; keys reside in process memory
 
 ### Cryptographic Implementation
 
-| Layer | Algorithm | Implementation |
-|-------|-----------|----------------|
-| Key exchange | X25519 ECDH | `cryptography` library |
+| Layer              | Algorithm   | Implementation                 |
+| ------------------ | ----------- | ------------------------------ |
+| Key exchange       | X25519 ECDH | `cryptography` library         |
 | Payload encryption | AES-256-GCM | 96-bit nonces, counter-tracked |
-| Key derivation | HKDF-SHA256 | Per-session keys |
-| Authentication | HMAC-SHA256 | Custom JWT implementation |
-| Password storage | bcrypt | Cost factor 12 |
+| Key derivation     | HKDF-SHA256 | Per-session keys               |
+| Authentication     | HMAC-SHA256 | Custom JWT implementation      |
+| Password storage   | bcrypt      | Cost factor 12                 |
 
 **Key rotation policy:**
+
 - Time-based: 300 seconds
 - Volume-based: 100MB or 10,000 messages
 - Automatic renegotiation on threshold
@@ -76,22 +81,36 @@ Extended Kalman filter fusing GPS, accelerometer, gyroscope, and compass. Produc
 
 ### 3. Offline-Capable Routing
 
-A*, Dijkstra, and greedy pathfinding over OpenStreetMap graphs. No external API dependency.
+A\*, Dijkstra, and greedy pathfinding over OpenStreetMap graphs. No external API dependency.
 
 **Why it matters:** Field teams operate with intermittent connectivity.  
 **What breaks without it:** Navigation fails offline; external API costs scale with usage.
 
 ---
 
+## Commercial License & Payment Plans
+
+PathMap is distributed under a proprietary commercial license. The public repository is for evaluation, review, and authorized development only. It does not grant a free production, resale, SaaS, white-label, or hosted-service license.
+
+| Plan       | Price                  | Intended use                                      | Includes                                                                                             |
+| ---------- | ---------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Starter    | $19 per seat / month   | Small teams evaluating private encrypted tracking | Up to 5 tracked devices, encrypted live map, route sharing, community deployment support             |
+| Pro        | $49 per seat / month   | Field operations that need production controls    | Up to 25 tracked devices, priority safety/route/diagnostics workflows, commercial production license |
+| Enterprise | Custom annual contract | Regulated teams and private deployments           | Device limits by agreement, security review, private deployment support, dedicated terms             |
+
+Payment processing is intentionally not bundled in this repository. Production operators should connect their approved billing provider, subscription ledger, and license enforcement service before offering hosted access.
+
+---
+
 ## Power Features
 
-| Feature | Purpose | Limitation |
-|---------|---------|------------|
-| **Geofencing** | Entry/exit alerts for defined zones | Circular zones only (no polygons) |
-| **Location Sharing** | Time-limited sharing with precision control | Requires both parties online |
-| **Traffic Obfuscation** | Packet padding, timing jitter, decoys | 10-30% bandwidth overhead |
-| **Ghost Mode** | Stop broadcasting while appearing online | Social engineering risk |
-| **Rate Limiting** | Token bucket per-endpoint | No distributed limiting |
+| Feature                 | Purpose                                     | Limitation                        |
+| ----------------------- | ------------------------------------------- | --------------------------------- |
+| **Geofencing**          | Entry/exit alerts for defined zones         | Circular zones only (no polygons) |
+| **Location Sharing**    | Time-limited sharing with precision control | Requires both parties online      |
+| **Traffic Obfuscation** | Packet padding, timing jitter, decoys       | 10-30% bandwidth overhead         |
+| **Ghost Mode**          | Stop broadcasting while appearing online    | Social engineering risk           |
+| **Rate Limiting**       | Token bucket per-endpoint                   | No distributed limiting           |
 
 ---
 
@@ -100,11 +119,13 @@ A*, Dijkstra, and greedy pathfinding over OpenStreetMap graphs. No external API 
 ### Technology Choices
 
 **FastAPI** over Django/Flask:
+
 - Native async for WebSocket scaling
 - Pydantic validation reduces input bugs
 - Sufficient for 10K concurrent connections
 
 **WebSockets** over gRPC/polling:
+
 - 50x reduction in connection overhead for 2-second updates
 - Browser support without proxy
 - Tradeoff: manual backpressure handling required
@@ -127,12 +148,12 @@ A*, Dijkstra, and greedy pathfinding over OpenStreetMap graphs. No external API 
 
 ### Failure Modes
 
-| Failure | Behavior | Recovery |
-|---------|----------|----------|
-| Database unavailable | Auth fails; existing sessions continue | Exponential backoff reconnect |
-| WebSocket disconnect | Client queues updates locally | Auto-reconnect with replay |
-| Crypto library missing | Weak obfuscation + warning log | Install `cryptography` |
-| OSM graph load failure | Routing unavailable; tracking continues | Restart with valid graph |
+| Failure                | Behavior                                | Recovery                      |
+| ---------------------- | --------------------------------------- | ----------------------------- |
+| Database unavailable   | Auth fails; existing sessions continue  | Exponential backoff reconnect |
+| WebSocket disconnect   | Client queues updates locally           | Auto-reconnect with replay    |
+| Crypto library missing | Weak obfuscation + warning log          | Install `cryptography`        |
+| OSM graph load failure | Routing unavailable; tracking continues | Restart with valid graph      |
 
 ---
 
@@ -155,33 +176,43 @@ curl -X POST http://localhost:8000/api/v1/social/register \
 ```
 
 Response:
+
 ```json
-{"user_id": "uuid-here", "access_token": "eyJ..."}
+{ "user_id": "uuid-here", "access_token": "eyJ..." }
 ```
 
 ### 3. Open Encrypted Tunnel
 
 ```javascript
-const ws = new WebSocket('ws://localhost:8000/api/v1/tunnel/connect');
+const ws = new WebSocket("ws://localhost:8000/api/v1/tunnel/connect");
 ws.onopen = () => {
-  ws.send(JSON.stringify({
-    type: 'handshake',
-    token: 'eyJ...',
-    public_key: clientX25519PublicKey
-  }));
+  ws.send(
+    JSON.stringify({
+      type: "handshake",
+      token: "eyJ...",
+      public_key: clientX25519PublicKey,
+    }),
+  );
 };
 ```
 
 ### 4. Send Location
 
 ```javascript
-const encrypted = aesGcmEncrypt(sharedSecret, JSON.stringify({
-  lat: 40.7128, lon: -74.0060, accuracy: 10, timestamp: Date.now()
-}));
-ws.send(JSON.stringify({ type: 'location', payload: encrypted }));
+const encrypted = aesGcmEncrypt(
+  sharedSecret,
+  JSON.stringify({
+    lat: 40.7128,
+    lon: -74.006,
+    accuracy: 10,
+    timestamp: Date.now(),
+  }),
+);
+ws.send(JSON.stringify({ type: "location", payload: encrypted }));
 ```
 
 **Expected errors:**
+
 - `401` — Token expired; refresh and retry
 - `429` — Rate limited; backoff 60 seconds
 - `handshake_failed` — Regenerate keypair
@@ -227,12 +258,12 @@ Manifests deploy: Backend (3 replicas), PostgreSQL StatefulSet.
 
 ## Version History
 
-| Version | Changes |
-|---------|---------|
-| 96 | X25519 tunnel encryption, traffic obfuscation |
-| 95 | Device tracking API, JWT authentication |
-| 94 | Kalman filter sensor fusion |
-| 93 | Friends, location sharing, ghost mode |
+| Version | Changes                                       |
+| ------- | --------------------------------------------- |
+| 96      | X25519 tunnel encryption, traffic obfuscation |
+| 95      | Device tracking API, JWT authentication       |
+| 94      | Kalman filter sensor fusion                   |
+| 93      | Friends, location sharing, ghost mode         |
 
 ---
 
@@ -250,4 +281,6 @@ PathMap is infrastructure for teams building location-aware systems who need enc
 
 ## License
 
-Proprietary. All rights reserved.
+Proprietary commercial software. All rights reserved.
+
+See [LICENSE.md](LICENSE.md). No free, open-source, resale, SaaS, hosted, production, or commercial-use rights are granted unless a written paid license agreement from onazi Treasure Oj is active.

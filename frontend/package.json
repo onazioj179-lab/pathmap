@@ -1,6 +1,9 @@
 {
   "name": "pathfinder-frontend",
   "version": "98.0.0",
+  "description": "Commercial encrypted location tracking and private navigation frontend for PathMap.",
+  "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

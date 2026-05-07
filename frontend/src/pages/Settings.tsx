@@ -14,7 +14,9 @@ import {
   Check,
   Cloud,
   Compass,
+  CreditCard,
   Globe2,
+  KeyRound,
   Languages,
   Map,
   Moon,
@@ -34,6 +36,7 @@ import './Settings.css';
 type ThemePreference = 'dark' | 'light' | 'system';
 type UnitPreference = 'metric' | 'imperial';
 type LanguagePreference = 'en' | 'es';
+type BillingPlan = 'starter' | 'pro' | 'enterprise';
 
 interface SettingsState {
   language: LanguagePreference;
@@ -44,6 +47,16 @@ interface SettingsState {
   safetyAlerts: boolean;
   reducedMotion: boolean;
   debug: boolean;
+  billingPlan: BillingPlan;
+}
+
+interface PricingPlan {
+  id: BillingPlan;
+  name: string;
+  price: string;
+  cadence: string;
+  description: string;
+  features: string[];
 }
 
 const STORAGE_KEY = 'pathmap.settings.v100';
@@ -57,6 +70,7 @@ const defaultSettings: SettingsState = {
   safetyAlerts: true,
   reducedMotion: false,
   debug: false,
+  billingPlan: 'pro',
 };
 
 const loadSettings = (): SettingsState => {
@@ -91,8 +105,15 @@ const Settings: React.FC = () => {
     ? 'es'
     : 'en';
 
-  const statusItems = useMemo(
-    () => [
+  const statusItems = useMemo(() => {
+    const activePlanLabel =
+      settings.billingPlan === 'starter'
+        ? t('settings.planStarterName', 'Starter')
+        : settings.billingPlan === 'enterprise'
+          ? t('settings.planEnterpriseName', 'Enterprise')
+          : t('settings.planProName', 'Pro');
+
+    return [
       {
         label: t('settings.language'),
         value: activeLanguage === 'en' ? 'English' : 'Espanol',
@@ -119,8 +140,68 @@ const Settings: React.FC = () => {
         value: settings.offline ? t('settings.offlineMode') : t('settings.onlineMode', 'Online'),
         icon: settings.offline ? WifiOff : Cloud,
       },
+      {
+        label: t('settings.licenseStatus', 'License'),
+        value: t('settings.commercialLicense', 'Commercial'),
+        icon: KeyRound,
+      },
+      {
+        label: t('settings.billingPlan', 'Plan'),
+        value: activePlanLabel,
+        icon: CreditCard,
+      },
+    ];
+  }, [activeLanguage, settings.billingPlan, settings.offline, settings.theme, settings.units, t]);
+
+  const pricingPlans = useMemo<PricingPlan[]>(
+    () => [
+      {
+        id: 'starter',
+        name: t('settings.planStarterName', 'Starter'),
+        price: t('settings.planStarterPrice', '$19'),
+        cadence: t('settings.planCadence', 'per seat / month'),
+        description: t(
+          'settings.planStarterDescription',
+          'For small teams evaluating private encrypted tracking.'
+        ),
+        features: [
+          t('settings.planStarterFeatureOne', 'Up to 5 tracked devices'),
+          t('settings.planStarterFeatureTwo', 'Encrypted live map and route sharing'),
+          t('settings.planStarterFeatureThree', 'Community deployment support'),
+        ],
+      },
+      {
+        id: 'pro',
+        name: t('settings.planProName', 'Pro'),
+        price: t('settings.planProPrice', '$49'),
+        cadence: t('settings.planCadence', 'per seat / month'),
+        description: t(
+          'settings.planProDescription',
+          'For field operations that need audit-ready navigation controls.'
+        ),
+        features: [
+          t('settings.planProFeatureOne', 'Up to 25 tracked devices'),
+          t('settings.planProFeatureTwo', 'Priority safety, route, and diagnostics workflows'),
+          t('settings.planProFeatureThree', 'Commercial production license'),
+        ],
+      },
+      {
+        id: 'enterprise',
+        name: t('settings.planEnterpriseName', 'Enterprise'),
+        price: t('settings.planEnterprisePrice', 'Custom'),
+        cadence: t('settings.planEnterpriseCadence', 'annual contract'),
+        description: t(
+          'settings.planEnterpriseDescription',
+          'For regulated teams that need private deployment, SLAs, and controls.'
+        ),
+        features: [
+          t('settings.planEnterpriseFeatureOne', 'Unlimited tracked devices by agreement'),
+          t('settings.planEnterpriseFeatureTwo', 'Private deployment and security review'),
+          t('settings.planEnterpriseFeatureThree', 'Dedicated support and license terms'),
+        ],
+      },
     ],
-    [activeLanguage, settings.offline, settings.theme, settings.units, t]
+    [t]
   );
 
   useEffect(() => {
@@ -238,6 +319,7 @@ const Settings: React.FC = () => {
         <nav className="settings-sidebar-nav" aria-label="Settings sections">
           <a href="#experience">{t('settings.experience', 'Experience')}</a>
           <a href="#navigation">{t('settings.navigation', 'Navigation')}</a>
+          <a href="#billing">{t('settings.billing', 'Billing')}</a>
           <a href="#privacy">{t('settings.privacy', 'Privacy')}</a>
         </nav>
 
@@ -247,6 +329,10 @@ const Settings: React.FC = () => {
             ·
           </span>
           <span>© 2026 onazi Treasure Oj</span>
+          <span className="settings-sidebar-footer-sep" aria-hidden="true">
+            ·
+          </span>
+          <span>{t('settings.commercialLicense', 'Commercial')}</span>
         </footer>
       </aside>
 
@@ -383,6 +469,75 @@ const Settings: React.FC = () => {
               checked => updateSetting('offline', checked),
               WifiOff
             )}
+          </div>
+        </section>
+
+        <section className="settings-section" id="billing">
+          <div className="settings-section-heading">
+            <CreditCard size={18} aria-hidden="true" />
+            <h2>{t('settings.billing', 'Billing')}</h2>
+          </div>
+          <div className="settings-panel settings-billing-panel">
+            <div className="settings-license-callout">
+              <KeyRound size={18} aria-hidden="true" />
+              <div>
+                <div className="settings-row-title">
+                  {t('settings.licenseTitle', 'Commercial license required')}
+                </div>
+                <div className="settings-row-detail">
+                  {t(
+                    'settings.licenseDetail',
+                    'PathMap is proprietary software. Local evaluation is allowed, but production, resale, hosted access, or commercial use requires an active paid plan.'
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="settings-pricing-grid"
+              role="radiogroup"
+              aria-label={t('settings.planSelection', 'Billing plan')}
+            >
+              {pricingPlans.map(plan => {
+                const active = settings.billingPlan === plan.id;
+
+                return (
+                  <label className={`settings-plan-card ${active ? 'active' : ''}`} key={plan.id}>
+                    <input
+                      type="radio"
+                      name="billingPlan"
+                      value={plan.id}
+                      checked={active}
+                      aria-label={plan.name}
+                      onChange={() => updateSetting('billingPlan', plan.id)}
+                    />
+                    <span className="settings-plan-card-top">
+                      <span>
+                        <span className="settings-plan-name">{plan.name}</span>
+                        <span className="settings-plan-description">{plan.description}</span>
+                      </span>
+                      <span className="settings-plan-badge">
+                        {active
+                          ? t('settings.currentPlan', 'Current plan')
+                          : t('settings.paidPlan', 'Paid plan')}
+                      </span>
+                    </span>
+                    <span className="settings-plan-price-row">
+                      <span className="settings-plan-price">{plan.price}</span>
+                      <span className="settings-plan-cadence">{plan.cadence}</span>
+                    </span>
+                    <span className="settings-plan-features">
+                      {plan.features.map(feature => (
+                        <span className="settings-plan-feature" key={feature}>
+                          <Check size={14} aria-hidden="true" />
+                          {feature}
+                        </span>
+                      ))}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
         </section>
 

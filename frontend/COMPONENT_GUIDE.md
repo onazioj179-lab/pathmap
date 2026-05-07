@@ -108,6 +108,10 @@ Before shipping a UI change:
 - Forms use associated labels or accessible names.
 - No recoverable UI errors are console-only.
 
+## Commercial Copy
+
+PathMap is proprietary commercial software, not freeware or an open-source distribution. User-facing billing, license, and plan language should be clear about evaluation limits, paid production use, and the current plan without pretending that payment processing exists inside the frontend.
+
 ## Verification
 
 Run these gates for user-facing changes:

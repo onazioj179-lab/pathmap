@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import OnboardingTerms from './components/OnboardingTerms';
 import Home from './pages/Home';
 import Settings from './pages/Settings';
 import type { VisualizationMode } from './services/visualization';
@@ -31,12 +32,14 @@ export interface AppState {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/settings" element={<Settings />} />
-      </Routes>
-    </BrowserRouter>
+    <OnboardingTerms>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </BrowserRouter>
+    </OnboardingTerms>
   );
 }
 

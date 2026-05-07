@@ -1,7 +1,7 @@
 {
   "name": "PathMap - AI Location Tracking",
   "short_name": "PathMap",
-  "description": "Real-time AI-powered location tracking with multi-GNSS satellite fusion",
+  "description": "Commercial encrypted location tracking and private navigation for paid team deployments",
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",

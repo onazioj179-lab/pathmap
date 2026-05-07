@@ -2,15 +2,15 @@
   display: block;
   width: 100%;
   min-height: var(--pm-skeleton-height, 16px);
-  border-radius: var(--pm-skeleton-radius, 10px);
-  background: linear-gradient(90deg, #101722 25%, #1b2432 50%, #101722 75%);
+  border-radius: var(--pm-skeleton-radius, 8px);
+  background: linear-gradient(90deg, rgba(7, 13, 16, 0.8) 25%, rgba(242, 169, 59, 0.14) 50%, rgba(7, 13, 16, 0.8) 75%);
   background-size: 200% 100%;
   animation: pm-skeleton-shimmer 1.35s ease-in-out infinite;
 }
 
 .pm-skeleton--card {
   min-height: 96px;
-  border-radius: 14px;
+  border-radius: 8px;
 }
 
 .pm-skeleton--line {

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">PathMap system grid</title>
+  <desc id="desc">Original abstract dark command-map globe with routes, scan lines, and signal nodes.</desc>
+  <defs>
+    <radialGradient id="globeGlow" cx="42%" cy="46%" r="46%">
+      <stop offset="0" stop-color="#7ce7ff" stop-opacity="0.26" />
+      <stop offset="0.44" stop-color="#2f9eb7" stop-opacity="0.11" />
+      <stop offset="1" stop-color="#020405" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="route" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#7ce7ff" stop-opacity="0.18" />
+      <stop offset="0.55" stop-color="#f2a93b" stop-opacity="0.8" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.2" />
+    </linearGradient>
+    <pattern id="scan" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M0 34H34M34 0V34" fill="none" stroke="#7ce7ff" stroke-opacity="0.045" stroke-width="1" />
+    </pattern>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1600" height="1000" fill="#020405" />
+  <rect width="1600" height="1000" fill="url(#scan)" />
+  <circle cx="655" cy="485" r="385" fill="url(#globeGlow)" />
+  <g fill="none" stroke="#dceeff" stroke-opacity="0.13">
+    <ellipse cx="655" cy="485" rx="392" ry="226" />
+    <ellipse cx="655" cy="485" rx="302" ry="382" transform="rotate(-19 655 485)" />
+    <ellipse cx="655" cy="485" rx="150" ry="382" transform="rotate(28 655 485)" />
+    <path d="M300 450C470 330 750 300 1038 408" />
+    <path d="M334 596C548 704 804 720 1026 580" />
+    <path d="M442 214C622 336 790 600 820 836" />
+  </g>
+  <g stroke="#7ce7ff" stroke-opacity="0.22" stroke-width="1.2" fill="none">
+    <path d="M360 620 512 498 684 544 834 404 1032 456 1182 340" />
+    <path d="M440 300 590 392 730 334 904 504 1120 540" />
+    <path d="M548 738 690 632 842 688 1006 620 1214 710" />
+  </g>
+  <path d="M512 498C640 420 792 396 1032 456" fill="none" stroke="url(#route)" stroke-width="3" filter="url(#softGlow)" />
+  <path d="M842 688C956 612 1052 540 1182 340" fill="none" stroke="#f2a93b" stroke-opacity="0.54" stroke-width="2" />
+  <g fill="#7ce7ff" filter="url(#softGlow)">
+    <circle cx="512" cy="498" r="4" />
+    <circle cx="684" cy="544" r="3" />
+    <circle cx="1032" cy="456" r="5" />
+    <circle cx="1120" cy="540" r="3" />
+    <circle cx="1214" cy="710" r="4" />
+  </g>
+  <g fill="#f2a93b" filter="url(#softGlow)">
+    <circle cx="834" cy="404" r="5" />
+    <circle cx="1182" cy="340" r="6" />
+    <circle cx="842" cy="688" r="4" />
+  </g>
+  <g fill="none" stroke="#ffffff" stroke-opacity="0.16">
+    <path d="M1248 170h190M1248 216h142M1248 262h168M1248 308h110" />
+    <path d="M1280 786h210M1280 832h126" />
+  </g>
+  <g fill="#dceeff" fill-opacity="0.44" font-family="Segoe UI, Arial, sans-serif" font-size="18" letter-spacing="3">
+    <text x="1248" y="142">PATHMAP GRID</text>
+    <text x="1280" y="760">PRIVATE ROUTE</text>
+  </g>
+</svg>

@@ -111,17 +111,17 @@
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   left: 20px;
   right: 20px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  gap: 3px;
   font-size: 11px;
   color: #3d4d5e;
   font-weight: 600;
   letter-spacing: 0.01em;
+  line-height: 1.35;
 }
 
 .settings-sidebar-footer-sep {
-  opacity: 0.5;
+  display: none;
 }
 
 .settings-main {
@@ -176,7 +176,7 @@
 .settings-heading h1 {
   max-width: 780px;
   margin: 0;
-  font-size: clamp(32px, 5vw, 56px);
+  font-size: 56px;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -191,7 +191,7 @@
 
 .settings-overview {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   margin-bottom: 26px;
 }
@@ -434,6 +434,456 @@
   font-weight: 800;
 }
 
+.settings-billing-panel {
+  padding: 16px;
+}
+
+.settings-license-callout {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin-bottom: 14px;
+  padding: 14px;
+  border: 1px solid #253246;
+  border-radius: 8px;
+  background: #0d1520;
+}
+
+.settings-license-callout svg {
+  color: #7fb1ff;
+}
+
+.settings-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.settings-plan-card {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  min-height: 260px;
+  padding: 16px;
+  border: 1px solid #223044;
+  border-radius: 8px;
+  background: #090e15;
+  color: #d8e2ef;
+  cursor: pointer;
+}
+
+.settings-plan-card input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.settings-plan-card:focus-within,
+.settings-plan-card.active {
+  border-color: #0a64ff;
+  box-shadow: 0 0 0 1px rgba(10, 100, 255, 0.35);
+}
+
+.settings-plan-card-top,
+.settings-plan-price-row,
+.settings-plan-features,
+.settings-plan-feature {
+  display: flex;
+}
+
+.settings-plan-card-top {
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.settings-plan-name,
+.settings-plan-description,
+.settings-plan-price,
+.settings-plan-cadence {
+  display: block;
+}
+
+.settings-plan-name {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.settings-plan-description {
+  margin-top: 6px;
+  color: #8f9bad;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.settings-plan-badge {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #cfe2ff;
+  background: #0f1d31;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.settings-plan-card.active .settings-plan-badge {
+  color: #ffffff;
+  background: #0a64ff;
+}
+
+.settings-plan-price-row {
+  align-items: baseline;
+  gap: 8px;
+}
+
+.settings-plan-price {
+  color: #ffffff;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.settings-plan-cadence {
+  color: #6f7d8e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settings-plan-features {
+  flex-direction: column;
+  gap: 9px;
+}
+
+.settings-plan-feature {
+  align-items: center;
+  gap: 8px;
+  color: #b8c5d6;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.settings-plan-feature svg {
+  flex: 0 0 auto;
+  color: #74d6a4;
+}
+
+/* Warm editorial + Fluent acrylic visual pass */
+.settings-page {
+  background: linear-gradient(135deg, #f6f0e6 0%, #eef5fb 48%, #fafafa 100%);
+  color: #25211d;
+  font-family: 'Segoe UI Variable', 'SF Pro Display', 'Inter', system-ui, sans-serif;
+}
+
+.settings-sidebar {
+  background: rgba(38, 34, 30, 0.88);
+  border-right-color: rgba(255, 255, 255, 0.16);
+  -webkit-backdrop-filter: blur(28px) saturate(1.2);
+  backdrop-filter: blur(28px) saturate(1.2);
+  box-shadow: 12px 0 36px rgba(30, 28, 25, 0.16);
+}
+
+.settings-brand-mark {
+  background: linear-gradient(135deg, #2c2824 0%, #c76632 100%);
+  box-shadow: 0 18px 38px rgba(199, 102, 50, 0.28);
+}
+
+.settings-brand-name,
+.settings-sidebar-user-name {
+  color: #fffaf2;
+}
+
+.settings-brand-status,
+.settings-sidebar-user-role,
+.settings-sidebar-nav a,
+.settings-sidebar-footer {
+  color: rgba(255, 250, 242, 0.68);
+}
+
+.settings-sidebar-user,
+.settings-sidebar-nav a:hover,
+.settings-sidebar-nav a:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.settings-sidebar-nav a:hover,
+.settings-sidebar-nav a:focus-visible {
+  color: #ffffff;
+}
+
+.settings-back,
+.settings-stat,
+.settings-panel,
+.settings-actions {
+  border-color: rgba(132, 113, 92, 0.2);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  backdrop-filter: blur(22px) saturate(1.15);
+  box-shadow: 0 18px 48px rgba(70, 62, 52, 0.1);
+}
+
+.settings-actions {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.settings-back,
+.settings-reset {
+  color: #342d26;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.settings-back:hover,
+.settings-back:focus-visible,
+.settings-reset:hover,
+.settings-reset:focus-visible {
+  border-color: #c76632;
+  color: #201a15;
+}
+
+.settings-kicker,
+.settings-stat svg,
+.settings-section-heading svg,
+.settings-row-icon,
+.settings-license-callout svg {
+  color: #c76632;
+}
+
+.settings-heading h1,
+.settings-stat strong,
+.settings-section-heading,
+.settings-row-title,
+.settings-plan-name,
+.settings-plan-price {
+  color: #24201c;
+}
+
+.settings-heading p,
+.settings-row-detail,
+.settings-stat span,
+.settings-plan-description,
+.settings-plan-cadence,
+.settings-plan-feature {
+  color: #6f6357;
+}
+
+.settings-row {
+  border-bottom-color: rgba(132, 113, 92, 0.16);
+}
+
+.settings-row-icon,
+.settings-control,
+.settings-license-callout,
+.settings-plan-card {
+  border-color: rgba(132, 113, 92, 0.18);
+  background: rgba(250, 247, 241, 0.72);
+}
+
+.settings-control {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.settings-segment {
+  color: #685b4f;
+}
+
+.settings-segment.active,
+.settings-save,
+.settings-switch.on,
+.settings-plan-card.active .settings-plan-badge {
+  background: #c76632;
+}
+
+.settings-segment.active,
+.settings-save,
+.settings-plan-card.active .settings-plan-badge {
+  color: #ffffff;
+}
+
+.settings-save {
+  box-shadow: 0 14px 34px rgba(199, 102, 50, 0.26);
+}
+
+.settings-switch {
+  border-color: rgba(132, 113, 92, 0.28);
+  background: #d9d1c7;
+}
+
+.settings-switch.on {
+  border-color: #c76632;
+}
+
+.settings-saved,
+.settings-plan-feature svg {
+  color: #20744a;
+}
+
+.settings-plan-card {
+  color: #342d26;
+  box-shadow: 0 12px 30px rgba(70, 62, 52, 0.08);
+}
+
+.settings-plan-card:focus-within,
+.settings-plan-card.active {
+  border-color: #c76632;
+  background: rgba(255, 252, 247, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(199, 102, 50, 0.18),
+    0 20px 46px rgba(199, 102, 50, 0.16);
+}
+
+.settings-plan-badge {
+  color: #75563f;
+  background: #f2e4d7;
+}
+
+.settings-segment:focus-visible,
+.settings-switch:focus-visible,
+.settings-save:focus-visible,
+.settings-reset:focus-visible {
+  outline-color: #2878d9;
+}
+
+/* PathMap command-map final theme */
+.settings-page {
+  background:
+    linear-gradient(105deg, rgba(2, 4, 5, 0.96), rgba(3, 10, 13, 0.9) 44%, rgba(5, 11, 18, 0.96)),
+    url('../assets/pathmap-system-visual.svg') center / cover fixed no-repeat,
+    #020405;
+  color: #edf7fb;
+}
+
+.settings-sidebar {
+  background: rgba(8, 9, 10, 0.88);
+  border-right-color: rgba(124, 231, 255, 0.14);
+  box-shadow: 14px 0 60px rgba(0, 0, 0, 0.42);
+}
+
+.settings-brand-mark {
+  background: linear-gradient(135deg, #0e1b20 0%, #f2a93b 100%);
+  box-shadow: 0 18px 46px rgba(242, 169, 59, 0.28);
+}
+
+.settings-brand-name,
+.settings-sidebar-user-name,
+.settings-heading h1,
+.settings-stat strong,
+.settings-section-heading,
+.settings-row-title,
+.settings-plan-name,
+.settings-plan-price {
+  color: #ffffff;
+}
+
+.settings-brand-status,
+.settings-sidebar-user-role,
+.settings-sidebar-nav a,
+.settings-sidebar-footer,
+.settings-heading p,
+.settings-row-detail,
+.settings-stat span,
+.settings-plan-description,
+.settings-plan-cadence,
+.settings-plan-feature {
+  color: #9fb3bc;
+}
+
+.settings-sidebar-user,
+.settings-sidebar-nav a:hover,
+.settings-sidebar-nav a:focus-visible,
+.settings-back,
+.settings-stat,
+.settings-panel,
+.settings-actions,
+.settings-row-icon,
+.settings-control,
+.settings-license-callout,
+.settings-plan-card {
+  border-color: rgba(124, 231, 255, 0.14);
+  background: rgba(7, 13, 16, 0.76);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+  backdrop-filter: blur(22px) saturate(1.15);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.28);
+}
+
+.settings-actions {
+  background: rgba(7, 13, 16, 0.9);
+}
+
+.settings-sidebar-nav a:hover,
+.settings-sidebar-nav a:focus-visible,
+.settings-back,
+.settings-reset {
+  color: #edf7fb;
+}
+
+.settings-kicker,
+.settings-stat svg,
+.settings-section-heading svg,
+.settings-row-icon,
+.settings-license-callout svg,
+.settings-segment.active,
+.settings-save,
+.settings-switch.on,
+.settings-plan-card.active .settings-plan-badge {
+  color: #10100f;
+}
+
+.settings-kicker,
+.settings-stat svg,
+.settings-section-heading svg,
+.settings-row-icon,
+.settings-license-callout svg {
+  color: #f2a93b;
+}
+
+.settings-row {
+  border-bottom-color: rgba(124, 231, 255, 0.1);
+}
+
+.settings-segment,
+.settings-back,
+.settings-reset {
+  color: #b7cad2;
+}
+
+.settings-segment.active,
+.settings-save,
+.settings-switch.on,
+.settings-plan-card.active .settings-plan-badge {
+  background: #f2a93b;
+}
+
+.settings-save {
+  box-shadow: 0 18px 42px rgba(242, 169, 59, 0.24);
+}
+
+.settings-switch {
+  border-color: rgba(124, 231, 255, 0.2);
+  background: #17252c;
+}
+
+.settings-plan-card:focus-within,
+.settings-plan-card.active {
+  border-color: #f2a93b;
+  background: rgba(13, 21, 24, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(242, 169, 59, 0.22),
+    0 22px 56px rgba(242, 169, 59, 0.14);
+}
+
+.settings-plan-badge {
+  color: #f6c875;
+  background: rgba(242, 169, 59, 0.12);
+}
+
+.settings-saved,
+.settings-plan-feature svg {
+  color: #7ce7ff;
+}
+
 @media (max-width: 900px) {
   .settings-page {
     grid-template-columns: 1fr;
@@ -460,6 +910,10 @@
 
   .settings-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .settings-pricing-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -501,5 +955,114 @@
 @media (prefers-reduced-motion: reduce) {
   .settings-switch span {
     transition: none;
+  }
+}
+
+/* =====================================================
+   PATHMAP SETTINGS FLOW FINAL LAYER
+===================================================== */
+
+.settings-page {
+  isolation: isolate;
+}
+
+.settings-heading h1 {
+  font-size: clamp(34px, 7vw, 56px);
+  line-height: 1.04;
+}
+
+.settings-heading p {
+  font-size: clamp(16px, 2.4vw, 19px);
+}
+
+.settings-sidebar-nav a,
+.settings-sidebar-footer,
+.settings-back,
+.settings-row-title,
+.settings-row-detail,
+.settings-plan-feature,
+.settings-plan-description {
+  letter-spacing: 0;
+}
+
+@media (max-width: 900px) {
+  .settings-sidebar {
+    display: grid;
+    gap: 14px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 16px;
+    contain: none;
+  }
+
+  .settings-brand,
+  .settings-sidebar-user,
+  .settings-sidebar-nav,
+  .settings-sidebar-footer {
+    margin: 0;
+  }
+
+  .settings-brand {
+    gap: 12px;
+  }
+
+  .settings-brand-mark {
+    width: 54px;
+    height: 54px;
+  }
+
+  .settings-sidebar-user {
+    padding: 12px;
+  }
+
+  .settings-sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .settings-sidebar-nav a {
+    min-width: 0;
+    padding: 9px 6px;
+    text-align: center;
+    font-size: clamp(12px, 3.6vw, 14px);
+    white-space: nowrap;
+  }
+
+  .settings-sidebar-footer {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .settings-sidebar-footer-sep {
+    display: inline;
+  }
+
+  .settings-main {
+    padding: 20px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .settings-header {
+    gap: 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  .settings-heading h1 {
+    font-size: clamp(34px, 11vw, 44px);
+  }
+
+  .settings-heading p {
+    font-size: clamp(16px, 5vw, 19px);
+    line-height: 1.45;
+  }
+
+  .settings-sidebar-nav a {
+    font-size: clamp(11px, 3.35vw, 13px);
   }
 }

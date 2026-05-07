@@ -87,6 +87,15 @@ describe('Settings Page', () => {
     expect(resetBtn).toBeInTheDocument();
   });
 
+  test('renders commercial license and billing plans', () => {
+    renderSettings();
+    expect(screen.getAllByText('settings.billing').length).toBeGreaterThan(0);
+    expect(screen.getByText('settings.licenseTitle')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'settings.planStarterName' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'settings.planProName' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'settings.planEnterpriseName' })).toBeInTheDocument();
+  });
+
   test('save-then-reset clears the saved indicator', () => {
     renderSettings();
     const saveBtn = screen.getByRole('button', { name: 'settings.save' });

@@ -10,7 +10,10 @@
   font-family:
     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Oxygen, Ubuntu,
     sans-serif;
-  background: #000000;
+  background:
+    linear-gradient(110deg, rgba(2, 4, 5, 0.84), rgba(2, 4, 5, 0.96) 58%),
+    url('../assets/pathmap-system-visual.svg') center / cover no-repeat,
+    #020405;
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -27,21 +30,75 @@ body {
   overscroll-behavior: none;
 }
 
-/* Pure black + blue variables */
+/* PathMap command-map variables */
 :root {
-  --dark-bg: #000000;
-  --dark-bg-mid: #0a0a0a;
-  --dark-bg-card: #111111;
-  --dark-border: #222222;
-  --dark-text: #ffffff;
-  --dark-text-muted: #888888;
-  --accent-blue: #0066ff;
-  --accent-cyan: #0066ff;
-  --accent-orange: #0066ff;
+  --dark-bg: #020405;
+  --dark-bg-mid: #071014;
+  --dark-bg-card: rgba(8, 15, 18, 0.82);
+  --dark-border: rgba(124, 231, 255, 0.16);
+  --dark-text: #edf7fb;
+  --dark-text-muted: #91a8b0;
+  --accent-blue: #7ce7ff;
+  --accent-cyan: #7ce7ff;
+  --accent-orange: #f2a93b;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+}
+
+.permission-screen,
+.sheet,
+.target-menu,
+.ai-route-card,
+.training-card,
+.live-card,
+.device-card,
+.data-item,
+.result-card,
+.setting-item,
+.algo-btn,
+.tap-hint,
+.device-preview {
+  border-color: var(--dark-border);
+  background: rgba(8, 15, 18, 0.82);
+  -webkit-backdrop-filter: blur(20px) saturate(1.14);
+  backdrop-filter: blur(20px) saturate(1.14);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.32);
+}
+
+.btn-primary,
+.track-btn,
+.location-btn,
+.train-btn,
+.algo-btn.active,
+.tab.active {
+  background: var(--accent-orange);
+  color: #10100f;
+  border-color: rgba(242, 169, 59, 0.7);
+}
+
+.section-header,
+.permission-header h1,
+.preview-title,
+.route-algo,
+.stat-value,
+.data-value,
+.device-name,
+.setting-name {
+  color: #edf7fb;
+}
+
+.section-icon,
+.section-header-icon,
+.perm-icon,
+.hint-icon,
+.tab-icon,
+.data-label,
+.stat-label,
+.preview-badge,
+.trained-badge {
+  color: var(--accent-orange);
 }
 
 /* AI Autopilot Indicator */
@@ -2731,5 +2788,487 @@ body {
   .ring-inner {
     animation: none;
     transition: none;
+  }
+}
+
+/* =====================================================
+   PATHMAP SYSTEM CONSISTENCY LAYER
+===================================================== */
+
+.app::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(124, 231, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 231, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app .glmap-root,
+.app .map-surface-root,
+.app .glmap-canvas,
+.app .maplibregl-map,
+.app .mapboxgl-map,
+.app .maplibregl-canvas,
+.app .mapboxgl-canvas {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  z-index: 1 !important;
+}
+
+.app .glmap-root {
+  background:
+    linear-gradient(110deg, rgba(2, 4, 5, 0.58), rgba(2, 4, 5, 0.86)),
+    url('../assets/pathmap-system-visual.svg') center / cover no-repeat,
+    #020405 !important;
+}
+
+.app .glmap-canvas {
+  background: transparent !important;
+}
+
+.app .maplibregl-canvas,
+.app .mapboxgl-canvas {
+  filter: grayscale(0.82) invert(0.86) hue-rotate(158deg) saturate(0.8) brightness(0.58)
+    contrast(1.18) !important;
+  opacity: 0.68;
+}
+
+.app .maplibregl-canvas-container,
+.app .mapboxgl-canvas-container {
+  opacity: 0.72;
+}
+
+.app .glmap-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 32% 40%, rgba(124, 231, 255, 0.12), transparent 36%),
+    linear-gradient(rgba(124, 231, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 231, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(2, 4, 5, 0.18), rgba(2, 4, 5, 0.62));
+  background-size: auto, 46px 46px, 46px 46px, auto;
+}
+
+.app > * {
+  position: relative;
+}
+
+.app > .glmap-root {
+  position: absolute !important;
+}
+
+.tracking-status,
+.target-menu-overlay,
+.ai-route-card,
+.training-overlay,
+.sheet,
+.pm-toast-stack {
+  position: absolute;
+  z-index: 20;
+}
+
+.sheet {
+  left: max(12px, env(safe-area-inset-left, 0px)) !important;
+  right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+  max-height: min(58dvh, 520px) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(124, 231, 255, 0.18) !important;
+  border-radius: 8px !important;
+}
+
+.sheet.collapsed {
+  max-height: 56px !important;
+}
+
+.sheet-toggle {
+  top: -18px !important;
+}
+
+.handle {
+  flex: 0 0 auto;
+}
+
+.tabs {
+  flex: 0 0 auto;
+}
+
+.content {
+  min-height: 0;
+  padding: 12px 14px 24px !important;
+  background: transparent !important;
+}
+
+.content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.permission-screen,
+.sheet,
+.sheet-toggle,
+.target-menu,
+.modal-content,
+.ai-route-card,
+.training-card,
+.device-card,
+.live-card,
+.data-item,
+.result-card,
+.setting-item,
+.settings-command-card,
+.algo-btn,
+.satellite-grid,
+.sat-item,
+.sat-status,
+.tap-hint,
+.device-preview,
+.target-name-input,
+.type-btn,
+.target-type-btn,
+.form-group input[type='text'],
+.form-group input[type='email'],
+.form-group input[type='password'],
+.form-group input[type='number'] {
+  border-color: rgba(124, 231, 255, 0.16) !important;
+  background: rgba(7, 13, 16, 0.84) !important;
+  color: #edf7fb;
+  -webkit-backdrop-filter: blur(18px) saturate(1.14);
+  backdrop-filter: blur(18px) saturate(1.14);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.32);
+}
+
+.sheet,
+.modal-content,
+.target-menu {
+  border-top: 1px solid rgba(124, 231, 255, 0.2);
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.device-card.selected,
+.algo-btn.active,
+.type-btn.active,
+.target-type-btn.active,
+.permission-item.granted {
+  border-color: rgba(242, 169, 59, 0.72) !important;
+  background: rgba(242, 169, 59, 0.13) !important;
+}
+
+.btn-primary,
+.btn-primary.full,
+.track-btn,
+.location-btn,
+.train-btn,
+.settings-command-button,
+.auth-buttons .btn-primary {
+  border: 1px solid rgba(242, 169, 59, 0.72) !important;
+  background: #f2a93b !important;
+  color: #10100f !important;
+  box-shadow: 0 16px 36px rgba(242, 169, 59, 0.22) !important;
+}
+
+.btn-secondary,
+.auth-buttons .btn-secondary,
+.add-btn,
+.hardware-buttons .add-btn,
+.delete-btn {
+  border: 1px solid rgba(124, 231, 255, 0.16) !important;
+  background: rgba(7, 13, 16, 0.86) !important;
+  color: #c6dce4 !important;
+}
+
+.delete-btn,
+.setting-name--danger,
+.setting-item.danger .setting-name {
+  color: #ff6b61 !important;
+}
+
+.permission-header h1,
+.section-header,
+.preview-title,
+.settings-command-title,
+.route-algo,
+.stat-value,
+.data-value,
+.device-name,
+.setting-name,
+.modal-title,
+.target-menu-header h3,
+.sat-name,
+.algo-name,
+.perm-name,
+.hint-text strong {
+  color: #edf7fb !important;
+}
+
+.permission-header p,
+.perm-desc,
+.device-meta,
+.setting-detail,
+.settings-command-detail,
+.settings-command-meta span,
+.modal-subtitle,
+.target-coords,
+.stat-label,
+.data-label,
+.algo-desc,
+.sat-status,
+.hint-text span,
+.type-btn span,
+.target-type-btn span:last-child {
+  color: #91a8b0 !important;
+}
+
+.section-icon,
+.section-header-icon,
+.perm-icon,
+.hint-icon,
+.tab-icon,
+.settings-command-icon,
+.sat-count,
+.sat-status span,
+.type-btn.active svg,
+.type-btn.active span,
+.target-type-btn.active .type-icon,
+.target-type-btn.active span:last-child,
+.setting-icon-svg--primary,
+.text-btn,
+.online-dot,
+.trained-badge,
+.preview-badge {
+  color: #f2a93b !important;
+  fill: #f2a93b !important;
+}
+
+.tabs {
+  background: rgba(3, 7, 9, 0.72);
+  border-bottom: 1px solid rgba(124, 231, 255, 0.1);
+}
+
+.tabs button {
+  color: #91a8b0;
+}
+
+.tabs button.active,
+.tabs button:hover {
+  color: #f2a93b;
+}
+
+.route-safety,
+.battery-badge,
+.target-type-badge {
+  border: 1px solid rgba(242, 169, 59, 0.24);
+  background: rgba(242, 169, 59, 0.14) !important;
+  color: #f6c875 !important;
+}
+
+.form-group input:focus,
+.target-name-input:focus {
+  border-color: #f2a93b !important;
+  box-shadow: 0 0 0 2px rgba(242, 169, 59, 0.16);
+}
+
+.training-fill {
+  background: #f2a93b;
+}
+
+/* =====================================================
+   PATHMAP MAP-FIRST FLOW FINAL LAYER
+===================================================== */
+
+.app {
+  isolation: isolate;
+}
+
+.app::before {
+  z-index: 4 !important;
+}
+
+.app::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(124, 231, 255, 0.12), transparent 34%),
+    radial-gradient(circle at 78% 18%, rgba(242, 169, 59, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(2, 4, 5, 0.24), rgba(2, 4, 5, 0.6) 72%, rgba(2, 4, 5, 0.82));
+}
+
+.app #map,
+.app .glmap-root,
+.app .map-surface-root,
+.app .glmap-canvas,
+.app .leaflet-container,
+.app .leaflet-pane,
+.app .leaflet-map-pane,
+.app .leaflet-tile-pane {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+.app .leaflet-tile {
+  filter: grayscale(1) invert(0.94) hue-rotate(145deg) saturate(0.72) brightness(0.44)
+    contrast(1.28) !important;
+  opacity: 0.58 !important;
+}
+
+.app .leaflet-control-container,
+.app .leaflet-control-zoom,
+.app .leaflet-control-attribution,
+.app .maplibregl-control-container,
+.app .mapboxgl-control-container {
+  display: none !important;
+}
+
+.tracking-status,
+.target-menu-overlay,
+.ai-route-card,
+.training-overlay,
+.sheet,
+.pm-toast-stack,
+.ui-watermark,
+.v94-version-tag,
+.v58-floating-controls-left,
+.v58-floating-controls2 {
+  z-index: 20 !important;
+}
+
+.sheet {
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 12px !important;
+  max-height: min(54dvh, 430px) !important;
+  border-radius: 8px !important;
+  background: rgba(5, 10, 12, 0.78) !important;
+}
+
+.sheet.collapsed {
+  max-height: 52px !important;
+}
+
+.sheet-toggle {
+  width: 58px !important;
+  height: 14px !important;
+  top: -15px !important;
+  border-radius: 8px 8px 0 0 !important;
+  border-color: rgba(124, 231, 255, 0.18) !important;
+  background: rgba(5, 10, 12, 0.9) !important;
+  box-shadow: none !important;
+}
+
+.sheet-toggle svg {
+  color: #f2a93b !important;
+}
+
+.handle {
+  width: 48px !important;
+  height: 3px !important;
+  margin: 7px auto 6px !important;
+  background: rgba(242, 169, 59, 0.55) !important;
+}
+
+.tabs {
+  padding: 0 6px !important;
+}
+
+.tabs button {
+  min-height: 58px !important;
+  padding: 8px 2px 9px !important;
+  font-size: 11px !important;
+}
+
+.tabs button svg,
+.tab-icon svg {
+  width: 19px !important;
+  height: 19px !important;
+}
+
+.content {
+  padding: 9px 12px 14px !important;
+}
+
+.section {
+  margin-bottom: 12px !important;
+}
+
+.tap-hint {
+  gap: 12px !important;
+  padding: 14px 16px !important;
+  border-radius: 8px !important;
+}
+
+.hint-icon {
+  font-size: 28px !important;
+}
+
+.hint-text strong {
+  font-size: clamp(17px, 5.4vw, 21px) !important;
+  line-height: 1.12 !important;
+}
+
+.hint-text span {
+  font-size: clamp(14px, 4.4vw, 17px) !important;
+  line-height: 1.32 !important;
+}
+
+.location-btn,
+.btn-primary.full {
+  min-height: 58px !important;
+  border-radius: 8px !important;
+  font-size: clamp(18px, 5.8vw, 24px) !important;
+}
+
+.device-card {
+  padding: 14px 14px !important;
+  border-radius: 8px !important;
+}
+
+.device-icon {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 8px !important;
+}
+
+.device-name {
+  font-size: clamp(19px, 6vw, 27px) !important;
+}
+
+@media (min-width: 780px) {
+  .sheet {
+    left: auto !important;
+    right: 18px !important;
+    bottom: 18px !important;
+    width: min(420px, 38vw) !important;
+    max-height: calc(100dvh - 36px) !important;
+  }
+}
+
+@media (max-height: 620px) {
+  .sheet {
+    max-height: min(56dvh, 340px) !important;
+  }
+
+  .tap-hint {
+    padding: 14px !important;
+  }
+
+  .location-btn,
+  .btn-primary.full {
+    min-height: 56px !important;
   }
 }
