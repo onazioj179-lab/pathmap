@@ -4,7 +4,7 @@
   justify-content: center;
   gap: 8px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--sys-radius-sm);
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
@@ -43,34 +43,34 @@
 }
 
 .pm-btn--primary {
-  background: var(--color-accent, #f2a93b);
-  color: #10100f;
-  box-shadow: 0 14px 34px rgba(242, 169, 59, 0.2);
+  background: var(--sys-action);
+  color: #1a1407;
+  box-shadow: 0 10px 24px -10px rgba(245, 177, 74, 0.55);
 }
 
 .pm-btn--primary:hover:not(:disabled) {
-  background: #ffc35d;
+  background: var(--sys-action-hover);
 }
 
 .pm-btn--secondary {
-  background: rgba(7, 13, 16, 0.86);
-  color: var(--color-text, #edf7fb);
-  border-color: var(--color-border, rgba(124, 231, 255, 0.16));
+  background: var(--sys-surface);
+  color: var(--sys-text);
+  border-color: var(--sys-border);
 }
 
 .pm-btn--secondary:hover:not(:disabled) {
-  background: rgba(13, 28, 34, 0.94);
+  background: var(--sys-surface-2);
 }
 
 .pm-btn--ghost {
   background: transparent;
-  color: var(--color-text-2, #c6dce4);
-  border-color: var(--color-border, rgba(124, 231, 255, 0.16));
+  color: var(--sys-text-dim);
+  border-color: var(--sys-border);
 }
 
 .pm-btn--ghost:hover:not(:disabled) {
-  color: #ffffff;
-  border-color: rgba(242, 169, 59, 0.42);
+  color: var(--sys-text);
+  border-color: var(--sys-accent);
 }
 
 .pm-btn__spinner {

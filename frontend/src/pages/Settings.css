@@ -1066,3 +1066,158 @@
     font-size: clamp(11px, 3.35vw, 13px);
   }
 }
+
+/* =====================================================
+   PATHMAP — System Skin (final unified, uses :root --sys-* tokens)
+   Brings Settings page in line with Home: rounded glass surfaces,
+   cyan accent, amber action, compact and quiet.
+===================================================== */
+
+.settings-page {
+  background: var(--sys-bg);
+  color: var(--sys-text);
+}
+
+.settings-sidebar {
+  background: linear-gradient(180deg, rgba(11, 14, 18, 0.96), rgba(11, 14, 18, 0.92));
+  border-right: 1px solid var(--sys-border);
+}
+
+.settings-brand-mark {
+  background: linear-gradient(135deg, var(--sys-accent), #2aa3d6);
+  box-shadow: 0 8px 22px rgba(93, 210, 255, 0.22);
+  border-radius: var(--sys-radius-sm);
+  color: #061018;
+}
+
+.settings-brand-name,
+.settings-sidebar-user-name,
+.settings-heading h1,
+.settings-stat strong,
+.settings-section-heading,
+.settings-row-title,
+.settings-plan-name,
+.settings-plan-price {
+  color: var(--sys-text);
+}
+
+.settings-brand-status,
+.settings-sidebar-user-role,
+.settings-sidebar-nav a,
+.settings-sidebar-footer,
+.settings-heading p,
+.settings-row-detail,
+.settings-stat span,
+.settings-plan-description,
+.settings-plan-cadence,
+.settings-plan-feature {
+  color: var(--sys-text-dim);
+}
+
+.settings-sidebar-user,
+.settings-back,
+.settings-stat,
+.settings-panel,
+.settings-license-callout,
+.settings-plan-card {
+  background: var(--sys-surface);
+  border: 1px solid var(--sys-border);
+  border-radius: var(--sys-radius);
+  box-shadow: var(--sys-shadow);
+}
+
+.settings-sidebar-nav a:hover,
+.settings-sidebar-nav a:focus-visible {
+  background: var(--sys-surface);
+  color: var(--sys-text);
+  border-radius: var(--sys-radius-sm);
+}
+
+.settings-row {
+  border-bottom: 1px solid var(--sys-border);
+}
+
+.settings-row-icon,
+.settings-control {
+  background: var(--sys-surface-2);
+  border: 1px solid var(--sys-border);
+  border-radius: var(--sys-radius-sm);
+  color: var(--sys-text);
+}
+
+.settings-segment {
+  background: transparent;
+  color: var(--sys-text-dim);
+  border-radius: var(--sys-radius-sm);
+}
+
+.settings-segment.active {
+  background: var(--sys-accent-soft);
+  color: var(--sys-accent);
+}
+
+.settings-switch {
+  background: var(--sys-surface-2);
+  border: 1px solid var(--sys-border);
+  border-radius: var(--sys-radius-pill);
+}
+
+.settings-switch.on {
+  background: var(--sys-accent-soft);
+  border-color: var(--sys-accent);
+}
+
+.settings-switch.on span {
+  background: var(--sys-accent);
+}
+
+.settings-save {
+  background: var(--sys-action);
+  color: #1a1407;
+  border-radius: var(--sys-radius-sm);
+  box-shadow: 0 10px 24px -10px rgba(245, 177, 74, 0.55);
+}
+
+.settings-save:hover:not(:disabled) {
+  background: var(--sys-action-hover);
+}
+
+.settings-back,
+.settings-reset {
+  color: var(--sys-text);
+  border-radius: var(--sys-radius-sm);
+}
+
+.settings-back:hover,
+.settings-back:focus-visible,
+.settings-reset:hover,
+.settings-reset:focus-visible {
+  background: var(--sys-surface-2);
+  color: var(--sys-text);
+}
+
+.settings-kicker,
+.settings-stat svg,
+.settings-section-heading svg,
+.settings-license-callout svg {
+  color: var(--sys-accent);
+}
+
+.settings-plan-card.active {
+  border-color: var(--sys-accent);
+  box-shadow: 0 12px 32px -12px rgba(93, 210, 255, 0.32);
+}
+
+.settings-plan-card.active .settings-plan-badge {
+  background: var(--sys-accent);
+  color: #061018;
+  border-radius: var(--sys-radius-pill);
+}
+
+.settings-plan-feature svg {
+  color: var(--sys-success);
+}
+
+.settings-saved {
+  color: var(--sys-success);
+}

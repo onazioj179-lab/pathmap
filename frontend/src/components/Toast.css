@@ -15,11 +15,11 @@
   align-items: start;
   gap: 12px;
   padding: 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(124, 231, 255, 0.16);
-  background: rgba(7, 13, 16, 0.96);
-  color: #edf7fb;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  border-radius: var(--sys-radius);
+  border: 1px solid var(--sys-border);
+  background: var(--sys-surface);
+  color: var(--sys-text);
+  box-shadow: var(--sys-shadow);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   pointer-events: auto;
@@ -41,16 +41,16 @@
   width: 10px;
   height: 10px;
   margin-top: 5px;
-  border-radius: 999px;
-  background: #f2a93b;
+  border-radius: var(--sys-radius-pill);
+  background: var(--sys-action);
 }
 
 .pm-toast--success .pm-toast__dot {
-  background: #34c759;
+  background: var(--sys-success);
 }
 
 .pm-toast--error .pm-toast__dot {
-  background: #ff3b30;
+  background: var(--sys-danger);
 }
 
 .pm-toast__title {
@@ -61,7 +61,7 @@
 
 .pm-toast__message {
   margin: 0;
-  color: #91a8b0;
+  color: var(--sys-text-dim);
   font-size: 13px;
   line-height: 1.45;
 }

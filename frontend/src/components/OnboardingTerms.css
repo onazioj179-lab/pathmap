@@ -71,12 +71,12 @@
   display: grid;
   gap: 18px;
   padding: 30px;
-  border: 1px solid rgba(124, 231, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(8, 12, 15, 0.86);
+  border: 1px solid var(--sys-border-strong);
+  border-radius: var(--sys-radius);
+  background: var(--sys-surface);
   -webkit-backdrop-filter: blur(30px) saturate(1.16);
   backdrop-filter: blur(30px) saturate(1.16);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.52);
+  box-shadow: var(--sys-shadow-lg);
 }
 
 .onboarding-terms__panel h1 {
@@ -146,13 +146,13 @@
 }
 
 .onboarding-terms .pm-btn--primary {
-  background: #f2a93b;
-  color: #10100f;
-  box-shadow: 0 18px 38px rgba(242, 169, 59, 0.24);
+  background: var(--sys-action);
+  color: #1a1407;
+  box-shadow: 0 14px 34px -10px rgba(245, 177, 74, 0.45);
 }
 
 .onboarding-terms .pm-btn--primary:hover:not(:disabled) {
-  background: #ffc35d;
+  background: var(--sys-action-hover);
 }
 
 @media (max-width: 900px) {

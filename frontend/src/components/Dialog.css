@@ -14,11 +14,13 @@
   width: min(480px, 100%);
   max-height: min(760px, calc(100vh - 36px));
   overflow: auto;
-  border-radius: 8px;
-  border: 1px solid rgba(124, 231, 255, 0.16);
-  background: rgba(7, 13, 16, 0.96);
-  color: #edf7fb;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.46);
+  border-radius: var(--sys-radius);
+  border: 1px solid var(--sys-border-strong);
+  background: var(--sys-surface);
+  color: var(--sys-text);
+  box-shadow: var(--sys-shadow-lg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  backdrop-filter: blur(20px) saturate(1.1);
 }
 
 .pm-dialog__header {

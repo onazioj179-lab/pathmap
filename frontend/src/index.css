@@ -61,6 +61,29 @@
   --avatar-bg: var(--color-surface-3);
   --avatar-border: var(--color-border);
   --avatar-fg: var(--color-text-2);
+
+  /* ─── System UI tokens (shared across Home, Settings, modals, components) ─── */
+  --sys-bg: #0b0e12;
+  --sys-surface: rgba(18, 22, 28, 0.92);
+  --sys-surface-2: rgba(24, 30, 38, 0.92);
+  --sys-surface-3: rgba(30, 38, 48, 0.88);
+  --sys-border: rgba(255, 255, 255, 0.08);
+  --sys-border-strong: rgba(255, 255, 255, 0.14);
+  --sys-text: #e6ebf2;
+  --sys-text-dim: rgba(230, 235, 242, 0.62);
+  --sys-text-faint: rgba(230, 235, 242, 0.42);
+  --sys-accent: #5dd2ff;
+  --sys-accent-soft: rgba(93, 210, 255, 0.14);
+  --sys-action: #f5b14a;
+  --sys-action-hover: #ffc25e;
+  --sys-success: #4ade80;
+  --sys-warn: #fbbf24;
+  --sys-danger: #f87171;
+  --sys-radius: 14px;
+  --sys-radius-sm: 10px;
+  --sys-radius-pill: 999px;
+  --sys-shadow: 0 12px 32px -12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --sys-shadow-lg: 0 24px 60px -16px rgba(0, 0, 0, 0.8), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 /* ─────────────────────────────────────────
