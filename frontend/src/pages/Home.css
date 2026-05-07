@@ -2792,79 +2792,19 @@ body {
 }
 
 /* =====================================================
-   PATHMAP SYSTEM CONSISTENCY LAYER
+   PATHMAP SYSTEM CONSISTENCY LAYER (non-destructive)
 ===================================================== */
 
-.app::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(rgba(124, 231, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 231, 255, 0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.app .glmap-root,
-.app .map-surface-root,
-.app .glmap-canvas,
-.app .maplibregl-map,
-.app .mapboxgl-map,
-.app .maplibregl-canvas,
-.app .mapboxgl-canvas {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100% !important;
-  z-index: 1 !important;
-}
-
 .app .glmap-root {
-  background:
-    linear-gradient(110deg, rgba(2, 4, 5, 0.58), rgba(2, 4, 5, 0.86)),
-    url('../assets/pathmap-system-visual.svg') center / cover no-repeat,
-    #020405 !important;
+  background: #020405 !important;
 }
 
 .app .glmap-canvas {
   background: transparent !important;
 }
 
-.app .maplibregl-canvas,
-.app .mapboxgl-canvas {
-  filter: grayscale(0.82) invert(0.86) hue-rotate(158deg) saturate(0.8) brightness(0.58)
-    contrast(1.18) !important;
-  opacity: 0.68;
-}
-
-.app .maplibregl-canvas-container,
-.app .mapboxgl-canvas-container {
-  opacity: 0.72;
-}
-
-.app .glmap-root::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 32% 40%, rgba(124, 231, 255, 0.12), transparent 36%),
-    linear-gradient(rgba(124, 231, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(124, 231, 255, 0.028) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(2, 4, 5, 0.18), rgba(2, 4, 5, 0.62));
-  background-size: auto, 46px 46px, 46px 46px, auto;
-}
-
 .app > * {
   position: relative;
-}
-
-.app > .glmap-root {
-  position: absolute !important;
 }
 
 .tracking-status,
@@ -3083,192 +3023,20 @@ body {
 }
 
 /* =====================================================
-   PATHMAP MAP-FIRST FLOW FINAL LAYER
+   PATHMAP HOME SKIN (light, non-destructive)
 ===================================================== */
 
-.app {
-  isolation: isolate;
-}
-
-.app::before {
-  z-index: 4 !important;
-}
-
-.app::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 28%, rgba(124, 231, 255, 0.12), transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(242, 169, 59, 0.08), transparent 28%),
-    linear-gradient(180deg, rgba(2, 4, 5, 0.24), rgba(2, 4, 5, 0.6) 72%, rgba(2, 4, 5, 0.82));
-}
-
-.app #map,
-.app .glmap-root,
-.app .map-surface-root,
-.app .glmap-canvas,
-.app .leaflet-container,
-.app .leaflet-pane,
-.app .leaflet-map-pane,
-.app .leaflet-tile-pane {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100% !important;
-}
-
 .app .leaflet-tile {
-  filter: grayscale(1) invert(0.94) hue-rotate(145deg) saturate(0.72) brightness(0.44)
-    contrast(1.28) !important;
-  opacity: 0.58 !important;
-}
-
-.app .leaflet-control-container,
-.app .leaflet-control-zoom,
-.app .leaflet-control-attribution,
-.app .maplibregl-control-container,
-.app .mapboxgl-control-container {
-  display: none !important;
-}
-
-.tracking-status,
-.target-menu-overlay,
-.ai-route-card,
-.training-overlay,
-.sheet,
-.pm-toast-stack,
-.ui-watermark,
-.v94-version-tag,
-.v58-floating-controls-left,
-.v58-floating-controls2 {
-  z-index: 20 !important;
+  filter: brightness(0.9) contrast(1.04) saturate(0.95);
 }
 
 .sheet {
-  left: 12px !important;
-  right: 12px !important;
-  bottom: 12px !important;
-  max-height: min(54dvh, 430px) !important;
-  border-radius: 8px !important;
-  background: rgba(5, 10, 12, 0.78) !important;
-}
-
-.sheet.collapsed {
-  max-height: 52px !important;
-}
-
-.sheet-toggle {
-  width: 58px !important;
-  height: 14px !important;
-  top: -15px !important;
-  border-radius: 8px 8px 0 0 !important;
-  border-color: rgba(124, 231, 255, 0.18) !important;
-  background: rgba(5, 10, 12, 0.9) !important;
-  box-shadow: none !important;
-}
-
-.sheet-toggle svg {
-  color: #f2a93b !important;
-}
-
-.handle {
-  width: 48px !important;
-  height: 3px !important;
-  margin: 7px auto 6px !important;
-  background: rgba(242, 169, 59, 0.55) !important;
+  background: rgba(7, 13, 16, 0.92) !important;
+  border-top: 1px solid rgba(124, 231, 255, 0.18);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  backdrop-filter: blur(20px) saturate(1.1);
 }
 
 .tabs {
-  padding: 0 6px !important;
-}
-
-.tabs button {
-  min-height: 58px !important;
-  padding: 8px 2px 9px !important;
-  font-size: 11px !important;
-}
-
-.tabs button svg,
-.tab-icon svg {
-  width: 19px !important;
-  height: 19px !important;
-}
-
-.content {
-  padding: 9px 12px 14px !important;
-}
-
-.section {
-  margin-bottom: 12px !important;
-}
-
-.tap-hint {
-  gap: 12px !important;
-  padding: 14px 16px !important;
-  border-radius: 8px !important;
-}
-
-.hint-icon {
-  font-size: 28px !important;
-}
-
-.hint-text strong {
-  font-size: clamp(17px, 5.4vw, 21px) !important;
-  line-height: 1.12 !important;
-}
-
-.hint-text span {
-  font-size: clamp(14px, 4.4vw, 17px) !important;
-  line-height: 1.32 !important;
-}
-
-.location-btn,
-.btn-primary.full {
-  min-height: 58px !important;
-  border-radius: 8px !important;
-  font-size: clamp(18px, 5.8vw, 24px) !important;
-}
-
-.device-card {
-  padding: 14px 14px !important;
-  border-radius: 8px !important;
-}
-
-.device-icon {
-  width: 56px !important;
-  height: 56px !important;
-  border-radius: 8px !important;
-}
-
-.device-name {
-  font-size: clamp(19px, 6vw, 27px) !important;
-}
-
-@media (min-width: 780px) {
-  .sheet {
-    left: auto !important;
-    right: 18px !important;
-    bottom: 18px !important;
-    width: min(420px, 38vw) !important;
-    max-height: calc(100dvh - 36px) !important;
-  }
-}
-
-@media (max-height: 620px) {
-  .sheet {
-    max-height: min(56dvh, 340px) !important;
-  }
-
-  .tap-hint {
-    padding: 14px !important;
-  }
-
-  .location-btn,
-  .btn-primary.full {
-    min-height: 56px !important;
-  }
+  background: rgba(3, 7, 9, 0.6);
 }
