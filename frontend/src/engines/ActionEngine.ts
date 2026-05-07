@@ -1,6 +1,8 @@
 export type NavigationAction = 'route' | 'safe-return' | 'explore' | 'track-start' | 'track-stop';
 export type ActionStatus = 'idle' | 'processing' | 'success' | 'error';
 
+import { getApiHttpBase } from '../services/apiConfig';
+
 interface ActionResult {
   success: boolean;
   message?: string;
@@ -22,7 +24,7 @@ export class ActionEngine {
   };
   private listeners: Set<(state: ActionState) => void> = new Set();
 
-  constructor(backendUrl: string = 'http://localhost:8000') {
+  constructor(backendUrl: string = getApiHttpBase()) {
     this.baseUrl = backendUrl;
   }
 

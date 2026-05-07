@@ -10,6 +10,8 @@
  * - AI-powered reconnection
  */
 
+import { getApiHttpBase, getApiWsBase } from './apiConfig';
+
 interface TunnelConfig {
   apiBase: string;
   wsBase: string;
@@ -40,8 +42,8 @@ interface TunnelMessage {
 type MessageHandler = (message: TunnelMessage) => void;
 
 const DEFAULT_CONFIG: TunnelConfig = {
-  apiBase: 'http://localhost:8000',
-  wsBase: 'ws://localhost:8000',
+  apiBase: getApiHttpBase(),
+  wsBase: getApiWsBase(),
   reconnectAttempts: 5,
   reconnectDelay: 2000,
   heartbeatInterval: 30000,

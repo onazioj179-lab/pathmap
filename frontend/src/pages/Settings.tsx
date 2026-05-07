@@ -31,6 +31,11 @@ import UserAvatar from '../components/UserAvatar';
 import { Button } from '../components/Button';
 import { ToastStack } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
+import { trackingService } from '../services/trackingService';
+import {
+  accountBillingService,
+  type PersistedSettings,
+} from '../services/accountBillingService';
 import './Settings.css';
 
 type ThemePreference = 'dark' | 'light' | 'system';
@@ -208,6 +213,25 @@ const Settings: React.FC = () => {
     applyThemePreference(settings.theme);
   }, [settings.theme]);
 
+  useEffect(() => {
+    let active = true;
+
+    (async () => {
+      const token = trackingService.getToken();
+      const hydrated = await accountBillingService.loadHydratedSettings(token);
+
+      if (!active || Object.keys(hydrated).length === 0) {
+        return;
+      }
+
+      setSettings(prev => ({ ...prev, ...hydrated }));
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const updateSetting = <K extends keyof SettingsState>(key: K, value: SettingsState[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     setSaved(false);
@@ -218,8 +242,12 @@ const Settings: React.FC = () => {
     updateSetting('language', language);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+    const token = trackingService.getToken();
+    await accountBillingService.persistSettings(token, settings as PersistedSettings);
+
     setSaved(true);
     showToast({
       kind: 'success',

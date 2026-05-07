@@ -4,9 +4,6 @@
  * Removes grey fallback layers, guarantees tile drawing, prevents blank render passes.
  */
 
-import { getTileDebugger } from './tileDebugger';
-
-const tileDebugger = getTileDebugger();
 export interface MapEngineSettings {
   loadTiles: boolean;
   useWorkerThreads: boolean;
@@ -53,9 +50,6 @@ class MapRendererFix {
   onTileError(event: TileLoadEvent) {
     const tileKey = `${event.z}/${event.x}/${event.y}`;
     const retryCount = this.tileRetryCount.get(tileKey) || 0;
-
-    // V89: Record tile error in debugger
-    tileDebugger.recordTileRequest(event.url, 0, 0, event.error || 'Tile load failed');
 
     if (retryCount < this.settings.retryAttempts) {
       this.tileRetryCount.set(tileKey, retryCount + 1);

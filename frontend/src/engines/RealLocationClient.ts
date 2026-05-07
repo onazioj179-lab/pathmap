@@ -9,6 +9,8 @@
  * - Stats panel updates
  */
 
+import { getApiHttpBase } from '../services/apiConfig';
+
 interface LocationPosition {
   latitude: number;
   longitude: number;
@@ -43,7 +45,7 @@ export class RealLocationClient {
   private callbacks: RLECallbacks;
   private apiBase: string;
   
-  constructor(apiBase: string = 'http://localhost:8000', callbacks: RLECallbacks = {}) {
+  constructor(apiBase: string = getApiHttpBase(), callbacks: RLECallbacks = {}) {
     this.apiBase = apiBase;
     this.callbacks = callbacks;
   }

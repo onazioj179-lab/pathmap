@@ -5,9 +5,10 @@
  */
 
 import { tunnelService } from './tunnelService';
+import { getApiHttpBase, getApiWsBase } from './apiConfig';
 
-const API_BASE = 'http://localhost:8000/api/v1/tracking';
-const WS_BASE = 'ws://localhost:8000/api/v1/tracking';
+const API_BASE = `${getApiHttpBase()}/api/v1/tracking`;
+const WS_BASE = `${getApiWsBase()}/api/v1/tracking`;
 
 // Types
 export interface TrackedDevice {

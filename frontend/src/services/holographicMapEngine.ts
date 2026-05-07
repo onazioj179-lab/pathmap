@@ -116,7 +116,6 @@ class HolographicMapEngine {
    */
   init(map: MapInstance, config: Partial<HolographicConfig> = {}): void {
     if (this.isInitialized) {
-      console.log('[HoloMap] Already initialized, updating config');
       this.setConfig(config);
       return;
     }
@@ -125,10 +124,6 @@ class HolographicMapEngine {
     this.config = { ...HOLO_PRESETS.CYBERPUNK, ...config };
     this.container = map.getContainer?.() || null;
     this.startTime = Date.now();
-
-    console.log('[HoloMap] ═══════════════════════════════════════');
-    console.log('[HoloMap] HOLOGRAPHIC MAP ENGINE V1.0 INITIALIZING');
-    console.log('[HoloMap] ═══════════════════════════════════════');
 
     // Create overlay container
     this.createOverlayContainer();
@@ -508,7 +503,7 @@ class HolographicMapEngine {
       </div>
       <div class="hdc-footer">
         <span id="holo-time">00:00:00</span>
-        <span class="hdc-id">HME-V1.0</span>
+        <span class="hdc-id">PathMap</span>
       </div>
     `;
     this.container.appendChild(this.deliveryCard);

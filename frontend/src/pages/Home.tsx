@@ -17,6 +17,7 @@ import { EmptyState } from '../components/EmptyState';
 import { Skeleton } from '../components/Skeleton';
 import { ToastStack } from '../components/Toast';
 import { useToast } from '../hooks/useToast';
+import { getApiHttpBase } from '../services/apiConfig';
 import '../styles/holographic.css';
 import './Home.css';
 
@@ -103,7 +104,7 @@ const targetTypeBadgeClass: Record<MapTarget['type'], string> = {
   custom: 'target-type-badge--custom',
 };
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = getApiHttpBase();
 
 // SVG Icons for target types
 const TargetTypeIcons: Record<string, JSX.Element> = {
@@ -239,7 +240,7 @@ export default function Home() {
       required: false,
     },
   ]);
-  const [showPermissions, setShowPermissions] = useState(true);
+  const [showPermissions, setShowPermissions] = useState(false);
   const [deviceData, setDeviceData] = useState<DeviceData | null>(null);
   const [devices, setDevices] = useState<TrackedDevice[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<TrackedDevice | null>(null);
@@ -2014,7 +2015,9 @@ export default function Home() {
                   <div className="live-card system-status-card">
                     <div>
                       <strong>Your location is ready</strong>
-                      <span>Accuracy: within about {Math.round(deviceData.location.accuracy)} m.</span>
+                      <span>
+                        Accuracy: within about {Math.round(deviceData.location.accuracy)} m.
+                      </span>
                     </div>
                     <span className="system-chip">Private</span>
                   </div>
@@ -2438,8 +2441,8 @@ export default function Home() {
                 </div>
               )}
 
-              {/* V99: Universal Device Status */}
-              <div className="section">
+              {/* Legacy device diagnostics removed from UI */}
+              <div className="section" hidden>
                 <div className="section-header">
                   <svg
                     viewBox="0 0 24 24"
@@ -2462,8 +2465,7 @@ export default function Home() {
                     <div className="setting-info">
                       <div className="setting-name">{universalDevice?.name || 'Detecting...'}</div>
                       <div className="setting-detail">
-                        {universalDevice?.os} {universalDevice?.osVersion} |{' '}
-                        {universalDevice?.browser}
+                        {universalDevice?.os} | {universalDevice?.browser}
                       </div>
                     </div>
                     <span className="status-badge granted">{universalDevice?.type || '...'}</span>
@@ -2488,8 +2490,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* V99: Satellite Status */}
-              <div className="section">
+              <div className="section" hidden>
                 <div className="section-header">
                   <svg
                     viewBox="0 0 24 24"
@@ -2562,8 +2563,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* V99: Connected Hardware */}
-              <div className="section">
+              <div className="section" hidden>
                 <div className="section-header">
                   <svg
                     viewBox="0 0 24 24"
@@ -2950,7 +2950,3 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
     </div>
   );
 }
-
-
-
-

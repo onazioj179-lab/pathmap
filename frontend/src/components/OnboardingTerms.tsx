@@ -66,8 +66,8 @@ export default function OnboardingTerms({ children }: OnboardingTermsProps) {
             <div>
               <h2>No removal or misuse</h2>
               <p>
-                Do not remove ownership notices, watermarks, anti-tamper checks, license notices,
-                or PathMap attribution.
+                Do not remove ownership notices, watermarks, anti-tamper checks, license notices, or
+                PathMap attribution.
               </p>
             </div>
           </article>

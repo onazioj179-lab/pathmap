@@ -2803,10 +2803,6 @@ body {
   background: transparent !important;
 }
 
-.app > * {
-  position: relative;
-}
-
 .tracking-status,
 .target-menu-overlay,
 .ai-route-card,
@@ -3041,7 +3037,6 @@ body {
   background: rgba(3, 7, 9, 0.6);
 }
 
-
 /* =====================================================
    PATHMAP — System UI (rounded, compact, professional)
 ===================================================== */
@@ -3117,9 +3112,15 @@ body {
   width: 18px;
   height: 18px;
   border-radius: 6px;
-  background:
-    conic-gradient(from 220deg at 50% 50%, var(--sys-action), var(--sys-accent), var(--sys-action));
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--sys-border-strong);
+  background: conic-gradient(
+    from 220deg at 50% 50%,
+    var(--sys-action),
+    var(--sys-accent),
+    var(--sys-action)
+  );
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--sys-border-strong);
 }
 
 .app.holo-mode .sys-stat {
@@ -3144,8 +3145,8 @@ body {
 
 .app.holo-mode .sys-stat[data-state='live'] {
   color: var(--sys-text);
-  background: rgba(74, 222, 128, 0.10);
-  border-color: rgba(74, 222, 128, 0.30);
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
 }
 .app.holo-mode .sys-stat[data-state='live'] .sys-stat-dot {
   background: var(--sys-success);
@@ -3154,8 +3155,13 @@ body {
 }
 
 @keyframes sys-pulse {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 
 .app.holo-mode .sys-metric {
@@ -3182,16 +3188,32 @@ body {
 }
 
 @media (max-width: 720px) {
-  .app.holo-mode .sys-bar { height: 40px; padding: 0 10px; font-size: 12px; }
+  .app.holo-mode .sys-bar {
+    height: 40px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
   .app.holo-mode .sys-bar-left,
-  .app.holo-mode .sys-bar-right { gap: 6px; }
-  .app.holo-mode .sys-metric { padding: 3px 8px; font-size: 11.5px; }
-  .app.holo-mode .sys-metric em { font-size: 9.5px; }
-  .app.holo-mode .sys-stat { padding: 3px 8px; font-size: 11px; }
+  .app.holo-mode .sys-bar-right {
+    gap: 6px;
+  }
+  .app.holo-mode .sys-metric {
+    padding: 3px 8px;
+    font-size: 11.5px;
+  }
+  .app.holo-mode .sys-metric em {
+    font-size: 9.5px;
+  }
+  .app.holo-mode .sys-stat {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 520px) {
-  .app.holo-mode .sys-metric:nth-of-type(3) { display: none; }
+  .app.holo-mode .sys-metric:nth-of-type(3) {
+    display: none;
+  }
 }
 
 /* === Map controls (rounded, refined) === */
@@ -3210,7 +3232,9 @@ body {
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
 }
-.app.holo-mode .leaflet-control-zoom a:last-child { border-bottom: none !important; }
+.app.holo-mode .leaflet-control-zoom a:last-child {
+  border-bottom: none !important;
+}
 .app.holo-mode .leaflet-control-zoom a:hover {
   background: var(--sys-accent-soft) !important;
   color: var(--sys-accent) !important;
@@ -3226,7 +3250,9 @@ body {
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }
-.app.holo-mode .leaflet-control-attribution a { color: var(--sys-accent) !important; }
+.app.holo-mode .leaflet-control-attribution a {
+  color: var(--sys-accent) !important;
+}
 
 /* === Bottom sheet (compact, rounded console) === */
 .app.holo-mode .sheet {
@@ -3283,9 +3309,13 @@ body {
   font-weight: 500;
   letter-spacing: 0.005em;
   text-transform: none;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
-.app.holo-mode .tabs button:hover { color: var(--sys-text) !important; }
+.app.holo-mode .tabs button:hover {
+  color: var(--sys-text) !important;
+}
 .app.holo-mode .tabs button.active {
   color: var(--sys-accent) !important;
   border-bottom-color: var(--sys-accent) !important;
@@ -3303,7 +3333,9 @@ body {
   font-size: 13px;
 }
 
-.app.holo-mode .section { margin-bottom: 14px !important; }
+.app.holo-mode .section {
+  margin-bottom: 14px !important;
+}
 
 .app.holo-mode .section h3,
 .app.holo-mode .section-title {
@@ -3364,7 +3396,10 @@ body {
   letter-spacing: 0.005em;
   text-transform: none;
   box-shadow: 0 4px 14px -4px rgba(245, 177, 74, 0.55) !important;
-  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
   clip-path: none !important;
 }
 .app.holo-mode .location-btn:hover,
@@ -3373,7 +3408,9 @@ body {
   box-shadow: 0 6px 18px -4px rgba(245, 177, 74, 0.7) !important;
 }
 .app.holo-mode .location-btn:active,
-.app.holo-mode .btn-primary.full:active { transform: translateY(1px); }
+.app.holo-mode .btn-primary.full:active {
+  transform: translateY(1px);
+}
 
 /* Device card */
 .app.holo-mode .device-card {
@@ -3383,7 +3420,9 @@ body {
   padding: 12px !important;
   gap: 12px;
 }
-.app.holo-mode .device-card::before { display: none !important; }
+.app.holo-mode .device-card::before {
+  display: none !important;
+}
 .app.holo-mode .device-icon {
   width: 40px !important;
   height: 40px !important;
@@ -3410,9 +3449,15 @@ body {
 }
 
 /* Reserve top space so map UI / sheet account for the system bar */
-.app.holo-mode #map { top: 68px !important; height: calc(100vh - 68px) !important; }
+.app.holo-mode #map {
+  top: 68px !important;
+  height: calc(100vh - 68px) !important;
+}
 @media (max-width: 720px) {
-  .app.holo-mode #map { top: 60px !important; height: calc(100vh - 60px) !important; }
+  .app.holo-mode #map {
+    top: 60px !important;
+    height: calc(100vh - 60px) !important;
+  }
 }
 
 /* Refinements */
@@ -3429,7 +3474,9 @@ body {
   align-items: center;
   justify-content: center;
 }
-.app.holo-mode .sheet:not(.collapsed) .sheet-toggle { display: none !important; }
+.app.holo-mode .sheet:not(.collapsed) .sheet-toggle {
+  display: none !important;
+}
 
 /* Sheet toggle — minimal pill */
 .app.holo-mode .sheet-toggle {
@@ -3441,7 +3488,9 @@ body {
   box-shadow: none !important;
   top: -10px !important;
 }
-.app.holo-mode .sheet-toggle svg { display: none !important; }
+.app.holo-mode .sheet-toggle svg {
+  display: none !important;
+}
 
 /* =====================================================
    PATHMAP — Final System Tightening
@@ -3450,7 +3499,7 @@ body {
 .app.holo-mode {
   --sys-surface: rgba(16, 20, 26, 0.78);
   --sys-surface-2: rgba(20, 25, 32, 0.64);
-  --sys-border: rgba(255, 255, 255, 0.10);
+  --sys-border: rgba(255, 255, 255, 0.1);
   --sys-border-strong: rgba(255, 255, 255, 0.16);
   --sys-radius: 16px;
   --sys-radius-sm: 12px;
@@ -3641,14 +3690,24 @@ body {
 }
 
 @media (max-width: 720px) {
-  .app.holo-mode .sys-bar-right .sys-metric:nth-child(2) { display: none; }
-  .app.holo-mode .sheet { max-height: min(48dvh, 345px) !important; }
+  .app.holo-mode .sys-bar-right .sys-metric:nth-child(2) {
+    display: none;
+  }
+  .app.holo-mode .sheet {
+    max-height: min(48dvh, 345px) !important;
+  }
 }
 
 @media (max-width: 520px) {
-  .app.holo-mode .sys-brand { font-size: 13px; }
-  .app.holo-mode .sys-stat { display: none; }
-  .app.holo-mode .system-overview-grid { grid-template-columns: 1fr; }
+  .app.holo-mode .sys-brand {
+    font-size: 13px;
+  }
+  .app.holo-mode .sys-stat {
+    display: none;
+  }
+  .app.holo-mode .system-overview-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* =====================================================
@@ -3778,8 +3837,13 @@ body {
 }
 
 @media (max-width: 720px) {
-  .app.holo-mode #map { top: 52px !important; height: calc(100vh - 52px) !important; }
-  .app.holo-mode .sheet { max-height: min(37dvh, 285px) !important; }
+  .app.holo-mode #map {
+    top: 52px !important;
+    height: calc(100vh - 52px) !important;
+  }
+  .app.holo-mode .sheet {
+    max-height: min(37dvh, 285px) !important;
+  }
 }
 
 /* =====================================================
@@ -3866,7 +3930,9 @@ body {
 }
 
 @media (max-width: 720px) {
-  .app.holo-mode .sheet { max-height: min(33dvh, 250px) !important; }
+  .app.holo-mode .sheet {
+    max-height: min(33dvh, 250px) !important;
+  }
 }
 
 /* Plain English labels */
@@ -3880,4 +3946,108 @@ body {
 .app.holo-mode .sys-metric em,
 .app.holo-mode .system-overview-label {
   font-size: 10px !important;
+}
+
+/* Keep live controls inside every viewport. */
+.app.holo-mode .tracking-status {
+  position: fixed !important;
+  top: max(62px, calc(env(safe-area-inset-top, 0px) + 62px)) !important;
+  left: max(12px, calc(env(safe-area-inset-left, 0px) + 12px)) !important;
+  right: auto !important;
+  width: min(330px, calc(100dvw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) !important;
+  height: 44px !important;
+  padding: 0 8px 0 10px !important;
+  gap: 8px !important;
+  z-index: 36 !important;
+  border: 1px solid var(--sys-border-strong) !important;
+  border-radius: 12px !important;
+  background: rgba(16, 20, 26, 0.9) !important;
+  box-shadow: var(--sys-shadow) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
+}
+
+.app.holo-mode .tracking-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.app.holo-mode .tracking-label,
+.app.holo-mode .tracking-target {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app.holo-mode .tracking-target {
+  display: block;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.app.holo-mode .tracking-label {
+  display: block;
+  font-size: 9.5px;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--sys-text-dim);
+}
+
+.app.holo-mode .tracking-pulse {
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  background: var(--sys-success);
+}
+
+.app.holo-mode .stop-btn {
+  flex: 0 0 auto;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  color: var(--sys-text) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid var(--sys-border) !important;
+}
+
+.app.holo-mode .fab {
+  position: fixed !important;
+  right: max(14px, calc(env(safe-area-inset-right, 0px) + 14px)) !important;
+  bottom: calc(min(33dvh, 250px) + max(24px, calc(env(safe-area-inset-bottom, 0px) + 24px))) !important;
+  left: auto !important;
+  top: auto !important;
+  width: 48px !important;
+  height: 48px !important;
+  z-index: 35 !important;
+  background: var(--sys-action) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36) !important;
+}
+
+.app.holo-mode .fab svg {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+@media (max-width: 380px) {
+  .app.holo-mode .tracking-status {
+    width: calc(100dvw - 20px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)) !important;
+    left: max(10px, calc(env(safe-area-inset-left, 0px) + 10px)) !important;
+    height: 42px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app.holo-mode .tracking-status {
+    top: max(76px, calc(env(safe-area-inset-top, 0px) + 76px)) !important;
+    width: min(380px, calc(100dvw - 520px)) !important;
+  }
+
+  .app.holo-mode .fab {
+    right: clamp(440px, 32vw, 560px) !important;
+    bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 24px)) !important;
+  }
 }

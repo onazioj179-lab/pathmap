@@ -9,9 +9,6 @@ import { antiTamperEngine } from './services/antiTamperEngine';
 import { identityCore } from './services/identityCore';
 import { uiScaleEngine } from './services/uiScaleEngine';
 import { fullDarkModeEngine } from './services/fullDarkModeEngine';
-import './services/mapEngine';
-import './services/searchEngine';
-import './services/ultraCleanMode';
 import { initWebVitals } from './services/webVitals';
 
 // V98: Wrap App with ErrorBoundary for graceful error handling
@@ -65,3 +62,8 @@ console.log('[PATHMAP] ULTRA CLEAN MODE');
 console.log('[PATHMAP] Map + Header + Bottom Nav only');
 console.log('[PATHMAP] All clutter removed');
 // Map, search, and ultra-clean mode auto-initialize on import
+if (typeof window !== 'undefined' && window.location.pathname === '/') {
+  void import('./services/mapEngine');
+  void import('./services/searchEngine');
+  void import('./services/ultraCleanMode');
+}

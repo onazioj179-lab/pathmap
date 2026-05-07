@@ -37,8 +37,7 @@ class MapEngineClass implements MapEngine {
 
     this.container = document.getElementById('map');
     if (!this.container) {
-      console.warn('[MapEngine] Map container not found, retrying...');
-      setTimeout(() => this.init(), 100);
+      console.warn('[MapEngine] Map container not found, skipping init on this route');
       return;
     }
 
@@ -63,7 +62,7 @@ class MapEngineClass implements MapEngine {
     // Create clean Leaflet map
     this.map = L.map('map', {
       zoomControl: false,
-      attributionControl: false
+      attributionControl: false,
     }).setView([0, 0], 2);
 
     // Add tile layer (English version)
@@ -72,7 +71,7 @@ class MapEngineClass implements MapEngine {
       minZoom: 1,
       crossOrigin: true,
       // Force English labels
-      className: 'map-tiles-en'
+      className: 'map-tiles-en',
     }).addTo(this.map);
 
     this.ready = true;
@@ -107,7 +106,7 @@ class MapEngineClass implements MapEngine {
    */
   panTo(lat: number, lng: number, zoom?: number): void {
     if (!this.map) return;
-    
+
     if (zoom !== undefined) {
       this.map.setView([lat, lng], zoom);
     } else {
@@ -141,21 +140,11 @@ if (typeof window !== 'undefined') {
   window.alert = () => {
     // No-op: alerts disabled
   };
-  
+
   window.confirm = () => {
     // No-op: confirms disabled
     return false;
   };
-}
-
-// Initialize when DOM is ready
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => mapEngine.init());
-  } else {
-    // DOM already ready
-    setTimeout(() => mapEngine.init(), 0);
-  }
 }
 
 export default mapEngine;

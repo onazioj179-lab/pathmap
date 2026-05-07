@@ -36,7 +36,7 @@ class UltraCleanMode {
       '.center-overlay',
       '.mid-panel',
       '.floating-buttons',
-      '.draw-controls'
+      '.draw-controls',
     ];
 
     selectors.forEach(sel => {
@@ -51,7 +51,7 @@ class UltraCleanMode {
    */
   clearLegacyPanels(): void {
     const legacySelectors = ['.panel', '.control-box', '.card'];
-    
+
     legacySelectors.forEach(sel => {
       document.querySelectorAll(sel).forEach(el => {
         // Only remove if not essential (bottom nav, header)
@@ -105,7 +105,7 @@ class UltraCleanMode {
       speedControl: false,
       debugMode: false,
       compareMode: false,
-      visualization: false
+      visualization: false,
     };
   }
 
@@ -139,8 +139,5 @@ class UltraCleanMode {
 
 // Export singleton
 export const ultraCleanMode = new UltraCleanMode();
-
-// Auto-initialize
-ultraCleanMode.init();
 
 export default ultraCleanMode;

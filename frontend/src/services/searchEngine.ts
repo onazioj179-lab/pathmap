@@ -42,8 +42,7 @@ class SearchEngineClass implements SearchEngine {
 
     this.input = document.getElementById('searchInput') as HTMLInputElement;
     if (!this.input) {
-      console.warn('[SearchEngine] Search input not found, retrying...');
-      setTimeout(() => this.init(), 500);
+      console.warn('[SearchEngine] Search input not found, skipping init on this route');
       return;
     }
 
@@ -68,7 +67,7 @@ class SearchEngineClass implements SearchEngine {
 
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
-      
+
       const response = await fetch(url);
       const data: SearchResult[] = await response.json();
 
@@ -90,7 +89,6 @@ class SearchEngineClass implements SearchEngine {
 
       // Place marker
       this.placeMarker(lat, lon, result.display_name);
-
     } catch (error) {
       console.error('[SearchEngine] Search failed:', error);
     }
@@ -138,15 +136,5 @@ class SearchEngineClass implements SearchEngine {
 
 // Export singleton instance
 export const searchEngine = new SearchEngineClass();
-
-// Initialize when DOM is ready
-if (typeof document !== 'undefined') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => searchEngine.init());
-  } else {
-    // DOM already ready - wait a bit for map to initialize first
-    setTimeout(() => searchEngine.init(), 100);
-  }
-}
 
 export default searchEngine;

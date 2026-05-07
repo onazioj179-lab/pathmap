@@ -274,15 +274,6 @@ export class MapModeController {
           lastUpdate: now
         };
 
-        // Check against targets
-        const targetFps = this.state.currentMode === 'globe' 
-          ? this.config.performanceTargets.fps_globe 
-          : this.config.performanceTargets.fps_2d;
-
-        if (fps < targetFps * 0.8) {
-          console.warn(`[V92:MODE] FPS below target: ${fps} < ${targetFps}`);
-        }
-
         this.frameCount = 0;
         this.lastFpsCheck = now;
       }
@@ -291,7 +282,6 @@ export class MapModeController {
     };
 
     this.fpsMonitorId = requestAnimationFrame(monitor);
-    console.log('[V92:MODE] Performance monitoring started');
   }
 
   /**
@@ -301,7 +291,6 @@ export class MapModeController {
     if (this.fpsMonitorId !== null) {
       cancelAnimationFrame(this.fpsMonitorId);
       this.fpsMonitorId = null;
-      console.log('[V92:MODE] Performance monitoring stopped');
     }
   }
 

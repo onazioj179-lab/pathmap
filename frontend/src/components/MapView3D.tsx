@@ -213,23 +213,24 @@ function MapView3D(props: MapView3DProps) {
 
       const initialCenter: [number, number] = startPoint || [40.7128, -74.006];
 
-      // Robust style selection with fallbacks for blue-screen issues
-      async function pickStyleUrl(): Promise<string> {
+      // Always-available map style fallback that does not depend on backend proxies.
+      function pickStyle(): any {
         if (isMapbox) return 'mapbox://styles/mapbox/dark-v11';
-        const candidates = [
-          'https://demotiles.maplibre.org/style.json',
-          'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-        ];
-        for (const url of candidates) {
-          try {
-            const res = await fetch(url, { method: 'HEAD' });
-            if (res.ok) return url;
-          } catch {}
-        }
-        return candidates[candidates.length - 1];
+        return {
+          version: 8,
+          sources: {
+            osm: {
+              type: 'raster',
+              tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+              tileSize: 256,
+              attribution: '© OpenStreetMap contributors',
+            },
+          },
+          layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+        };
       }
 
-      const styleUrl = await pickStyleUrl();
+      const styleUrl = pickStyle();
 
       const options: any = {
         container: containerRef.current,
@@ -251,27 +252,6 @@ function MapView3D(props: MapView3DProps) {
         maxTileCacheSize: 100,
         performanceMetricsCollection: false,
       };
-
-      // V93/V94: EXTREME TILE FORCE-LOAD - Map boot with guaranteed tile availability
-      console.log('[V94:EXTREME] Starting extreme tile force-load initialization...');
-
-      // Import extreme force-loader (dynamic to avoid circular deps)
-      const { getExtremeTileForceLoader } = await import('../services/extremeTileForceLoader');
-      const extremeLoader = getExtremeTileForceLoader();
-
-      // Test tile loading capability (non-blocking, always succeeds due to fallback)
-      console.log('[V94:EXTREME] Testing tile load capability...');
-      const testSuccess = await extremeLoader.testTileLoad(2, 2, 2);
-
-      if (testSuccess) {
-        console.log('[V94:EXTREME] [OK] Tile validation PASSED - primary tiles available');
-      } else {
-        console.warn('[V94:EXTREME] [WARN] Primary tiles unavailable, using failover chain');
-      }
-
-      // V93: NO ERROR OVERLAY - Always proceed with map creation
-      // The extreme loader guarantees SOMETHING will load (even if fallback)
-      console.log('[V93] [OK] Map boot sequence ready - proceeding with map creation');
 
       const map = new MapLib.Map(options);
       mapRef.current = map;
@@ -589,7 +569,6 @@ function MapView3D(props: MapView3DProps) {
           onMapClick(lat, lng);
         });
 
-        // V97: Initialize Holographic Map Engine for futuristic cyberpunk visualization
         try {
           holographicMapEngine.init(map, {
             enableGrid: true,
@@ -597,21 +576,17 @@ function MapView3D(props: MapView3DProps) {
             enableVignette: true,
             enable3DBuildings: true,
             enableDataLabels: true,
-            enableDeliveryCard: true,
+            enableDeliveryCard: false,
           });
 
-          // Add holo-mode class to container for CSS styling
           const container = map.getContainer?.();
           if (container) {
             container.parentElement?.classList.add('holo-mode');
           }
 
-          // Expose globally for AI Autopilot integration
           (window as any).holoMapEngine = holographicMapEngine;
-
-          console.log('[V97] Holographic Map Engine initialized');
         } catch (e) {
-          console.warn('[V97] Holographic init failed:', e);
+          console.warn('Holographic map engine could not start:', e);
         }
 
         setReady(true);
@@ -1037,9 +1012,6 @@ function MapView3D(props: MapView3DProps) {
       <div id="pf-uiwm" className="ui-watermark">
         {AUTHOR_NAME} — {WATERMARK_SHORT}
       </div>
-
-      {/* V94: Version Tag (Auto-updating) */}
-      <div className="v94-version-tag">V94 EXTREME</div>
 
       {/* V95: Left floating controls - Search + AR balanced on left side */}
       {!isLiveNavActive && (

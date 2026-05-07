@@ -114,9 +114,7 @@ body {
   height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
-  background:
-    linear-gradient(110deg, rgba(2, 4, 5, 0.9), rgba(2, 4, 5, 1)),
-    #020405;
+  background: linear-gradient(110deg, rgba(2, 4, 5, 0.9), rgba(2, 4, 5, 1)), #020405;
   color: var(--color-text);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
