@@ -1442,17 +1442,17 @@ export default function Home() {
           </span>
         </div>
         <div className="sys-bar-right">
-          <span className="sys-metric" title="Latitude">
-            <em>LAT</em>
-            {deviceData?.location?.lat?.toFixed(4) ?? '—'}
+          <span className="sys-metric" title="Active targets">
+            <em>Targets</em>
+            {mapTargets.length}
           </span>
-          <span className="sys-metric" title="Longitude">
-            <em>LON</em>
-            {deviceData?.location?.lng?.toFixed(4) ?? '—'}
+          <span className="sys-metric" title="Route engine">
+            <em>Route</em>
+            {aiRoute ? 'Ready' : 'Idle'}
           </span>
-          <span className="sys-metric" title="Satellites">
-            <em>SAT</em>
-            {satelliteData.satellites.length || 0}
+          <span className="sys-metric" title="Privacy mode">
+            <em>Privacy</em>
+            On
           </span>
         </div>
       </header>
@@ -1803,7 +1803,7 @@ export default function Home() {
                 <path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z" />
               </svg>
             </span>
-            <span>Devices</span>
+            <span>Systems</span>
           </button>
           <button className={tab === 'routes' ? 'active' : ''} onClick={() => setTab('routes')}>
             <span className="tab-icon">
@@ -2007,196 +2007,52 @@ export default function Home() {
                 </button>
               )}
 
-              {/* Live Location */}
+              {/* Tracking Lock */}
               {deviceData?.location && (
                 <div className="section">
-                  <div className="section-header">
-                    <svg
-                      className="section-icon"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>{' '}
-                    Live Location
-                  </div>
-                  <div className="live-card">
-                    <div className="live-coords">
-                      <span>{deviceData.location.lat.toFixed(6)}</span>
-                      <span>{deviceData.location.lng.toFixed(6)}</span>
+                  <div className="section-header">Tracking lock</div>
+                  <div className="live-card system-status-card">
+                    <div>
+                      <strong>Location secured</strong>
+                      <span>Accuracy radius: ±{Math.round(deviceData.location.accuracy)}m</span>
                     </div>
-                    <div className="live-meta">
-                      <span>±{Math.round(deviceData.location.accuracy)}m</span>
-                      {deviceData.location.speed && (
-                        <span>{(deviceData.location.speed * 3.6).toFixed(1)} km/h</span>
-                      )}
-                      {deviceData.location.altitude && (
-                        <span>{Math.round(deviceData.location.altitude)}m alt</span>
-                      )}
-                    </div>
+                    <span className="system-chip">Private</span>
                   </div>
                 </div>
               )}
-
-              {/* Devices to Track */}
-              <div className="section">
-                <div className="section-header">Devices</div>
-                <div className="device-list">
-                  {devices.length === 0 ? (
-                    <EmptyState
-                      title="No tracked devices yet"
-                      message="Grant location permissions or connect another device to start live tracking."
-                      icon={
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                          <path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z" />
-                        </svg>
-                      }
-                    />
-                  ) : (
-                    devices.map(device => (
-                      <button
-                        key={device.id}
-                        className={`device-card ${selectedDevice?.id === device.id ? 'selected' : ''}`}
-                        onClick={() => startTracking(device)}
-                      >
-                        <span className="device-icon">{getDeviceIcon(device.type)}</span>
-                        <div className="device-info">
-                          <div className="device-name">
-                            {device.name}
-                            {device.trained && <span className="trained-badge">AI</span>}
-                          </div>
-                          <div className="device-meta">
-                            {device.online && <span className="online-dot"></span>}
-                            <span>{device.lastSeen}</span>
-                            {device.data.battery && (
-                              <span className="battery-badge">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                                  <path d="M17 5H3a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2zm0 12H3V7h14v10zm4-9v6h-2V8h2z" />
-                                </svg>{' '}
-                                {device.data.battery.level}%
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          className="train-btn"
-                          onClick={e => {
-                            e.stopPropagation();
-                            trainDevice(device);
-                          }}
-                        >
-                          {device.trained ? (
-                            <>
-                              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                              </svg>{' '}
-                              Trained
-                            </>
-                          ) : (
-                            <>
-                              <svg
-                                viewBox="0 0 24 24"
-                                width="14"
-                                height="14"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                                />
-                              </svg>{' '}
-                              Train
-                            </>
-                          )}
-                        </button>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
             </>
           )}
 
-          {/* Devices Tab */}
-          {tab === 'devices' && deviceData && (
+          {/* Systems Tab */}
+          {tab === 'devices' && (
             <>
               <div className="section">
-                <div className="section-header">This Device Data</div>
-                <div className="data-grid">
-                  <div className="data-item">
-                    <span className="data-label">Device ID</span>
-                    <span className="data-value">{deviceData.id.slice(0, 8)}...</span>
+                <div className="section-header">System status</div>
+                <div className="system-overview-grid">
+                  <div className="system-overview-card">
+                    <span className="system-overview-label">Session</span>
+                    <strong>{tracking ? 'Active' : 'Ready'}</strong>
+                    <span>{tracking ? 'Monitoring enabled' : 'Waiting for target'}</span>
                   </div>
-                  <div className="data-item">
-                    <span className="data-label">Platform</span>
-                    <span className="data-value">{deviceData.platform}</span>
+                  <div className="system-overview-card">
+                    <span className="system-overview-label">Targets</span>
+                    <strong>{mapTargets.length}</strong>
+                    <span>{mapTargets.length === 1 ? 'Saved target' : 'Saved targets'}</span>
                   </div>
-                  <div className="data-item">
-                    <span className="data-label">Screen</span>
-                    <span className="data-value">
-                      {deviceData.screenWidth}x{deviceData.screenHeight}
-                    </span>
+                  <div className="system-overview-card">
+                    <span className="system-overview-label">Sources</span>
+                    <strong>{connectedHardware.length + satelliteData.satellites.length}</strong>
+                    <span>Ready sources</span>
                   </div>
-                  {deviceData.deviceMemory && (
-                    <div className="data-item">
-                      <span className="data-label">Memory</span>
-                      <span className="data-value">{deviceData.deviceMemory}GB</span>
-                    </div>
-                  )}
-                  {deviceData.hardwareConcurrency && (
-                    <div className="data-item">
-                      <span className="data-label">CPU Cores</span>
-                      <span className="data-value">{deviceData.hardwareConcurrency}</span>
-                    </div>
-                  )}
-                  {deviceData.ip && (
-                    <div className="data-item full">
-                      <span className="data-label">IP Address</span>
-                      <span className="data-value">{deviceData.ip}</span>
-                    </div>
-                  )}
-                  {deviceData.connection && (
-                    <>
-                      <div className="data-item">
-                        <span className="data-label">Network</span>
-                        <span className="data-value">{deviceData.connection.type}</span>
-                      </div>
-                      <div className="data-item">
-                        <span className="data-label">Speed</span>
-                        <span className="data-value">{deviceData.connection.downlink} Mbps</span>
-                      </div>
-                    </>
-                  )}
-                  {deviceData.battery && (
-                    <>
-                      <div className="data-item">
-                        <span className="data-label">Battery</span>
-                        <span className="data-value">{deviceData.battery.level}%</span>
-                      </div>
-                      <div className="data-item">
-                        <span className="data-label">Charging</span>
-                        <span className="data-value">
-                          {deviceData.battery.charging ? 'Yes' : 'No'}
-                        </span>
-                      </div>
-                    </>
-                  )}
+                </div>
+              </div>
+              <div className="section">
+                <div className="system-status-card">
+                  <div>
+                    <strong>Tracking workspace ready</strong>
+                    <span>Only operational tracking controls are shown in this view.</span>
+                  </div>
+                  <span className="system-chip">Clean</span>
                 </div>
               </div>
             </>
@@ -3094,3 +2950,6 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
     </div>
   );
 }
+
+
+
