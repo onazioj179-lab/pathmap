@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 import { Button } from '../components/Button';
+import { ToastStack } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import './Settings.css';
 
 type ThemePreference = 'dark' | 'light' | 'system';
@@ -83,6 +85,7 @@ const Settings: React.FC = () => {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<SettingsState>(loadSettings);
   const [saved, setSaved] = useState(false);
+  const { messages, showToast, dismiss } = useToast();
 
   const activeLanguage = (i18n.resolvedLanguage || settings.language).startsWith('es')
     ? 'es'
@@ -137,6 +140,11 @@ const Settings: React.FC = () => {
   const handleSave = () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     setSaved(true);
+    showToast({
+      kind: 'success',
+      title: t('settings.saveSuccess', 'Settings saved'),
+      message: t('settings.saveSuccessDetail', 'Your PathMap preferences are now active.'),
+    });
   };
 
   const handleReset = () => {
@@ -144,6 +152,11 @@ const Settings: React.FC = () => {
     i18n.changeLanguage(defaultSettings.language);
     applyThemePreference(defaultSettings.theme);
     setSaved(false);
+    showToast({
+      kind: 'info',
+      title: t('settings.resetSuccess', 'Settings reset'),
+      message: t('settings.resetSuccessDetail', 'Defaults have been restored for this device.'),
+    });
   };
 
   const renderSegment = <T extends string>(
@@ -415,7 +428,13 @@ const Settings: React.FC = () => {
         </section>
 
         <div className="settings-actions" role="group" aria-label="Settings actions">
-          <Button className="settings-reset" type="button" variant="ghost" size="md" onClick={handleReset}>
+          <Button
+            className="settings-reset"
+            type="button"
+            variant="ghost"
+            size="md"
+            onClick={handleReset}
+          >
             {t('settings.reset')}
           </Button>
           {saved && (
@@ -436,6 +455,7 @@ const Settings: React.FC = () => {
           </Button>
         </div>
       </main>
+      <ToastStack messages={messages} onDismiss={dismiss} />
     </div>
   );
 };

@@ -57,7 +57,8 @@ describe('Settings Page', () => {
   test('saves preferences locally', () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: 'settings.save' }));
-    expect(screen.getByRole('status')).toHaveTextContent('settings.saved');
+    expect(screen.getByText('settings.saved')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dismiss settings.saveSuccess' })).toBeInTheDocument();
   });
 
   test('renders a user avatar in the sidebar', () => {
@@ -89,8 +90,9 @@ describe('Settings Page', () => {
     const saveBtn = screen.getByRole('button', { name: 'settings.save' });
     const resetBtn = screen.getByRole('button', { name: 'settings.reset' });
     fireEvent.click(saveBtn);
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    expect(screen.getByText('settings.saved')).toBeInTheDocument();
     fireEvent.click(resetBtn);
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByText('settings.saved')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Dismiss settings.resetSuccess' })).toBeInTheDocument();
   });
 });

@@ -1183,8 +1183,8 @@ body {
 }
 
 .training-fill {
-  appearance: none;
   -webkit-appearance: none;
+  appearance: none;
   height: 100%;
   width: 100%;
   background: #0066ff;

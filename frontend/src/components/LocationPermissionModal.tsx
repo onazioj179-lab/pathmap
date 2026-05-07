@@ -1,6 +1,6 @@
 /**
  * PATHFINDER V39 — PERMISSION REQUEST COMPONENT
- * 
+ *
  * Modal UI for requesting device location permission with clear messaging.
  */
 
@@ -28,9 +28,9 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
     setPermissionStatus(status);
 
     // Subscribe to permission changes
-    const unsubscribe = deviceLocationService.addPermissionListener((status) => {
+    const unsubscribe = deviceLocationService.addPermissionListener(status => {
       setPermissionStatus(status);
-      
+
       if (status.granted) {
         setShowModal(false);
         onPermissionGranted();
@@ -44,21 +44,23 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
 
   const handleRequestPermission = async () => {
     console.log('[PermissionModal] User clicked Allow Location Access');
-    
+
     // Detect browser for troubleshooting
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    
+
     if (isSafari || isIOS) {
-      console.log('[PermissionModal] Running on Safari/iOS - watch for browser popup at top of screen');
+      console.log(
+        '[PermissionModal] Running on Safari/iOS - watch for browser popup at top of screen'
+      );
     }
-    
+
     setIsRequesting(true);
     try {
       console.log('[PermissionModal] Calling deviceLocationService.requestPermission()...');
       const result = await deviceLocationService.requestPermission();
       console.log('[PermissionModal] Permission result:', result);
-      
+
       if (result.denied) {
         console.warn('[PermissionModal] Permission was denied by user or browser');
       } else if (result.granted) {
@@ -94,13 +96,15 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
 
         {/* Description */}
         <p className="text-center text-gray-600 mb-4">
-          PathFinder needs your location to provide real-time navigation, safety monitoring, and environmental awareness.
+          PathFinder needs your location to provide real-time navigation, safety monitoring, and
+          environmental awareness.
         </p>
 
         {/* Safari/iOS specific instruction */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <p className="text-xs text-blue-800 text-center">
-            <strong>Safari/iOS users:</strong> After clicking "Allow", you must tap "Allow" in the browser popup that appears at the top of your screen.
+            <strong>Safari/iOS users:</strong> After clicking "Allow", you must tap "Allow" in the
+            browser popup that appears at the top of your screen.
           </p>
         </div>
 
@@ -114,7 +118,9 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
                 Please enable location access in your browser settings.
               </p>
               <details className="text-xs text-red-700">
-                <summary className="cursor-pointer font-semibold mb-1">Safari/iOS Instructions</summary>
+                <summary className="cursor-pointer font-semibold mb-1">
+                  Safari/iOS Instructions
+                </summary>
                 <ol className="list-decimal ml-4 mt-1 space-y-1">
                   <li>Open Settings → Safari → Location</li>
                   <li>Select "Ask" or "Allow"</li>
@@ -143,7 +149,9 @@ export const LocationPermissionModal: React.FC<LocationPermissionModalProps> = (
             size="lg"
             className="touch-manipulation"
           >
-            {isRequesting ? 'Requesting...' : (
+            {isRequesting ? (
+              'Requesting...'
+            ) : (
               <>
                 <MapPin className="w-5 h-5" />
                 Allow Location Access

@@ -13,6 +13,10 @@ import {
   type SatelliteInfo,
 } from '../services/satelliteIntegration';
 import { embeddedBridge, type EmbeddedDevice } from '../services/embeddedBridge';
+import { EmptyState } from '../components/EmptyState';
+import { Skeleton } from '../components/Skeleton';
+import { ToastStack } from '../components/Toast';
+import { useToast } from '../hooks/useToast';
 import '../styles/holographic.css';
 import './Home.css';
 
@@ -172,6 +176,7 @@ const TargetTypeIcons: Record<string, JSX.Element> = {
 
 export default function Home() {
   const navigate = useNavigate();
+  const { messages, showToast, dismiss } = useToast();
   const [tab, setTab] = useState<Tab>('track');
   const [authScreen, setAuthScreen] = useState<AuthScreen>('none');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -937,7 +942,11 @@ export default function Home() {
   // AI Route Finding - connects to your backend
   const findAIRoute = async (targetDevice: TrackedDevice) => {
     if (!deviceData?.location || !targetDevice.data.location) {
-      alert('Need location data for both devices');
+      showToast({
+        kind: 'error',
+        title: 'Route needs two locations',
+        message: 'Enable your location and select a device with a recent position.',
+      });
       return;
     }
 
@@ -949,6 +958,7 @@ export default function Home() {
 
     // Try different AI algorithms
     const algorithms = ['ShadowPath', 'BFS', 'DFS', 'Dijkstra'];
+    let routeFound = false;
 
     for (const algo of algorithms) {
       try {
@@ -982,11 +992,25 @@ export default function Home() {
                 : `${Math.round(etaMinutes / 60)}h ${etaMinutes % 60}m`,
             safety: data.safety_score || 85,
           });
+          routeFound = true;
+          showToast({
+            kind: 'success',
+            title: 'AI route ready',
+            message: `${data.algorithm || algo} found a route to ${targetDevice.name}.`,
+          });
           break;
         }
       } catch (e) {
         console.log(`${algo} failed, trying next...`);
       }
+    }
+
+    if (!routeFound) {
+      showToast({
+        kind: 'error',
+        title: 'Route unavailable',
+        message: 'The routing engines could not find a path for this target yet.',
+      });
     }
 
     setRouteLoading(false);
@@ -998,6 +1022,11 @@ export default function Home() {
     setSelectedDevice(device);
     setTracking(true);
     setCalibrating(true);
+    showToast({
+      kind: 'info',
+      title: 'Tracking started',
+      message: `PathMap is now tracking ${device.name}.`,
+    });
 
     // Force get location if not available
     if (!deviceData?.location) {
@@ -1140,7 +1169,11 @@ export default function Home() {
   // V96: Find AI route to map target
   const findRouteToTarget = async (target: MapTarget) => {
     if (!deviceData?.location) {
-      alert('Need your location first');
+      showToast({
+        kind: 'error',
+        title: 'Your location is needed',
+        message: 'Enable location before routing to a map target.',
+      });
       return;
     }
 
@@ -1151,6 +1184,7 @@ export default function Home() {
     const end = [target.lat, target.lng];
 
     const algorithms = ['ShadowPath', 'A*', 'Dijkstra', 'BFS'];
+    let routeFound = false;
 
     for (const algo of algorithms) {
       try {
@@ -1178,11 +1212,25 @@ export default function Home() {
                 : `${Math.round(etaMinutes / 60)}h ${etaMinutes % 60}m`,
             safety: data.safety_score || 85,
           });
+          routeFound = true;
+          showToast({
+            kind: 'success',
+            title: 'Target route ready',
+            message: `${data.algorithm || algo} found a route to ${target.name}.`,
+          });
           break;
         }
       } catch (e) {
         console.log(`${algo} failed, trying next...`);
       }
+    }
+
+    if (!routeFound) {
+      showToast({
+        kind: 'error',
+        title: 'Route unavailable',
+        message: 'The route engines could not reach this target yet.',
+      });
     }
 
     setRouteLoading(false);
@@ -1195,8 +1243,13 @@ export default function Home() {
       if (activeTarget?.id === targetId) {
         stopTracking();
       }
+      showToast({
+        kind: 'info',
+        title: 'Target removed',
+        message: 'The tracking target was removed from this session.',
+      });
     },
-    [activeTarget]
+    [activeTarget, showToast]
   );
 
   // Grant permission - improved error handling
@@ -1976,7 +2029,17 @@ export default function Home() {
               <div className="section">
                 <div className="section-header">Devices</div>
                 <div className="device-list">
-                  {devices.map(device => (
+                  {devices.length === 0 ? (
+                    <EmptyState
+                      title="No tracked devices yet"
+                      message="Grant location permissions or connect another device to start live tracking."
+                      icon={
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                          <path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z" />
+                        </svg>
+                      }
+                    />
+                  ) : devices.map(device => (
                     <button
                       key={device.id}
                       className={`device-card ${selectedDevice?.id === device.id ? 'selected' : ''}`}
@@ -2191,6 +2254,20 @@ export default function Home() {
                   )}
                 </button>
               )}
+
+              {!selectedDevice && !aiRoute && (
+                <EmptyState
+                  title="Select a device to route"
+                  message="Choose a tracked device first, then PathMap can calculate a route using the active pathfinding engine."
+                  icon={
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                      <path d="M9 11.5c0-.83.67-1.5 1.5-1.5S12 10.67 12 11.5 11.33 13 10.5 13 9 12.33 9 11.5zm4.5 0c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S15.83 13 15 13s-1.5-.67-1.5-1.5zM20 9V7c0-1.1-.9-2-2-2h-3c-.41-1.16-1.52-2-2.82-2h-.36C10.52 3 9.41 3.84 9 5H6C4.9 5 4 5.9 4 7v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3z" />
+                    </svg>
+                  }
+                />
+              )}
+
+              {routeLoading && <Skeleton variant="card" label="Calculating route" />}
 
               {aiRoute && (
                 <div className="section">
@@ -2617,14 +2694,15 @@ export default function Home() {
                 </div>
                 <div className="settings-list">
                   {connectedHardware.length === 0 ? (
-                    <div className="setting-item">
-                      <div className="setting-info">
-                        <div className="setting-name setting-name--muted">No devices connected</div>
-                        <div className="setting-detail">
-                          Connect GPS receivers, smart speakers, or IoT devices
-                        </div>
-                      </div>
-                    </div>
+                    <EmptyState
+                      title="No hardware connected"
+                      message="Connect Bluetooth GPS, serial GPS, or smart devices when you are ready to enrich navigation data."
+                      icon={
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                          <path d="M17.71 7.71 12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29z" />
+                        </svg>
+                      }
+                    />
                   ) : (
                     connectedHardware.map(device => (
                       <div key={device.id} className="setting-item">
@@ -2843,6 +2921,7 @@ export default function Home() {
           </svg>
         )}
       </button>
+      <ToastStack messages={messages} onDismiss={dismiss} />
     </div>
   );
 }

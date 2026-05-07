@@ -1,0 +1,39 @@
+.pm-empty-state {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 28px 18px;
+  border: 1px dashed #2a3448;
+  border-radius: 14px;
+  background: rgba(12, 16, 24, 0.72);
+  text-align: center;
+  color: #d9e6f8;
+}
+
+.pm-empty-state__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(0, 102, 255, 0.13);
+  color: #5aa0ff;
+}
+
+.pm-empty-state__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pm-empty-state__message {
+  max-width: 34rem;
+  margin: 0;
+  color: #8fa1b8;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pm-empty-state__action {
+  margin-top: 4px;
+}

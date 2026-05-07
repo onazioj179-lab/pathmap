@@ -1,0 +1,40 @@
+.pm-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4800;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.62);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.pm-dialog {
+  width: min(480px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid #263244;
+  background: #0b0f16;
+  color: #f7fbff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.46);
+}
+
+.pm-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 0;
+}
+
+.pm-dialog__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.pm-dialog__body {
+  padding: 18px;
+}

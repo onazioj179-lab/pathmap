@@ -46,12 +46,7 @@ interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   icon: React.ReactNode;
 }
 
-export const IconButton: React.FC<IconButtonProps> = ({
-  label,
-  icon,
-  className = '',
-  ...rest
-}) => {
+export const IconButton: React.FC<IconButtonProps> = ({ label, icon, className = '', ...rest }) => {
   const title = rest.title || label;
 
   return (

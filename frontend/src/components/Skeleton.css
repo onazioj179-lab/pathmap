@@ -1,0 +1,41 @@
+.pm-skeleton {
+  display: block;
+  width: 100%;
+  min-height: var(--pm-skeleton-height, 16px);
+  border-radius: var(--pm-skeleton-radius, 10px);
+  background: linear-gradient(90deg, #101722 25%, #1b2432 50%, #101722 75%);
+  background-size: 200% 100%;
+  animation: pm-skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.pm-skeleton--card {
+  min-height: 96px;
+  border-radius: 14px;
+}
+
+.pm-skeleton--line {
+  min-height: 14px;
+}
+
+.pm-skeleton--circle {
+  width: var(--pm-skeleton-size, 44px);
+  height: var(--pm-skeleton-size, 44px);
+  min-height: 0;
+  border-radius: 999px;
+}
+
+@keyframes pm-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pm-skeleton {
+    animation: none;
+  }
+}
