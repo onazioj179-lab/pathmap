@@ -63,7 +63,7 @@ const FriendTracker: React.FC<FriendTrackerProps> = ({ map, onTargetSelect }) =>
   useEffect(() => {
     if (isTracking) {
       fetchFriendLocations();
-      refreshInterval.current = window.setInterval(fetchFriendLocations, 5000);
+      refreshInterval.current = window.setInterval(fetchFriendLocations, 3000);
     } else {
       if (refreshInterval.current) {
         clearInterval(refreshInterval.current);

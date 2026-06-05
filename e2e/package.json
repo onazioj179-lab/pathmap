@@ -4,6 +4,8 @@
   "description": "PathMap E2E Tests with Playwright",
   "scripts": {
     "test": "playwright test",
+    "smoke": "node scripts/smoke.mjs",
+    "test:operational": "playwright test tests/operational --project=chromium",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",

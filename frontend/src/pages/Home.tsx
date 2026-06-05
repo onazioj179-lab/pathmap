@@ -1,9 +1,12 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapView3D from '../components/MapView3D';
 import { trackingService, type LocationData, type Geofence } from '../services/trackingService';
+import { tunnelService } from '../services/tunnelService';
+import { sharingService } from '../services/sharingService';
+import { authService } from '../services/authService';
 import { holographicMapEngine } from '../services/holographicMapEngine';
 import { sharpLocationEngine } from '../services/sharpLocationEngine';
 import { universalDeviceEngine, type DeviceInfo } from '../services/universalDeviceEngine';
@@ -20,6 +23,59 @@ import { useToast } from '../hooks/useToast';
 import { getApiHttpBase } from '../services/apiConfig';
 import '../styles/holographic.css';
 import './Home.css';
+
+interface PushLocation {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  altitude?: number;
+  speed?: number;
+  heading?: number;
+}
+
+// Rough great-circle distance in metres (equirectangular approximation).
+function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6_371_000;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const meanLat = (((aLat + bLat) / 2) * Math.PI) / 180;
+  const x = dLng * Math.cos(meanLat);
+  return Math.hypot(x, dLat) * R;
+}
+
+// Send the current position to the backend when signed in, throttled to real
+// movement (> ~5 m) or every ~3 s. Prefers the encrypted tunnel; falls back to
+// the HTTP sharing endpoint when the tunnel isn't established/registered.
+function pushLocationToBackend(
+  loc: PushLocation,
+  lastRef: React.MutableRefObject<{ t: number; lat: number; lng: number } | null>
+): void {
+  if (!authService.isAuthenticated()) return;
+  const now = Date.now();
+  const last = lastRef.current;
+  const movedEnough = !last || metersBetween(last.lat, last.lng, loc.lat, loc.lng) > 5;
+  const longEnough = !last || now - last.t > 3000;
+  if (!movedEnough && !longEnough) return;
+  lastRef.current = { t: now, lat: loc.lat, lng: loc.lng };
+
+  if (tunnelService.isConnected() && tunnelService.isRegistered()) {
+    void tunnelService.sendLocation(loc.lat, loc.lng, loc.accuracy, {
+      altitude: loc.altitude,
+      speed: loc.speed,
+      heading: loc.heading,
+      source: 'gps',
+    });
+  } else {
+    void sharingService.updateLocation(
+      loc.lat,
+      loc.lng,
+      loc.accuracy,
+      loc.altitude,
+      loc.speed,
+      loc.heading
+    );
+  }
+}
 
 type Tab = 'track' | 'devices' | 'routes' | 'settings';
 type TrackingMethod = 'gps' | 'wifi' | 'cellular' | 'bluetooth' | 'ip';
@@ -786,6 +842,9 @@ export default function Home() {
     return data;
   }, []);
 
+  // Throttle for backend location pushes (last sent point + time).
+  const lastPushRef = useRef<{ t: number; lat: number; lng: number } | null>(null);
+
   // Get real-time location
   const startLocationTracking = useCallback(() => {
     if (!navigator.geolocation) return;
@@ -818,6 +877,11 @@ export default function Home() {
           const updated = [...prev, newPoint].slice(-100);
           return updated;
         });
+
+        // Push to the backend so friends can see live movement. Only when
+        // signed in; throttled to moves > ~5 m or > 3 s. Encrypted tunnel is
+        // preferred, with an HTTP fallback when it isn't established yet.
+        pushLocationToBackend(newLocation, lastPushRef);
       },
       err => console.error('Location error:', err),
       {

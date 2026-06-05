@@ -5,6 +5,7 @@
  */
 
 import { tunnelService } from './tunnelService';
+import { authService } from './authService';
 import { getApiHttpBase, getApiWsBase } from './apiConfig';
 
 const API_BASE = `${getApiHttpBase()}/api/v1/tracking`;
@@ -96,6 +97,20 @@ class TrackingService {
       const connected = await tunnelService.connect();
       if (connected) {
         console.log('[TrackingService] Encrypted tunnel ACTIVE - all location data protected');
+
+        // Associate the tunnel with the signed-in user so location updates are
+        // attributed and persisted. Register now if already authenticated, and
+        // again whenever the user logs in while the tunnel is connected.
+        const registerIfPossible = () => {
+          const token = authService.getAccessToken();
+          if (token && tunnelService.isConnected() && !tunnelService.isRegistered()) {
+            void tunnelService.registerSession(token);
+          }
+        };
+        registerIfPossible();
+        authService.onAuthChange(isAuth => {
+          if (isAuth) registerIfPossible();
+        });
 
         // Register tunnel message handlers
         tunnelService.on('location_update', msg => {

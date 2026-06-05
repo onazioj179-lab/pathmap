@@ -182,6 +182,49 @@ jobs:
           name: frontend-build
           path: frontend/dist
 
+  # ============== E2E OPERATIONAL BOTS ==============
+  e2e:
+    name: E2E Operational Bots
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-test]
+    env:
+      JWT_SECRET: e2e-test-secret
+      AUTH_RATE_LIMIT_PER_MINUTE: "1000"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install backend dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Install frontend dependencies
+        run: cd frontend && npm ci
+
+      - name: Install e2e deps + Chromium
+        run: cd e2e && npm install && npx playwright install --with-deps chromium
+
+      - name: Run operational bots (health, auth, tunnel, full loop)
+        run: cd e2e && CI=1 npx playwright test tests/operational --project=chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 14
+
   # ============== DOCKER BUILD ==============
   docker-build:
     name: Docker Build

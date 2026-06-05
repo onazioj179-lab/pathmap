@@ -11,6 +11,7 @@ Features:
 - Graceful fallback to memory
 """
 
+import os
 import time
 import logging
 from typing import Dict, Tuple, Optional, Any
@@ -123,13 +124,18 @@ class RedisRateLimiter:
     - Graceful memory fallback
     """
     
+    # Auth limits are deliberately strict in production but configurable so test
+    # environments (which register/log in many bot users quickly) don't trip
+    # them. Set AUTH_RATE_LIMIT_PER_MINUTE in CI/dev to a high value.
+    _AUTH_PER_MIN = int(os.getenv("AUTH_RATE_LIMIT_PER_MINUTE", "10"))
+
     # Default limits for different endpoint types
     DEFAULT_LIMITS = {
         'auth': RateLimitConfig(
-            requests_per_minute=10,
-            requests_per_hour=60,
-            requests_per_day=200,
-            burst_limit=5
+            requests_per_minute=_AUTH_PER_MIN,
+            requests_per_hour=max(60, _AUTH_PER_MIN * 6),
+            requests_per_day=max(200, _AUTH_PER_MIN * 20),
+            burst_limit=max(5, _AUTH_PER_MIN)
         ),
         'api': RateLimitConfig(
             requests_per_minute=60,

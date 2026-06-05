@@ -59,6 +59,7 @@ class TunnelService {
   private reconnectAttempts = 0;
   private messageHandlers: Map<string, MessageHandler[]> = new Map();
   private pendingMessages: TunnelMessage[] = [];
+  private registered = false;
 
   constructor(config: Partial<TunnelConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -393,6 +394,42 @@ class TunnelService {
   }
 
   /**
+   * Associate this established tunnel session with an authenticated user by
+   * sending the bearer token over the encrypted channel. Must be called (and
+   * resolve true) before location updates will be persisted server-side.
+   */
+  async registerSession(token: string): Promise<boolean> {
+    if (!token || !this.isConnected()) return false;
+    return new Promise<boolean>(resolve => {
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.off('tunnel_registered', onOk);
+        this.off('tunnel_register_failed', onFail);
+      };
+      const onOk = () => {
+        this.registered = true;
+        cleanup();
+        resolve(true);
+      };
+      const onFail = () => {
+        cleanup();
+        resolve(false);
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve(false);
+      }, 5000);
+      this.on('tunnel_registered', onOk);
+      this.on('tunnel_register_failed', onFail);
+      this.send({ type: 'tunnel_register', token });
+    });
+  }
+
+  isRegistered(): boolean {
+    return this.registered;
+  }
+
+  /**
    * Request tracking for target
    */
   async requestTracking(targetId: string): Promise<boolean> {
@@ -419,6 +456,7 @@ class TunnelService {
     }
 
     this.keyPair = null;
+    this.registered = false;
     console.log('[TUNNEL] Connection closed');
   }
 
@@ -470,3 +508,10 @@ class TunnelService {
 export const tunnelService = new TunnelService();
 export default tunnelService;
 export type { TunnelConfig, TunnelSession, TunnelMessage };
+
+// Dev-only handle so end-to-end test bots can drive the real client in-page
+// (handshake + register + send) without re-implementing the crypto. Never ships
+// in production builds because import.meta.env.DEV is false there.
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
+  (window as unknown as { __tunnel?: TunnelService }).__tunnel = tunnelService;
+}
