@@ -7,9 +7,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Unified semantic design tokens (single source of truth). */
-@import './styles/tokens.css';
-
 /* ─────────────────────────────────────────
    Design tokens
    ───────────────────────────────────────── */

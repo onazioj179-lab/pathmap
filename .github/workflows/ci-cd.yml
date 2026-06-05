@@ -211,6 +211,11 @@ jobs:
       - name: Install frontend dependencies
         run: cd frontend && npm ci
 
+      - name: Generate frontend integrity module
+        # ees.generated.ts is gitignored and normally produced by the build; the
+        # dev server (used by the e2e webServer) needs it to exist.
+        run: cd frontend && node scripts/buildIntegrity.mjs
+
       - name: Install e2e deps + Chromium
         run: cd e2e && npm install && npx playwright install --with-deps chromium
 
