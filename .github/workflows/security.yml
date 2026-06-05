@@ -132,19 +132,36 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Start test environment
-        run: docker-compose up -d
+        # Compose V2 is a docker plugin on modern runners ("docker compose",
+        # not the removed "docker-compose" binary).
+        run: docker compose up -d --build
         env:
           JWT_SECRET: test_secret_for_ci_only
           POSTGRES_PASSWORD: test_password
+          # Production emits HSTS, but FORCE_HTTPS would 307-redirect the plain
+          # HTTP probe below and hide the app headers, so disable it for the test.
+          ENVIRONMENT: production
+          FORCE_HTTPS: "false"
 
-      - name: Wait for services
-        run: sleep 10
+      - name: Wait for backend to be ready
+        # The backend loads an OSM graph on startup, so poll instead of a fixed sleep.
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/v1/health >/dev/null 2>&1; then
+              echo "backend ready after ${i} attempts"; exit 0
+            fi
+            sleep 5
+          done
+          echo "backend did not become ready"; docker compose logs backend; exit 1
 
       - name: Test security headers
         run: |
-          curl -I http://localhost:8000/v1/health | grep -i "x-frame-options: DENY"
-          curl -I http://localhost:8000/v1/health | grep -i "x-content-type-options: nosniff"
-          curl -I http://localhost:8000/v1/health | grep -i "strict-transport-security"
+          headers=$(curl -sI http://localhost:8000/v1/health)
+          echo "$headers"
+          echo "$headers" | grep -i "x-frame-options: DENY"
+          echo "$headers" | grep -i "x-content-type-options: nosniff"
+          echo "$headers" | grep -i "strict-transport-security"
 
       - name: Stop test environment
-        run: docker-compose down
+        if: always()
+        run: docker compose down
