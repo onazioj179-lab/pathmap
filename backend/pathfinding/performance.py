@@ -1,7 +1,6 @@
 # V7: High-Performance Optimizations
 
 from typing import Any, Tuple, List, Optional
-from functools import lru_cache
 import hashlib
 
 

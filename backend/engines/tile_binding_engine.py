@@ -7,7 +7,6 @@ Ensures backend returns real tiles, enforces 200 OK status, and provides readine
 import httpx
 from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
-import asyncio
 
 @dataclass
 class TileConfig:

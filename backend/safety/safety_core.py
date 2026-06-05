@@ -6,7 +6,6 @@ Fixes: path-breaking, waypoint misalignment, breadcrumb jitter, ETA inconsistenc
 
 from typing import List, Dict, Any, Tuple, Optional, Set
 import math
-from collections import defaultdict
 
 
 class NodeValidator:
@@ -164,7 +163,7 @@ class SafetyCore:
             try:
                 neighbors = len(list(self.graph.neighbors(node)))
                 avg_neighbors += neighbors
-            except:
+            except Exception:
                 pass
         avg_neighbors = avg_neighbors / min(20, len(path_nodes)) if path_nodes else 0
         
@@ -208,7 +207,7 @@ class SafetyCore:
             try:
                 node_data = self.graph.nodes[node_id]
                 fixed_waypoints.append([node_data['y'], node_data['x']])
-            except:
+            except Exception:
                 # Fallback to original
                 fixed_waypoints.append([lat, lon])
                 

@@ -5,108 +5,105 @@ Unit tests for pathfinding algorithms: ShadowPath, HomeGuard, PathfinderX.
 """
 
 import pytest
-import networkx as nx
-from unittest.mock import patch, MagicMock
-import math
 
 
 class TestShadowPath:
     """Tests for ShadowPath (A*) algorithm."""
-    
+
     @pytest.fixture
     def shadow_path(self, mock_graph):
         """Create ShadowPath instance with mock graph."""
         from pathfinding.shadow_path import ShadowPath
         return ShadowPath(mock_graph)
-    
-    def test_find_path_exists(self, shadow_path):
+
+    def test_find_path_exists(self, shadow_path, mock_graph_coords):
         """Should find path between connected nodes."""
-        path, visited, cost = shadow_path.find_path(1, 4)
-        
-        assert path is not None
-        assert len(path) > 0
-        assert path[0] == 1
-        assert path[-1] == 4
-    
-    def test_find_path_no_connection(self, shadow_path):
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+        path, visited, cost, steps = shadow_path.find_route(slat, slon, elat, elon)
+
+        assert path  # non-empty list of [lat, lon]
+        assert path[0] == [slat, slon]
+        assert path[-1] == [elat, elon]
+
+    def test_find_path_no_connection(self, shadow_path, mock_graph_coords):
         """Should handle disconnected nodes gracefully."""
-        # Add isolated node
+        # Add an isolated node far away; routing to it must find no path.
         shadow_path.graph.add_node(99, y=10.0, x=8.0)
-        
-        path, visited, cost = shadow_path.find_path(1, 99)
-        
-        # Should return empty or None for no path
-        assert path is None or len(path) == 0
-    
-    def test_visited_nodes_tracked(self, shadow_path):
+        slat, slon = mock_graph_coords[1]
+        path, visited, cost, steps = shadow_path.find_route(slat, slon, 10.0, 8.0)
+
+        assert path == []  # no route to the isolated node
+
+    def test_visited_nodes_tracked(self, shadow_path, mock_graph_coords):
         """Should track visited nodes during search."""
-        path, visited, cost = shadow_path.find_path(1, 4)
-        
-        assert visited is not None
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+        path, visited, cost, steps = shadow_path.find_route(slat, slon, elat, elon)
+
+        assert visited
         assert len(visited) > 0
-    
-    def test_cost_calculated(self, shadow_path):
-        """Should calculate path cost."""
-        path, visited, cost = shadow_path.find_path(1, 4)
-        
-        assert cost is not None
-        assert cost >= 0
+
+    def test_cost_calculated(self, shadow_path, mock_graph_coords):
+        """Should calculate path cost (in metres)."""
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+        path, visited, cost, steps = shadow_path.find_route(slat, slon, elat, elon)
+
+        assert cost > 0
 
 
 class TestHomeGuard:
     """Tests for HomeGuard (Dijkstra) algorithm."""
-    
+
     @pytest.fixture
     def home_guard(self, mock_graph):
         """Create HomeGuard instance with mock graph."""
         from pathfinding.home_guard import HomeGuard
         return HomeGuard(mock_graph)
-    
-    def test_find_path_exists(self, home_guard):
+
+    def test_find_path_exists(self, home_guard, mock_graph_coords):
         """Should find shortest path between nodes."""
-        path, visited, cost = home_guard.find_path(1, 4)
-        
-        assert path is not None
-        assert len(path) > 0
-        assert path[0] == 1
-        assert path[-1] == 4
-    
-    def test_path_is_shortest(self, home_guard):
-        """HomeGuard should find shortest path."""
-        path, visited, cost = home_guard.find_path(1, 4)
-        
-        # Dijkstra guarantees shortest path
-        # Total edge weights: 100 + 100 + 150 = 350
-        assert cost <= 400  # Allow some tolerance
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+        path, visited, cost, steps = home_guard.find_route(slat, slon, elat, elon)
+
+        assert path
+        assert path[0] == [slat, slon]
+        assert path[-1] == [elat, elon]
+
+    def test_path_is_shortest(self, home_guard, mock_graph_coords):
+        """HomeGuard (Dijkstra) should find the shortest path."""
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+        path, visited, cost, steps = home_guard.find_route(slat, slon, elat, elon)
+
+        # Only route is 1->2->3->4 with edge lengths 100 + 100 + 150 = 350.
+        assert cost == pytest.approx(350.0)
 
 
 class TestPathfinderX:
     """Tests for PathfinderX (Greedy) algorithm."""
-    
+
     @pytest.fixture
     def pathfinder_x(self, mock_graph):
         """Create PathfinderX instance with mock graph."""
         from pathfinding.pathfinder_x import PathfinderX
         return PathfinderX(mock_graph)
-    
-    def test_find_path_exists(self, pathfinder_x):
+
+    def test_find_path_exists(self, pathfinder_x, mock_graph_coords):
         """Should find path between nodes."""
-        path, visited, cost = pathfinder_x.find_path(1, 4)
-        
-        assert path is not None
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+        path, visited, cost, steps = pathfinder_x.find_route(slat, slon, elat, elon)
+
+        assert path
         assert len(path) > 0
-    
-    def test_greedy_explores_less(self, pathfinder_x, mock_graph):
-        """Greedy should typically explore fewer nodes than Dijkstra."""
+
+    def test_greedy_and_dijkstra_both_route(self, pathfinder_x, mock_graph, mock_graph_coords):
+        """Both greedy and Dijkstra should find a path on the mock graph."""
         from pathfinding.home_guard import HomeGuard
-        
+
         home_guard = HomeGuard(mock_graph)
-        
-        _, visited_greedy, _ = pathfinder_x.find_path(1, 4)
-        _, visited_dijkstra, _ = home_guard.find_path(1, 4)
-        
-        # Greedy often explores less (but not guaranteed)
-        # Just verify both find a path
+        (slat, slon), (elat, elon) = mock_graph_coords[1], mock_graph_coords[4]
+
+        _, visited_greedy, _, _ = pathfinder_x.find_route(slat, slon, elat, elon)
+        _, visited_dijkstra, _, _ = home_guard.find_route(slat, slon, elat, elon)
+
         assert len(visited_greedy) > 0
         assert len(visited_dijkstra) > 0
 
@@ -133,9 +130,10 @@ class TestRouteAPI:
         for algo in ["ShadowPath", "HomeGuard", "PathfinderX"]:
             request = {**base_request, "algo": algo}
             response = client.post("/route", json=request)
-            
-            # Just verify endpoint accepts all algorithms
-            assert response.status_code in [200, 404, 500]
+
+            # Endpoint accepts all algorithms; 503 if the graph is still loading
+            # in the background at startup.
+            assert response.status_code in [200, 404, 500, 503]
     
     def test_compare_endpoint(self, client):
         """POST /compare should compare algorithms."""
@@ -163,7 +161,7 @@ class TestSafeReturn:
         # Endpoint may not exist or graph not loaded
         if response.status_code == 200:
             data = response.json()
-            assert "routes" in data or "path" in data
+            assert "direct_home" in data
 
 
 class TestPerformance:
@@ -175,7 +173,7 @@ class TestPerformance:
         import time
         
         start = time.time()
-        response = client.post("/route", json=sample_route_request)
+        client.post("/route", json=sample_route_request)
         elapsed = time.time() - start
         
         # Should complete within 2 seconds

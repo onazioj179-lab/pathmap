@@ -5,7 +5,6 @@ Checks tile server connectivity, validates responses, prevents blank maps.
 
 import httpx
 from typing import Dict, Any, List
-import asyncio
 
 
 class TileDiagnostics:

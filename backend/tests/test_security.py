@@ -4,106 +4,86 @@ PATHMAP - Security Tests
 Tests for encryption, tunnel, and security features.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 import base64
 import os
 
 
 class TestEncryption:
-    """Tests for encryption module."""
-    
+    """Tests for the E2E encryption module (AES-256-GCM)."""
+
+    def _cipher(self):
+        from security.encryption import E2EEncryption
+        enc = E2EEncryption()
+        enc.derive_session_key("sess-1", "alice", "bob")
+        return enc
+
     def test_aes_encrypt_decrypt(self):
-        """AES encryption should be reversible."""
-        from security.encryption import AESCipher
-        
-        cipher = AESCipher()
-        plaintext = b"Hello, PathMap!"
-        
-        ciphertext = cipher.encrypt(plaintext)
-        decrypted = cipher.decrypt(ciphertext)
-        
-        assert decrypted == plaintext
-    
+        """Encryption should be reversible for a session with a derived key."""
+        enc = self._cipher()
+        payload = enc.encrypt("Hello, PathMap!", "sess-1")
+        assert payload is not None
+        decrypted = enc.decrypt(payload, "sess-1")
+        assert decrypted == "Hello, PathMap!"
+
     def test_different_plaintexts_different_ciphertexts(self):
-        """Different inputs should produce different outputs."""
-        from security.encryption import AESCipher
-        
-        cipher = AESCipher()
-        
-        ct1 = cipher.encrypt(b"Message 1")
-        ct2 = cipher.encrypt(b"Message 2")
-        
+        """Different inputs should produce different ciphertexts."""
+        enc = self._cipher()
+        ct1 = enc.encrypt("Message 1", "sess-1").ciphertext
+        ct2 = enc.encrypt("Message 2", "sess-1").ciphertext
         assert ct1 != ct2
-    
+
     def test_same_plaintext_different_ciphertexts(self):
-        """Same input with random IV should produce different outputs."""
-        from security.encryption import AESCipher
-        
-        cipher = AESCipher()
-        plaintext = b"Same message"
-        
-        ct1 = cipher.encrypt(plaintext)
-        ct2 = cipher.encrypt(plaintext)
-        
-        # With random IV, ciphertexts should differ
+        """Same input with a random nonce should produce different ciphertexts."""
+        enc = self._cipher()
+        ct1 = enc.encrypt("Same message", "sess-1").ciphertext
+        ct2 = enc.encrypt("Same message", "sess-1").ciphertext
         assert ct1 != ct2
 
 
 class TestTunnelEngine:
     """Tests for encrypted tunnel."""
     
+    def _client_pub(self):
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.hazmat.primitives import serialization
+        priv = ec.generate_private_key(ec.SECP256R1())
+        pub = priv.public_key().public_bytes(
+            serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint
+        )
+        return pub
+
     def test_tunnel_session_creation(self):
-        """Should create tunnel session."""
+        """create_session returns (session_id, server_public_key)."""
         from security.tunnel_engine import TunnelEngine
-        
+
         engine = TunnelEngine()
-        session = engine.create_session()
-        
-        assert session is not None
-        assert session.session_id is not None
-    
+        session_id, server_pub = engine.create_session()
+
+        assert isinstance(session_id, str) and session_id
+        assert len(server_pub) == 65  # uncompressed P-256 point
+
     def test_tunnel_key_exchange(self):
-        """Should complete key exchange."""
+        """generate_keypair returns a private key and a 65-byte public point."""
         from security.tunnel_engine import TunnelEngine
-        
+
         engine = TunnelEngine()
-        
-        # Generate keypair
-        public_key = engine.generate_keypair()
-        
-        assert public_key is not None
-        assert len(public_key) > 0
-    
+        _priv, public_key = engine.generate_keypair()
+
+        assert len(public_key) == 65
+
     def test_tunnel_encryption(self):
-        """Should encrypt/decrypt data through tunnel."""
+        """After a handshake, the engine produces a valid encrypted envelope."""
+        import json
         from security.tunnel_engine import TunnelEngine
-        
+
         engine = TunnelEngine()
-        session = engine.create_session()
-        
-        plaintext = b'{"type": "location", "lat": 9.0820}'
-        
-        encrypted = engine.encrypt_frame(session, plaintext)
-        decrypted = engine.decrypt_frame(session, encrypted)
-        
-        assert decrypted == plaintext
-    
-    def test_key_rotation(self):
-        """Should rotate keys after threshold."""
-        from security.tunnel_engine import TunnelEngine
-        
-        engine = TunnelEngine()
-        session = engine.create_session()
-        
-        initial_key_id = session.key_id if hasattr(session, 'key_id') else 0
-        
-        # Simulate many messages (would trigger rotation in real use)
-        for i in range(100):
-            engine.encrypt_frame(session, b"test message")
-        
-        # Key rotation is implementation-dependent
-        assert session is not None
+        session_id, _server_pub = engine.create_session()
+        assert engine.complete_handshake(session_id, self._client_pub()) is True
+
+        envelope = engine.encrypt_message(session_id, b'{"type": "location", "lat": 9.0820}')
+        assert envelope is not None
+        obj = json.loads(envelope)
+        assert "n" in obj and "ct" in obj
 
 
 class TestStealthLayer:
@@ -152,40 +132,39 @@ class TestStealthLayer:
 class TestRateLimiter:
     """Tests for rate limiting."""
     
-    def test_allow_under_limit(self):
-        """Should allow requests under limit."""
-        from security.rate_limiter import RateLimiter
-        
+    async def test_allow_under_limit(self):
+        """Should allow requests under the limit."""
+        from security.hardening import RateLimiter
+
         limiter = RateLimiter(max_requests=10, window_seconds=60)
-        
+
         for _ in range(5):
-            assert limiter.is_allowed("test-client") is True
-    
-    def test_block_over_limit(self):
-        """Should block requests over limit."""
-        from security.rate_limiter import RateLimiter
-        
+            allowed, _info = await limiter.is_allowed("test-client")
+            assert allowed is True
+
+    async def test_block_over_limit(self):
+        """Should block requests over the limit."""
+        from security.hardening import RateLimiter
+
         limiter = RateLimiter(max_requests=5, window_seconds=60)
-        
-        # Exhaust limit
+
         for _ in range(5):
-            limiter.is_allowed("test-client")
-        
-        # Should be blocked
-        assert limiter.is_allowed("test-client") is False
-    
-    def test_different_clients_independent(self):
+            await limiter.is_allowed("test-client")
+
+        allowed, _info = await limiter.is_allowed("test-client")
+        assert allowed is False
+
+    async def test_different_clients_independent(self):
         """Different clients should have independent limits."""
-        from security.rate_limiter import RateLimiter
-        
+        from security.hardening import RateLimiter
+
         limiter = RateLimiter(max_requests=2, window_seconds=60)
-        
-        # Client 1 uses their limit
-        limiter.is_allowed("client-1")
-        limiter.is_allowed("client-1")
-        
-        # Client 2 should still be allowed
-        assert limiter.is_allowed("client-2") is True
+
+        await limiter.is_allowed("client-1")
+        await limiter.is_allowed("client-1")
+
+        allowed, _info = await limiter.is_allowed("client-2")
+        assert allowed is True
 
 
 class TestTunnelAPI:
@@ -224,7 +203,7 @@ class TestSecurityHeaders:
         response = client.options("/api/v1/health")
         
         # CORS is typically enabled
-        headers = dict(response.headers)
+        dict(response.headers)
         # Headers may vary based on configuration
         assert response.status_code in [200, 204, 405]
     

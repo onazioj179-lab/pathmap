@@ -9,7 +9,6 @@ Provides professional SVG icon management with:
 """
 
 from typing import Dict, Optional
-from pathlib import Path
 
 
 class IconEngine:

@@ -130,12 +130,13 @@ jobs:
       - name: Run type checking
         run: |
           cd frontend
-          npm run type-check || true
+          npm run typecheck || true
 
       - name: Run tests
         run: |
           cd frontend
-          npm test -- --coverage --ci --reporters=default --reporters=jest-junit
+          # Project uses vitest; npm test => "vitest run".
+          npm test
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4

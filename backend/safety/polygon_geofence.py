@@ -9,7 +9,7 @@ import math
 import json
 import sqlite3
 import logging
-from typing import List, Dict, Any, Tuple, Optional, Union
+from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum

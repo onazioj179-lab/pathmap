@@ -17,11 +17,24 @@ class AStar:
     def __init__(self, graph):
         self.graph = graph
 
+    # Mean Earth radius in metres.
+    _EARTH_RADIUS_M = 6_371_000.0
+
     def _heuristic_estimate(self, a: Any, b: Any) -> float:
-        # Straight-line (Euclidean on lat/lon) heuristic
+        # Great-circle straight-line distance in METRES (equirectangular
+        # approximation). Edge weights are road lengths in metres, so the
+        # heuristic must be in metres to actually guide A*. It stays admissible
+        # (straight-line distance can never exceed the real road distance), so
+        # the route remains optimal while exploring far fewer nodes.
         n1 = self.graph.nodes[a]
         n2 = self.graph.nodes[b]
-        return math.hypot(n1['y'] - n2['y'], n1['x'] - n2['x'])
+        lat1 = math.radians(n1['y'])
+        lat2 = math.radians(n2['y'])
+        dlat = lat2 - lat1
+        dlon = math.radians(n2['x'] - n1['x'])
+        mean_lat = (lat1 + lat2) * 0.5
+        x = dlon * math.cos(mean_lat)
+        return math.hypot(x, dlat) * self._EARTH_RADIUS_M
 
     def find_route(
         self, start_lat: float, start_lon: float, end_lat: float, end_lon: float

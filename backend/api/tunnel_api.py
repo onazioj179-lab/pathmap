@@ -5,8 +5,8 @@ E2E encrypted WebSocket tunnel with backpressure handling.
 All data travels through encrypted tunnel with stealth obfuscation.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import json
@@ -103,7 +103,7 @@ async def sender_loop(conn: TunnelConnection):
                 # Send with timeout to detect slow consumers
                 try:
                     await asyncio.wait_for(
-                        conn.websocket.send_bytes(data),
+                        conn.websocket.send_text(data),
                         timeout=MESSAGE_TIMEOUT
                     )
                     conn.messages_sent += 1
@@ -126,9 +126,9 @@ async def sender_loop(conn: TunnelConnection):
         conn.is_healthy = False
 
 
-async def enqueue_message(conn: TunnelConnection, data: bytes) -> bool:
+async def enqueue_message(conn: TunnelConnection, data: str) -> bool:
     """
-    Enqueue message with backpressure handling.
+    Enqueue an encrypted JSON-envelope string with backpressure handling.
     Returns False if queue is full (message dropped).
     """
     try:
@@ -178,24 +178,27 @@ async def initiate_handshake(request: TunnelHandshakeRequest):
     """
     try:
         client_pub_key = base64.b64decode(request.client_public_key)
-        
-        if len(client_pub_key) != 32:
-            raise HTTPException(status_code=400, detail="Invalid key length")
-        
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid base64 public key")
+
+    # P-256 uncompressed public point is 65 bytes (0x04 || X(32) || Y(32)).
+    if len(client_pub_key) != 65 or client_pub_key[0] != 0x04:
+        raise HTTPException(status_code=400, detail="Invalid key length or format (expected 65-byte uncompressed P-256 point)")
+
+    try:
         session_id, server_pub_key = tunnel_engine.create_session()
-        
         success = tunnel_engine.complete_handshake(session_id, client_pub_key)
         if not success:
             raise HTTPException(status_code=500, detail="Handshake failed")
-        
+
         logger.info(f"Tunnel handshake complete: {session_id[:8]}...")
-        
         return TunnelHandshakeResponse(
             session_id=session_id,
             server_public_key=base64.b64encode(server_pub_key).decode(),
             stealth_mode=stealth_layer.config.mode.name
         )
-        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Handshake error: {e}")
         raise HTTPException(status_code=500, detail="Handshake failed")
@@ -236,8 +239,8 @@ async def tunnel_websocket(websocket: WebSocket, session_id: str):
     try:
         while conn.is_healthy:
             try:
-                raw_data = await asyncio.wait_for(
-                    websocket.receive_bytes(),
+                raw_text = await asyncio.wait_for(
+                    websocket.receive_text(),
                     timeout=HEARTBEAT_INTERVAL
                 )
             except asyncio.TimeoutError:
@@ -246,40 +249,34 @@ async def tunnel_websocket(websocket: WebSocket, session_id: str):
                     logger.info(f"Heartbeat timeout for {session_id[:8]}")
                     break
                 continue
-            
+
             conn.last_heartbeat = time.time()
-            
-            deobfuscated = stealth_layer.deobfuscate(raw_data)
-            if deobfuscated is None:
-                logger.warning(f"Deobfuscation failed for {session_id[:8]}")
-                continue
-            
-            result = tunnel_engine.decrypt_frame(deobfuscated)
-            if result is None:
+
+            # Each message is a JSON envelope {"n","ct"} encrypted with AES-256-GCM.
+            plaintext = tunnel_engine.decrypt_message(session_id, raw_text)
+            if plaintext is None:
                 logger.warning(f"Decryption failed for {session_id[:8]}")
                 continue
-            
-            decrypted_session_id, plaintext, frame_type = result
-            
-            if frame_type == tunnel_engine.FRAME_HEARTBEAT:
+
+            # Inner plaintext is a JSON app message; route by its "type".
+            try:
+                inner = json.loads(plaintext.decode())
+                inner_type = inner.get("type", "")
+            except Exception:
+                inner_type = ""
+
+            if inner_type == "heartbeat" or inner_type == "ping":
                 response = await _handle_heartbeat(session_id)
-            elif frame_type == tunnel_engine.FRAME_DATA:
-                response = await _handle_data(session_id, plaintext)
-            elif frame_type == tunnel_engine.FRAME_CLOSE:
+            elif inner_type == "close":
                 break
             else:
-                continue
-            
+                response = await _handle_data(session_id, plaintext)
+
             if response:
-                encrypted = tunnel_engine.encrypt_frame(session_id, response, tunnel_engine.FRAME_DATA)
-                if encrypted:
-                    obfuscated = stealth_layer.obfuscate(encrypted)
-                    await enqueue_message(conn, obfuscated)
-            
-            if stealth_layer.should_send_decoy():
-                decoy = stealth_layer.generate_decoy()
-                await enqueue_message(conn, decoy)
-                
+                envelope = tunnel_engine.encrypt_message(session_id, response)
+                if envelope:
+                    await enqueue_message(conn, envelope)
+
     except WebSocketDisconnect:
         logger.info(f"Tunnel disconnected: {session_id[:8]}...")
     except Exception as e:
@@ -412,7 +409,7 @@ async def close_tunnel_session(session_id: str):
             conn.is_healthy = False
             try:
                 await conn.websocket.close()
-            except:
+            except Exception:
                 pass
             unregister_connection(session_id)
         
@@ -432,14 +429,12 @@ async def send_to_tunnel(session_id: str, data: Dict) -> bool:
     
     try:
         plaintext = json.dumps(data).encode()
-        encrypted = tunnel_engine.encrypt_frame(session_id, plaintext, tunnel_engine.FRAME_DATA)
-        
-        if encrypted:
-            obfuscated = stealth_layer.obfuscate(encrypted)
-            return await enqueue_message(conn, obfuscated)
+        envelope = tunnel_engine.encrypt_message(session_id, plaintext)
+        if envelope:
+            return await enqueue_message(conn, envelope)
     except Exception as e:
         logger.error(f"Send to tunnel error: {e}")
-    
+
     return False
 
 
