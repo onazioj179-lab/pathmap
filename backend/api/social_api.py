@@ -122,7 +122,7 @@ async def rate_limit_check(request: Request, user: Dict[str, Any] = Depends(get_
     
     client_host = request.client.host if request.client else 'unknown'
     identifier = str(user.get('sub', client_host))
-    allowed, reason, retry_after = limiter.check_limit(identifier, 'api')
+    allowed, reason, retry_after = await limiter.check_limit(identifier, 'api')
     
     if not allowed:
         raise HTTPException(
@@ -131,7 +131,7 @@ async def rate_limit_check(request: Request, user: Dict[str, Any] = Depends(get_
             headers={"Retry-After": str(retry_after)}
         )
     
-    limiter.record_request(identifier)
+    await limiter.record_request(identifier)
     return user
 
 
@@ -144,10 +144,10 @@ async def register(req: RegisterRequest, request: Request):
     
     # Rate limit registration attempts
     client_host = request.client.host if request.client else 'unknown'
-    allowed, reason, retry_after = limiter.check_limit(client_host, 'auth')
+    allowed, reason, retry_after = await limiter.check_limit(client_host, 'auth')
     if not allowed:
         raise HTTPException(status_code=429, detail=reason)
-    limiter.record_request(client_host)
+    await limiter.record_request(client_host)
     
     auth = get_auth_core()
     success, message, user = auth.register(
@@ -188,10 +188,10 @@ async def login(req: LoginRequest, request: Request):
     limiter = get_rate_limiter()
     client_host = request.client.host if request.client else 'unknown'
     
-    allowed, reason, retry_after = limiter.check_limit(client_host, 'auth')
+    allowed, reason, retry_after = await limiter.check_limit(client_host, 'auth')
     if not allowed:
         raise HTTPException(status_code=429, detail=reason)
-    limiter.record_request(client_host)
+    await limiter.record_request(client_host)
     
     auth = get_auth_core()
     success, message, data = auth.login(
