@@ -1,0 +1,86 @@
+/*
+ * PathMap design tokens — one semantic source of truth.
+ * Dark-first; light theme via [data-theme="light"]. Components should reference
+ * these variables instead of hardcoded hex values or the older V## token layers.
+ */
+:root {
+  /* Surfaces & text */
+  --bg: #06070a;
+  --surface: #0e1117;
+  --surface-2: #161b24;
+  --surface-3: #1e2530;
+  --border: #232a36;
+  --border-strong: #313a49;
+  --text: #eef2f7;
+  --text-muted: #9aa6b6;
+  --text-faint: #6b7686;
+
+  /* Brand & status */
+  --accent: #3b82f6;
+  --accent-hover: #2f6fe0;
+  --accent-contrast: #ffffff;
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-8: 48px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  /* Typography */
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, system-ui, sans-serif;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-lg: 18px;
+  --text-xl: 22px;
+  --text-2xl: 28px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+  /* Safe-area insets (notches) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Focus ring used across interactive controls */
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-theme='light'] {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --surface-2: #eef2f7;
+  --surface-3: #e3e9f1;
+  --border: #d6dde7;
+  --border-strong: #c2ccd9;
+  --text: #0b1320;
+  --text-muted: #51607a;
+  --text-faint: #7a8aa3;
+  --accent-contrast: #ffffff;
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 6px 20px rgba(15, 23, 42, 0.12);
+  --shadow-3: 0 16px 40px rgba(15, 23, 42, 0.18);
+}
+
+/* Shared, accessible focus treatment for keyboard users. */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
