@@ -1,5 +1,5 @@
 import osmnx as ox
-from typing import List, Tuple, Any
+from typing import List, Any
 
 
 def nearest_node(graph, lat: float, lon: float):

@@ -7,7 +7,6 @@ from typing import List, Literal, Optional, Any, Dict
 from datetime import datetime
 import uvicorn
 from contextlib import asynccontextmanager
-import asyncio
 import os
 import sys
 import logging
@@ -36,7 +35,6 @@ from pathfinding.home_guard import HomeGuard
 from pathfinding.pathfinder_x import PathfinderX
 
 # V44/V45: Python Page Engine
-from page_engine import PageEngine, SyncLayer, AssetManager, LocationAccessPage
 from page_engine.page_engine import get_page_engine
 from page_engine.sync_layer import get_sync_layer
 from page_engine.asset_manager import get_asset_manager
@@ -78,7 +76,6 @@ from api.social_api import router_social as social_router
 
 # V94: Precision Tracking System
 from api.tracking_api import router_tracking
-from location.precision_tracking_engine import get_precision_tracking_engine
 
 # V95: Device Tracking API with Auth & Encryption (now in api folder)
 from api.tracking_api import router as device_tracking_router
@@ -144,13 +141,13 @@ async def lifespan(app: FastAPI):
     context_engine = ContextEngine()
     
     # V44: Python Page Engine initialization
-    page_engine = get_page_engine()
-    sync_layer = get_sync_layer()
+    get_page_engine()
+    get_sync_layer()
     asset_manager = get_asset_manager()
     asset_manager.preload_common_icons()
     
     # V45: Location Access Page initialization
-    location_page = get_location_access_page()
+    get_location_access_page()
     
     # V48: Real Location Engine + Icon Engine initialization
     real_location_engine = get_rle()
@@ -160,32 +157,32 @@ async def lifespan(app: FastAPI):
     print("Performance cache and spatial index initialized")
     print(f"V11: SafeReturn initialized with {len(landmark_db.get_landmarks_by_category('safe'))} safe landmarks")
     print(f"V21: SafetyCore initialized - {safety_core.get_diagnostics()['unsafe_nodes']} unsafe nodes detected")
-    print(f"V27.1: ContextEngine initialized - auto-adapt mode ready")
-    print(f"V44: Python Page Engine (PPE) initialized - high-resolution rendering active")
-    print(f"V45: Universal Location Access Page initialized - cross-platform support")
-    print(f"V46: Smart Permission Fallback initialized - block detection + fallback modes ready")
-    print(f"V48: Real Location Engine (RLE) initialized - GPS tracking ready")
-    print(f"V48: Icon Engine (IE) initialized - professional SVG icons loaded")
+    print("V27.1: ContextEngine initialized - auto-adapt mode ready")
+    print("V44: Python Page Engine (PPE) initialized - high-resolution rendering active")
+    print("V45: Universal Location Access Page initialized - cross-platform support")
+    print("V46: Smart Permission Fallback initialized - block detection + fallback modes ready")
+    print("V48: Real Location Engine (RLE) initialized - GPS tracking ready")
+    print("V48: Icon Engine (IE) initialized - professional SVG icons loaded")
     
     # V53: Initialize Ultra Stable 20-Year System
     ultra_stable_engine = UltraStableEngine()
     long_life_backend = LongLifeBackendEngine("pathfinder_v53.db")
-    print(f"V53: Ultra Stable Engine (USE) initialized - Dijkstra/A*/BFS routing ready")
-    print(f"V53: Long-Life Backend Engine (LLBE) initialized - SQLite persistence active")
-    print(f"V53: Versioned API Contract (VIC) /v1/ - frozen until 2045-11-22")
+    print("V53: Ultra Stable Engine (USE) initialized - Dijkstra/A*/BFS routing ready")
+    print("V53: Long-Life Backend Engine (LLBE) initialized - SQLite persistence active")
+    print("V53: Versioned API Contract (VIC) /v1/ - frozen until 2045-11-22")
     
     # V54: Initialize Trust-Based Location + Auto-Calibration
     trust_location_flow = get_trust_location_flow()
     auto_calibration_engine = get_auto_calibration_engine()
     always_on_live_location = get_always_on_live_location()
-    print(f"V54: Trust-Based Location Flow (TLF) initialized - optional permission model")
-    print(f"V54: Auto-Calibration Engine v2 (ACE v2) initialized - 30-min refresh cycle")
-    print(f"V54: Always-On Live Location (AOLL) initialized - no toggles, auto-tracking")
+    print("V54: Trust-Based Location Flow (TLF) initialized - optional permission model")
+    print("V54: Auto-Calibration Engine v2 (ACE v2) initialized - 30-min refresh cycle")
+    print("V54: Always-On Live Location (AOLL) initialized - no toggles, auto-tracking")
     
     # V83: Initialize Tile Binding Engine
     tile_binding_engine = get_tile_binding_engine()
     await tile_binding_engine.init()
-    print(f"V83: Tile Binding Engine (TBE) initialized - tile servers verified, caching active")
+    print("V83: Tile Binding Engine (TBE) initialized - tile servers verified, caching active")
     
     # V89: Initialize Tile Diagnostics
     tile_diagnostics = get_tile_diagnostics()
@@ -221,7 +218,7 @@ async def lifespan(app: FastAPI):
         tile_valid = await tile_heartbeat.fetch_and_validate_tile(test_tile_url)
     
     if tile_valid:
-        print(f"V91: Tile Server Hard Fix (TSHF) initialized - guaranteed tile load: READY")
+        print("V91: Tile Server Hard Fix (TSHF) initialized - guaranteed tile load: READY")
         print(f"V91: Active tile URL: {primary_tile_url}")
     else:
         print("[V91:WARNING] All tile servers failed validation - map may show blank")
@@ -229,27 +226,27 @@ async def lifespan(app: FastAPI):
     # V92: Initialize Python Tile Proxy (Ultimate Stability Layer)
     tile_proxy = get_tile_proxy()
     await tile_proxy.initialize()
-    print(f"V92: Python Tile Proxy initialized - ALL tiles route through backend")
+    print("V92: Python Tile Proxy initialized - ALL tiles route through backend")
     print(f"V92: Upstream providers: {len(tile_proxy.upstream_providers)}")
     print(f"V92: Max retries: {tile_proxy.max_retries}, Cache: memory+disk")
-    print(f"V92: Zero tile failures guaranteed - proxy intercepts all requests")
+    print("V92: Zero tile failures guaranteed - proxy intercepts all requests")
     
-    print(f"\n[PATHMAP] Backend Server Ready on http://0.0.0.0:8000")
-    print(f"   - Python Page Engine: Active")
-    print(f"   - Location Access: Universal (V45 + V46)")
-    print(f"   - Smart Fallback: 7 permission states")
-    print(f"   - Real GPS Tracking: V48 RLE")
-    print(f"   - Professional Icons: V48 IE")
-    print(f"   - V53 Ultra Stable: 20-year warranty (2025-2045)")
-    print(f"   - V53 API: /v1/health, /v1/route (frozen)")
-    print(f"   - V54 Trust Location: Optional permission, no forcing")
-    print(f"   - V54 Auto-Calibration: 30-min refresh, app resume")
-    print(f"   - V54 Always-On: Live tracking when permission exists")
-    print(f"   - V83 Tile Binding: Backend tile servers verified + cached")
-    print(f"   - V97 Rate Limiting: Applied to all routes")
-    print(f"   - V97 Structured Logging: Request/Response tracking")
-    print(f"   - WebSocket Sync: /ws/sync")
-    print(f"   - API Docs: http://localhost:8000/docs\n")
+    print("\n[PATHMAP] Backend Server Ready on http://0.0.0.0:8000")
+    print("   - Python Page Engine: Active")
+    print("   - Location Access: Universal (V45 + V46)")
+    print("   - Smart Fallback: 7 permission states")
+    print("   - Real GPS Tracking: V48 RLE")
+    print("   - Professional Icons: V48 IE")
+    print("   - V53 Ultra Stable: 20-year warranty (2025-2045)")
+    print("   - V53 API: /v1/health, /v1/route (frozen)")
+    print("   - V54 Trust Location: Optional permission, no forcing")
+    print("   - V54 Auto-Calibration: 30-min refresh, app resume")
+    print("   - V54 Always-On: Live tracking when permission exists")
+    print("   - V83 Tile Binding: Backend tile servers verified + cached")
+    print("   - V97 Rate Limiting: Applied to all routes")
+    print("   - V97 Structured Logging: Request/Response tracking")
+    print("   - WebSocket Sync: /ws/sync")
+    print("   - API Docs: http://localhost:8000/docs\n")
     try:
         yield
     finally:
@@ -743,7 +740,7 @@ async def route(request: RouteRequest, speed: float = 1.0):
                         lon=float(node_data['x']),
                         intensity=float(count / max_visits)
                     ))
-                except:
+                except Exception:
                     pass
             
             analytics = AnalyticsData(
@@ -1344,7 +1341,7 @@ async def update_gps(data: Dict[str, float]):
     update = page_engine.update_gps(lat, lon, accuracy)
     
     # Sync through ISL (critical priority)
-    event = sync_layer.sync_gps(lat, lon, accuracy, source='python')
+    sync_layer.sync_gps(lat, lon, accuracy, source='python')
     
     # Broadcast to connected clients
     import json
@@ -1371,7 +1368,7 @@ async def update_panel(data: Dict[str, Any]):
     update = page_engine.update_panel(panel_name)
     
     # Sync through ISL
-    event = sync_layer.sync_panel(panel_name, source=source)
+    sync_layer.sync_panel(panel_name, source=source)
     
     # Broadcast
     import json
@@ -1606,7 +1603,7 @@ async def handle_location_permission(data: Dict[str, Any]):
         sync_layer.enqueue_event(event)
         sync_layer.process_event(event)
         
-        print(f"[V45] Location permission DENIED - enabling no-GPS mode")
+        print("[V45] Location permission DENIED - enabling no-GPS mode")
         
         return {
             "success": True,
@@ -1633,7 +1630,7 @@ async def handle_location_permission(data: Dict[str, Any]):
         sync_layer.enqueue_event(event)
         sync_layer.process_event(event)
         
-        print(f"[V45] Location permission SKIPPED - no-GPS mode enabled")
+        print("[V45] Location permission SKIPPED - no-GPS mode enabled")
         
         return result
     
@@ -1649,7 +1646,7 @@ async def get_location_status():
     Returns current state and whether GPS is enabled
     """
     page_engine = get_page_engine()
-    location_page = get_location_access_page()
+    get_location_access_page()
     
     state = page_engine.get_state_snapshot()
     
@@ -1804,7 +1801,7 @@ async def retry_gps_permission():
     Used when user wants to enable location after initially denying/skipping
     """
     page_engine = get_page_engine()
-    location_page = get_location_access_page()
+    get_location_access_page()
     
     # Reset state to allow retry
     from page_engine.permission_state import LocationPermissionState, set_current_diagnostics, PermissionDiagnostics
@@ -1919,7 +1916,7 @@ async def start_gps_tracking(request: V48SecureContextRequest):
             'tracking_started': True
         }, priority='CRITICAL')
     
-    print(f"[V48 RLE] GPS tracking started - secure context validated")
+    print("[V48 RLE] GPS tracking started - secure context validated")
     
     return result
 
@@ -1942,7 +1939,7 @@ async def stop_gps_tracking():
         'tracking_stopped': True
     }, priority='HIGH')
     
-    print(f"[V48 RLE] GPS tracking stopped")
+    print("[V48 RLE] GPS tracking stopped")
     
     return result
 

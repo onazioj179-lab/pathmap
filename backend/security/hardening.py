@@ -7,14 +7,12 @@ Production security measures: rate limiting, headers, input validation.
 import os
 import re
 import html
-import hashlib
 import secrets
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, List, Callable
+from typing import Dict, Any, Callable
 from collections import defaultdict
 import asyncio
 import logging
-from functools import wraps
 
 from fastapi import Request, Response, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware

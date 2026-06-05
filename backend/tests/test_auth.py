@@ -5,8 +5,6 @@ Unit tests for auth module: registration, login, JWT, sessions.
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
-import time
 
 
 class TestPasswordUtils:

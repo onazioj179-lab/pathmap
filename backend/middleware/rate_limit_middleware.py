@@ -7,7 +7,7 @@ Uses the existing rate_limiter module.
 
 import time
 import logging
-from typing import Optional, Callable
+from typing import Callable
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware

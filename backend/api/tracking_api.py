@@ -10,9 +10,8 @@ REST and WebSocket endpoints for real-time precision tracking with:
 
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict
 import json
-import asyncio
 
 from location.precision_tracking_engine import (
     get_precision_tracking_engine,

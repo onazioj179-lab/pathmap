@@ -3,7 +3,7 @@ V12 - Friend Pickup Mode
 Real-time meeting point calculation using ShadowPath.
 """
 
-from typing import List, Dict, Tuple, Any, Optional
+from typing import List, Dict, Any, Optional
 import math
 
 

@@ -8,7 +8,6 @@ Production-grade backup for PostgreSQL with S3/local storage.
 import os
 import subprocess
 import gzip
-import shutil
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 import asyncio

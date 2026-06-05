@@ -12,15 +12,14 @@ Features:
 - AI-learned traffic patterns
 """
 
-import os
 import time
 import random
 import hashlib
 import struct
 import secrets
 import threading
-from typing import Optional, Dict, Any, List, Tuple
-from dataclasses import dataclass, field
+from typing import Optional, Dict, Any
+from dataclasses import dataclass
 from enum import Enum
 from collections import deque
 
@@ -111,7 +110,7 @@ class StealthLayer:
                     return None
             
             data_len = struct.unpack('>I', packet[offset:offset+4])[0]
-            noise_len = struct.unpack('>I', packet[offset+4:offset+8])[0]
+            struct.unpack('>I', packet[offset+4:offset+8])[0]
             
             if data_len > len(packet) - offset - 8:
                 return None
@@ -140,7 +139,7 @@ class StealthLayer:
             return -1
         
         if packet[:3] == self.TLS_MAGIC:
-            declared_len = struct.unpack('>H', packet[3:5])[0]
+            struct.unpack('>H', packet[3:5])[0]
             
             if self.config.mode == StealthMode.PARANOID:
                 if len(packet) < 5 + 16:

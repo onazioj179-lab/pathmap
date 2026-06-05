@@ -3,9 +3,8 @@ V11 - Safe-Return Mode (HomeGuard Expansion)
 Breadcrumb trail recording and safe-return path generation.
 """
 
-from typing import List, Dict, Tuple, Any, Optional
+from typing import List, Dict, Any, Optional
 import time
-from datetime import datetime
 
 class BreadcrumbTrail:
     """Records user's journey for safe return tracking."""

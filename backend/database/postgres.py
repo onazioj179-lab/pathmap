@@ -44,8 +44,7 @@ from sqlalchemy.orm import (  # type: ignore[import-not-found]
     sessionmaker,
     Session,
 )
-from sqlalchemy.pool import QueuePool  # type: ignore[import-not-found]
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY  # type: ignore[import-not-found]
+from sqlalchemy.dialects.postgresql import UUID, JSONB  # type: ignore[import-not-found]
 import uuid
 
 logger = logging.getLogger(__name__)

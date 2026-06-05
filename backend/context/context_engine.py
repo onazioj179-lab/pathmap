@@ -12,10 +12,9 @@ Monitors real-world conditions and automatically adapts routing strategy:
 - Safety conditions
 """
 
-from typing import Dict, Any, List, Literal, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple
 from datetime import datetime
 from enum import Enum
-import math
 
 
 class ContextFlag(Enum):

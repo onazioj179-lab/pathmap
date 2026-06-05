@@ -4,8 +4,6 @@ PATHMAP - Security Tests
 Tests for encryption, tunnel, and security features.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 import base64
 import os
 
@@ -96,7 +94,7 @@ class TestTunnelEngine:
         engine = TunnelEngine()
         session = engine.create_session()
         
-        initial_key_id = session.key_id if hasattr(session, 'key_id') else 0
+        session.key_id if hasattr(session, 'key_id') else 0
         
         # Simulate many messages (would trigger rotation in real use)
         for i in range(100):
@@ -224,7 +222,7 @@ class TestSecurityHeaders:
         response = client.options("/api/v1/health")
         
         # CORS is typically enabled
-        headers = dict(response.headers)
+        dict(response.headers)
         # Headers may vary based on configuration
         assert response.status_code in [200, 204, 405]
     

@@ -6,8 +6,8 @@ Shared test fixtures, mocks, and configuration.
 
 import pytest
 import asyncio
-from typing import Generator, AsyncGenerator
-from unittest.mock import MagicMock, patch
+from typing import AsyncGenerator
+from unittest.mock import MagicMock
 import tempfile
 import os
 import sys
@@ -40,7 +40,7 @@ def temp_db():
     # Cleanup
     try:
         os.unlink(db_path)
-    except:
+    except Exception:
         pass
 
 

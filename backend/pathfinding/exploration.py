@@ -3,7 +3,7 @@ V13 - Area Exploration with PathfinderX
 Wide-radius scanning for interesting/safe/unfamiliar zones.
 """
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any
 import math
 import random
 
