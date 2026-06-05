@@ -170,7 +170,7 @@ class CameraFluidityEngine {
   }
 
   /**
-   * V59: Premium easing function with cinematic bezier curve
+   * Premium easing function with cinematic bezier curve
    */
   private easeFunction(t: number, type: 'linear' | 'ease-in-out' | 'bezier'): number {
     switch (type) {
@@ -179,7 +179,7 @@ class CameraFluidityEngine {
       case 'ease-in-out':
         return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       case 'bezier':
-        // V59: Premium map camera ease - cubic-bezier(0.16, 0.84, 0.44, 1)
+        // Premium map camera ease - cubic-bezier(0.16, 0.84, 0.44, 1)
         // This creates a smooth, cinematic motion for camera transitions
         return this.cubicBezier(0.16, 0.84, 0.44, 1.0, t);
       default:
@@ -188,7 +188,7 @@ class CameraFluidityEngine {
   }
 
   /**
-   * V59: Cubic bezier curve implementation for premium camera motion
+   * Cubic bezier curve implementation for premium camera motion
    */
   private cubicBezier(p1x: number, p1y: number, p2x: number, p2y: number, t: number): number {
     // Simplified cubic bezier for performance at 120Hz

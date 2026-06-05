@@ -81,7 +81,7 @@ export const fullDarkModeEngine = {
 
   // Map-specific helpers
   getDarkSatelliteUrl(): string | null {
-    // V77: Return dark satellite tile URL if available; null = use existing
+    // Return dark satellite tile URL if available; null = use existing
     // For now, we'll darken existing tiles via paint properties in MapView3D
     return null;
   },

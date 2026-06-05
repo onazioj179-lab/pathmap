@@ -15,7 +15,7 @@ export type EsteOptions = {
 };
 
 const DEFAULT_TERRAIN = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png";
-// V77: Backend proxy for terrain DEM
+// Backend proxy for terrain DEM
 const BACKEND_TERRAIN = "/api/v1/terrain/{z}/{x}/{y}";
 
 export const earthScaleTerrainEngine = {
@@ -25,7 +25,7 @@ export const earthScaleTerrainEngine = {
 
   init(map: GLMap, opts?: EsteOptions) {
     if (this._inited) return;
-    // V77: Prefer backend proxy on localhost only when backend is ready
+    // Prefer backend proxy on localhost only when backend is ready
     const useBackend = (window as any).__pfBackendReady === true && window.location.hostname === 'localhost';
     const demUrl = opts?.demUrlTemplate || (useBackend ? BACKEND_TERRAIN : DEFAULT_TERRAIN);
     this._exaggeration = Math.max(0.5, Math.min(3, opts?.exaggeration ?? 1.0));

@@ -39,7 +39,7 @@ class ARXController {
       this.refSpace = await this.session.requestReferenceSpace('local-floor');
       this.active = true;
       this.route = route;
-      // V67: Ensure UI watermark visible in AR (DOM overlay) and set AR opacity
+      // Ensure UI watermark visible in AR (DOM overlay) and set AR opacity
       ensureUIWatermark((document.querySelector('.glmap-root') as HTMLElement) || document.body);
       setARMode(true);
       try {

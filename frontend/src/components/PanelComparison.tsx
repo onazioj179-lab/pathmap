@@ -34,7 +34,7 @@ export default function PanelComparison({ state, updateState, onClose }: PanelCo
         end_lon: state.endPoint[1],
         algorithms,
         profile: 'walking',
-        include_visualization: state.showAlgorithmBehavior // V30: Request viz data if enabled
+        include_visualization: state.showAlgorithmBehavior // Request viz data if enabled
       });
 
       updateState({ 

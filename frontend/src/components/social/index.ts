@@ -1,6 +1,6 @@
 /**
  * PATHMAP - Social Components Index
- * V93: Find My Friends Feature
+ * Find My Friends Feature
  */
 
 // Auth Components

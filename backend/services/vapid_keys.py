@@ -128,7 +128,7 @@ def get_public_key() -> str:
     return keys['public_key']
 
 
-# V97: VAPID endpoint for frontend to fetch public key
+# VAPID endpoint for frontend to fetch public key
 _cached_keys: Optional[Dict[str, str]] = None
 
 

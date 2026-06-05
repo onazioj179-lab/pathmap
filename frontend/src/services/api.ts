@@ -15,18 +15,18 @@ export interface RouteRequest {
   profile?: 'walking' | 'driving' | 'offroad';
   speed?: number;
   elev_weight?: number;
-  include_visualization?: boolean; // V30: Request visualization metadata
-  // V35: Advanced safety options
+  include_visualization?: boolean; // Request visualization metadata
+  // Advanced safety options
   include_v35_data?: boolean;
   ambient_mode_override?: 'ShadowPath' | 'HomeGuard' | 'PathfinderX';
   battery_aware?: boolean;
-  // V36: Sensor fusion data
+  // Sensor fusion data
   fused_position?: any;
   motion_state?: string;
   heading?: number;
   sensor_confidence?: number;
   ambient_light?: number;
-  // V37: Behavior prediction data
+  // Behavior prediction data
   predicted_intent?: any;
   intent_adjustments?: any;
   primary_intent?: string;
@@ -43,21 +43,21 @@ export interface RouteResponse {
   distance: number;
   time: number;
   algorithm: string;
-  visualization?: VisualizationMetadata; // V30: Algorithm reveal data
-  // V32: Timing metadata
+  visualization?: VisualizationMetadata; // Algorithm reveal data
+  // Timing metadata
   timestamp_start?: number;
   timestamp_end?: number;
   duration_ms?: number;
   latency_ms?: number;
   processing_time_ms?: number;
-  // V35: Advanced Safety & Location metadata
+  // Advanced Safety & Location metadata
   device_gps_accuracy?: 'high' | 'medium' | 'low';
   battery_level?: number;
   ambient_mode_signal?: boolean;
   familiarity_score?: number;
   drift_correction_applied?: boolean;
   micro_optimization_data?: any;
-  // V36: Sensor fusion metadata
+  // Sensor fusion metadata
   fused_position?: any;
   motion_state?: string;
   heading?: number;
@@ -65,7 +65,7 @@ export interface RouteResponse {
   ambient_light?: number;
   gps_accuracy?: number;
   sensor_profile?: any;
-  // V37: Behavior prediction metadata
+  // Behavior prediction metadata
   predicted_intent?: any;
   intent_adjustments?: any;
   algorithm_recommendation?: string;
@@ -84,12 +84,12 @@ export interface SafeReturnResponse {
   backup_routes: RouteResponse[];
   safety_score: number;
   routes: RouteResponse[];
-  // V32: Timing metadata
+  // Timing metadata
   timestamp_start?: number;
   timestamp_end?: number;
   duration_ms?: number;
   processing_time_ms?: number;
-  // V35: Advanced Safety metadata
+  // Advanced Safety metadata
   device_gps_accuracy?: 'high' | 'medium' | 'low';
   battery_level?: number;
   ambient_mode_signal?: boolean;
@@ -104,7 +104,7 @@ export interface CompareRequest {
   end_lon: number;
   algorithms: string[];
   profile?: 'walking' | 'driving' | 'offroad';
-  include_visualization?: boolean; // V30: Request visualization metadata
+  include_visualization?: boolean; // Request visualization metadata
 }
 
 export interface CompareResponse {
@@ -115,12 +115,12 @@ export interface CompareResponse {
     safest: string;
     shortest: string;
   };
-  // V32: Timing metadata
+  // Timing metadata
   timestamp_start?: number;
   timestamp_end?: number;
   duration_ms?: number;
   processing_time_ms?: number;
-  // V35: Advanced Safety metadata
+  // Advanced Safety metadata
   device_gps_accuracy?: 'high' | 'medium' | 'low';
   battery_level?: number;
   ambient_mode_signal?: boolean;
@@ -144,12 +144,12 @@ export interface ExploreResponse {
     type: string;
   }>;
   coverage_score: number;
-  // V32: Timing metadata
+  // Timing metadata
   timestamp_start?: number;
   timestamp_end?: number;
   duration_ms?: number;
   processing_time_ms?: number;
-  // V35: Advanced Safety metadata
+  // Advanced Safety metadata
   device_gps_accuracy?: 'high' | 'medium' | 'low';
   battery_level?: number;
   ambient_mode_signal?: boolean;
@@ -170,12 +170,12 @@ export interface LiveRouteResponse {
   dynamic_eta: number;
   user_path: [number, number][];
   friend_path: [number, number][];
-  // V32: Timing metadata
+  // Timing metadata
   timestamp_start?: number;
   timestamp_end?: number;
   duration_ms?: number;
   processing_time_ms?: number;
-  // V35: Friend ETA data
+  // Friend ETA data
   friend_eta_data?: {
     user_movement_vector: { velocity: number; bearing: number; acceleration: number };
     friend_movement_vector: { velocity: number; bearing: number; acceleration: number };
@@ -230,24 +230,24 @@ export async function fetchRoute(request: RouteRequest): Promise<RouteResponse> 
   const url = `${API_BASE_URL}/route`;
   const timeEngine = getTimeEngine();
   
-  // V32: Start timing
+  // Start timing
   const timingId = timeEngine.startEvent('route_calculation', {
     algorithm: request.algorithm,
   });
   const requestStartTime = performance.now();
   
   try {
-    // V35: Gather additional data if requested
+    // Gather additional data if requested
     const v35Data = request.include_v35_data ? gatherV35Data() : {};
     
     const requestBody = {
       start: [request.start_lat, request.start_lon],
       end: [request.end_lat, request.end_lon],
-      algorithm: request.ambient_mode_override || request.algorithm, // V35: Allow ambient mode override
+      algorithm: request.ambient_mode_override || request.algorithm, // Allow ambient mode override
       profile: request.profile || 'walking',
       speed: request.speed || 1.0,
       elev_weight: request.elev_weight || 1.0,
-      // V35: Include V35 data in request
+      // Include V35 data in request
       ...v35Data
     };
     
@@ -259,7 +259,7 @@ export async function fetchRoute(request: RouteRequest): Promise<RouteResponse> 
 
     const data = await response.json();
     
-    // V32: Calculate timing metrics
+    // Calculate timing metrics
     const requestEndTime = performance.now();
     const roundtripTime = requestEndTime - requestStartTime;
     const backendDuration = data.duration_ms || data.processing_time_ms;
@@ -280,13 +280,13 @@ export async function fetchRoute(request: RouteRequest): Promise<RouteResponse> 
       distance: data.distance || 0,
       time: data.time || 0,
       algorithm: request.algorithm,
-      // V32: Include timing metadata
+      // Include timing metadata
       timestamp_start: data.timestamp_start,
       timestamp_end: data.timestamp_end,
       duration_ms: data.duration_ms,
       latency_ms: roundtripTime,
       processing_time_ms: data.processing_time_ms,
-      // V35: Include V35 metadata from response
+      // Include V35 metadata from response
       device_gps_accuracy: data.device_gps_accuracy,
       battery_level: data.battery_level,
       ambient_mode_signal: data.ambient_mode_signal,
@@ -305,7 +305,7 @@ export async function fetchSafeReturn(request: SafeReturnRequest): Promise<SafeR
   const url = `${API_BASE_URL}/safe_return`;
   const timeEngine = getTimeEngine();
   
-  // V32: Start timing
+  // Start timing
   const timingId = timeEngine.startEvent('safe_return_calculation');
   const requestStartTime = performance.now();
   
@@ -322,7 +322,7 @@ export async function fetchSafeReturn(request: SafeReturnRequest): Promise<SafeR
 
     const data = await response.json();
     
-    // V32: Calculate timing metrics
+    // Calculate timing metrics
     const requestEndTime = performance.now();
     const roundtripTime = requestEndTime - requestStartTime;
     
@@ -336,7 +336,7 @@ export async function fetchSafeReturn(request: SafeReturnRequest): Promise<SafeR
       backup_routes: data.backup_routes || [],
       safety_score: data.safety_score || 100,
       routes: data.routes || [data.main_route, ...(data.backup_routes || [])],
-      // V32: Include timing metadata
+      // Include timing metadata
       timestamp_start: data.timestamp_start,
       timestamp_end: data.timestamp_end,
       duration_ms: data.duration_ms,
@@ -353,7 +353,7 @@ export async function fetchComparison(request: CompareRequest): Promise<CompareR
   const url = `${API_BASE_URL}/compare`;
   const timeEngine = getTimeEngine();
   
-  // V32: Start timing
+  // Start timing
   const timingId = timeEngine.startEvent('comparison_analysis', {
     algorithms: request.algorithms,
   });
@@ -373,7 +373,7 @@ export async function fetchComparison(request: CompareRequest): Promise<CompareR
 
     const data = await response.json();
     
-    // V32: Calculate timing metrics
+    // Calculate timing metrics
     const requestEndTime = performance.now();
     const roundtripTime = requestEndTime - requestStartTime;
     
@@ -390,7 +390,7 @@ export async function fetchComparison(request: CompareRequest): Promise<CompareR
         safest: '',
         shortest: ''
       },
-      // V32: Include timing metadata
+      // Include timing metadata
       timestamp_start: data.timestamp_start,
       timestamp_end: data.timestamp_end,
       duration_ms: data.duration_ms,
@@ -407,7 +407,7 @@ export async function fetchExplore(request: ExploreRequest): Promise<ExploreResp
   const url = `${API_BASE_URL}/explore`;
   const timeEngine = getTimeEngine();
   
-  // V32: Start timing
+  // Start timing
   const timingId = timeEngine.startEvent('exploration_scan', {
     radius: request.radius,
     maxPoints: request.max_points,
@@ -427,7 +427,7 @@ export async function fetchExplore(request: ExploreRequest): Promise<ExploreResp
 
     const data = await response.json();
     
-    // V32: Calculate timing metrics
+    // Calculate timing metrics
     const requestEndTime = performance.now();
     const roundtripTime = requestEndTime - requestStartTime;
     
@@ -441,7 +441,7 @@ export async function fetchExplore(request: ExploreRequest): Promise<ExploreResp
       zone_map: data.zone_map || {},
       landmarks: data.landmarks || [],
       coverage_score: data.coverage_score || 0,
-      // V32: Include timing metadata
+      // Include timing metadata
       timestamp_start: data.timestamp_start,
       timestamp_end: data.timestamp_end,
       duration_ms: data.duration_ms,
@@ -615,12 +615,12 @@ export function gatherV35Data(): {
     const heatmapState = heatmap.getState();
     const moeState = moe.getState();
 
-    // V36: Gather sensor fusion data
+    // Gather sensor fusion data
     const sfl = (window as any).sensorFusionLayer;
     const fusedPosition = sfl?.getFusedPosition();
     const sensorProfile = sfl?.getSensorProfile();
 
-    // V37: Gather behavior prediction data
+    // Gather behavior prediction data
     const bpe = (window as any).behaviorPredictionEngine;
     const ims = (window as any).intentModelingSystem;
     const prediction = bpe?.getCurrentPrediction();
@@ -636,14 +636,14 @@ export function gatherV35Data(): {
         edge_adjustments: Object.fromEntries(moeState.edgeWeightAdjustments || new Map()),
         recent_suggestions: (moeState.recentSuggestions || []).slice(-5),
       } : undefined,
-      // V36: Sensor fusion data
+      // Sensor fusion data
       fused_position: fusedPosition,
       motion_state: fusedPosition?.motion_state,
       heading: fusedPosition?.heading,
       confidence_level: fusedPosition?.confidence_level,
       ambient_light: sfl?.getState()?.raw_sensor_data?.ambientLight,
       sensor_profile: sensorProfile,
-      // V37: Behavior prediction data
+      // Behavior prediction data
       predicted_intent: prediction,
       intent_adjustments: adjustments,
       primary_intent: prediction?.primary_intent,

@@ -448,7 +448,7 @@ class LocationAccessPage:
                   `Your location is only used for real-time navigation and is never stored or shared.`);
         }}
         
-        // V46: Show diagnostic sheet
+        // Show diagnostic sheet
         async function showDiagnosticSheet(diagnostics) {{
             const response = await fetch('/api/v46/diagnostic-sheet', {{
                 method: 'POST',

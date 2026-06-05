@@ -17,11 +17,11 @@ interface MapViewProps {
   comparisonResults: any[] | null;
   trackingHistory: [number, number][];
   landmarks: Array<{ id: string; position: [number, number]; name: string; type: string }>;
-  visualizationMode: VisualizationMode; // V30: Algorithm reveal mode
-  showAlgorithmBehavior: boolean; // V30: Show algorithm behavior
-  algorithm: AlgorithmType; // V30: Current algorithm
-  liveNavigation: NavigationState | null; // V31: Real-time navigation state
-  isLiveNavActive: boolean; // V31: Live navigation active
+  visualizationMode: VisualizationMode; // Algorithm reveal mode
+  showAlgorithmBehavior: boolean; // Show algorithm behavior
+  algorithm: AlgorithmType; // Current algorithm
+  liveNavigation: NavigationState | null; // Real-time navigation state
+  isLiveNavActive: boolean; // Live navigation active
   onMapClick: (lat: number, lng: number) => void;
 }
 
@@ -61,7 +61,7 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
   return null;
 }
 
-// V31: Current location icon (pulsing blue dot)
+// Current location icon (pulsing blue dot)
 const currentLocationIcon = new Icon({
   iconUrl:
     'data:image/svg+xml;base64,' +
@@ -79,7 +79,7 @@ const currentLocationIcon = new Icon({
   iconAnchor: [15, 15],
 });
 
-// V39: Map recenter component
+// Map recenter component
 function MapRecenter({ center }: { center: [number, number] }) {
   const map = useMap();
 
@@ -133,7 +133,7 @@ export default function MapView({
     if (startPoint) setMapCenter(startPoint);
   }, [startPoint]);
 
-  // V73: Ensure UI scale mode reflects 2D map when this view mounts
+  // Ensure UI scale mode reflects 2D map when this view mounts
   useEffect(() => {
     try {
       uiScaleEngine.setMode('2D');
@@ -182,7 +182,7 @@ export default function MapView({
         {startPoint && <Marker position={startPoint} icon={startIcon} />}
         {endPoint && <Marker position={endPoint} icon={endIcon} />}
 
-        {/* V30: Algorithm Visualization Overlay for single route */}
+        {/* Algorithm Visualization Overlay for single route */}
         {routeData?.path && routeData.visualization && visualizationMode !== 'path-only' && (
           <AlgorithmVisualizer
             algorithm={algorithm}
@@ -223,7 +223,7 @@ export default function MapView({
           </>
         )}
 
-        {/* V30: Algorithm Visualization for comparison mode */}
+        {/* Algorithm Visualization for comparison mode */}
         {comparisonResults?.map((result, idx) => {
           const algoType = result.algorithm as AlgorithmType;
           const hasViz = result.visualization && showAlgorithmBehavior;
@@ -259,7 +259,7 @@ export default function MapView({
 
         {/* Device location indicator removed in minimal mode */}
 
-        {/* V31: Live Navigation - Current Position (if different from device location) */}
+        {/* Live Navigation - Current Position (if different from device location) */}
         {isLiveNavActive && liveNavigation?.currentPosition && (
           <Marker
             position={[liveNavigation.currentPosition.lat, liveNavigation.currentPosition.lon]}
@@ -267,7 +267,7 @@ export default function MapView({
           />
         )}
 
-        {/* V31: Breadcrumb trail from live navigation */}
+        {/* Breadcrumb trail from live navigation */}
         {isLiveNavActive &&
           liveNavigation?.breadcrumbTrail &&
           liveNavigation.breadcrumbTrail.length > 1 && (

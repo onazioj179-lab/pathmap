@@ -1,5 +1,5 @@
 /**
- * V98: Web Vitals Performance Monitoring
+ * Web Vitals Performance Monitoring
  *
  * Tracks Core Web Vitals metrics:
  * - LCP (Largest Contentful Paint) - loading performance

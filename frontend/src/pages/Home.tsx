@@ -81,7 +81,7 @@ type Tab = 'track' | 'devices' | 'routes' | 'settings';
 type TrackingMethod = 'gps' | 'wifi' | 'cellular' | 'bluetooth' | 'ip';
 type AuthScreen = 'none' | 'login' | 'register';
 
-// V96: Map Target - tap to track any location
+// Map Target - tap to track any location
 interface MapTarget {
   id: string;
   name: string;
@@ -309,7 +309,7 @@ export default function Home() {
   const [watchId, setWatchId] = useState<number | null>(null);
   const [trackingHistory, setTrackingHistory] = useState<[number, number][]>([]);
 
-  // V96: Map targets - tap to track locations
+  // Map targets - tap to track locations
   const [mapTargets, setMapTargets] = useState<MapTarget[]>([]);
   const [showTargetMenu, setShowTargetMenu] = useState<{ lat: number; lng: number } | null>(null);
   const [activeTarget, setActiveTarget] = useState<MapTarget | null>(null);
@@ -320,7 +320,7 @@ export default function Home() {
   const [aiAutopilotActive, setAiAutopilotActive] = useState(false);
   const [_autopilotStatus, setAutopilotStatus] = useState('Initializing...');
 
-  // V99: Universal Device + Satellite Integration
+  // Universal Device + Satellite Integration
   const [universalDevice, setUniversalDevice] = useState<DeviceInfo | null>(null);
   const [satelliteData, setSatelliteData] = useState<{
     satellites: SatelliteInfo[];
@@ -340,7 +340,7 @@ export default function Home() {
       console.log('[AI Autopilot] Starting autonomous control...');
       setAutopilotStatus('Analyzing device...');
 
-      // V99: Initialize Universal Device Engine (Desktop/Laptop/iOS/Android/HomePod/Embedded)
+      // Initialize Universal Device Engine (Desktop/Laptop/iOS/Android/HomePod/Embedded)
       try {
         const deviceInfo = await universalDeviceEngine.init();
         setUniversalDevice(deviceInfo);
@@ -355,7 +355,7 @@ export default function Home() {
         console.warn('[AI Autopilot] Device engine:', e);
       }
 
-      // V99: Initialize Multi-GNSS Satellite Integration
+      // Initialize Multi-GNSS Satellite Integration
       try {
         await satelliteIntegration.init();
         satelliteIntegration.onPositionUpdate(pos => {
@@ -369,7 +369,7 @@ export default function Home() {
         console.warn('[AI Autopilot] Satellite integration:', e);
       }
 
-      // V99: Initialize Embedded/IoT Bridge
+      // Initialize Embedded/IoT Bridge
       try {
         await embeddedBridge.init();
         embeddedBridge.onDeviceUpdate(devices => {
@@ -473,7 +473,7 @@ export default function Home() {
           `[AI Autopilot] Location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)} (±${Math.round(location.accuracy)}m)`
         );
 
-        // V98: Initialize Sharp Location Engine with Compass integration
+        // Initialize Sharp Location Engine with Compass integration
         try {
           await sharpLocationEngine.init(); // Now async with compass
           sharpLocationEngine.startTracking({
@@ -548,7 +548,7 @@ export default function Home() {
                 ].slice(-100) as [number, number][]
             );
 
-            // V97: Update holographic engine with current position
+            // Update holographic engine with current position
             try {
               holographicMapEngine.updateCurrentPosition({
                 lat: newLocation.lat,
@@ -1145,13 +1145,13 @@ export default function Home() {
     stopLocationTracking();
   };
 
-  // V96: Handle map tap - create tracking target
+  // Handle map tap - create tracking target
   const handleMapClick = useCallback((lat: number, lng: number) => {
     console.log('Map tapped:', lat, lng);
     setShowTargetMenu({ lat, lng });
   }, []);
 
-  // V96: Create a new map target
+  // Create a new map target
   const createMapTarget = useCallback(
     (lat: number, lng: number, name: string, type: MapTarget['type']) => {
       const colors = {
@@ -1184,7 +1184,7 @@ export default function Home() {
     [mapTargets.length]
   );
 
-  // V96: Start tracking a map target
+  // Start tracking a map target
   const startTrackingTarget = useCallback(
     (target: MapTarget) => {
       console.log('Starting tracking for target:', target.name);
@@ -1231,7 +1231,7 @@ export default function Home() {
     [deviceData?.location, startLocationTracking]
   );
 
-  // V96: Find AI route to map target
+  // Find AI route to map target
   const findRouteToTarget = async (target: MapTarget) => {
     if (!deviceData?.location) {
       showToast({
@@ -1301,7 +1301,7 @@ export default function Home() {
     setRouteLoading(false);
   };
 
-  // V96: Delete a map target
+  // Delete a map target
   const deleteMapTarget = useCallback(
     (targetId: string) => {
       setMapTargets(prev => prev.filter(t => t.id !== targetId));
@@ -1602,7 +1602,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* V96: Tap-to-Track Target Menu */}
+      {/* Tap-to-Track Target Menu */}
       {showTargetMenu && (
         <div className="target-menu-overlay" onClick={() => setShowTargetMenu(null)}>
           <div className="target-menu" onClick={e => e.stopPropagation()}>
@@ -1892,7 +1892,7 @@ export default function Home() {
           {/* Track Tab */}
           {tab === 'track' && (
             <>
-              {/* V96: Map Targets */}
+              {/* Map Targets */}
               {mapTargets.length > 0 && (
                 <div className="section">
                   <div className="section-header">

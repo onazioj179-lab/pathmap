@@ -1,5 +1,5 @@
 /**
- * V84: Frontend Map Renderer Fix
+ * Frontend Map Renderer Fix
  * Ensures UI map engine can display fetched tiles correctly.
  * Removes grey fallback layers, guarantees tile drawing, prevents blank render passes.
  */

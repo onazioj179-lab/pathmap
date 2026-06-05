@@ -389,7 +389,7 @@ class SyncLayer:
         self.enqueue_event(event)
         return event
 
-    # V50: New sync channels (map layer, navigation state, action status)
+    # New sync channels (map layer, navigation state, action status)
     def sync_map_layer(
         self,
         layer: str,
@@ -442,7 +442,7 @@ class SyncLayer:
         self.enqueue_event(event)
         return event
 
-    # V51: Gesture and preview state sync
+    # Gesture and preview state sync
     def sync_gesture_state(
         self,
         gesture_active: bool,
@@ -475,7 +475,7 @@ class SyncLayer:
         self.enqueue_event(event)
         return event
 
-    # V52: Offline mode state sync
+    # Offline mode state sync
     def sync_offline_state(
         self,
         offline_mode: bool,

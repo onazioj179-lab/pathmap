@@ -12,7 +12,7 @@ interface PanelTrackingProps {
 export default function PanelTracking({ state, updateState, onClose }: PanelTrackingProps) {
   const [controllerState, setControllerState] = useState(interactionController.getState());
 
-  // V41: Subscribe to InteractionController state
+  // Subscribe to InteractionController state
   useEffect(() => {
     const unsubscribe = interactionController.subscribe(setControllerState);
     return unsubscribe;
@@ -21,7 +21,7 @@ export default function PanelTracking({ state, updateState, onClose }: PanelTrac
   const handleStartTracking = () => {
     if (controllerState.isTrackingActive) return;
 
-    // V41: Use InteractionController for tracking
+    // Use InteractionController for tracking
     interactionController.onTrackStart();
     updateState({ isTracking: true });
   };
@@ -29,7 +29,7 @@ export default function PanelTracking({ state, updateState, onClose }: PanelTrac
   const handleStopTracking = () => {
     if (!controllerState.isTrackingActive) return;
 
-    // V41: Use InteractionController to stop tracking
+    // Use InteractionController to stop tracking
     const points = interactionController.onTrackStop();
     
     // Convert to app format and update

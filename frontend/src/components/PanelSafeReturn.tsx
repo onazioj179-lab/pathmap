@@ -13,7 +13,7 @@ export default function PanelSafeReturn({ state, updateState, onClose }: PanelSa
   const [error, setError] = useState<string | null>(null);
   const [controllerState, setControllerState] = useState(interactionController.getState());
 
-  // V41: Subscribe to InteractionController state
+  // Subscribe to InteractionController state
   useEffect(() => {
     const unsubscribe = interactionController.subscribe(setControllerState);
     return unsubscribe;
@@ -31,7 +31,7 @@ export default function PanelSafeReturn({ state, updateState, onClose }: PanelSa
 
     setError(null);
 
-    // V41: Use InteractionController with debouncing + async handling
+    // Use InteractionController with debouncing + async handling
     await interactionController.onSafeReturn(
       currentPosition,
       (routeData) => {

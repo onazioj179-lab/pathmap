@@ -153,14 +153,14 @@ class LocationFluidityEngine {
   }
 
   /**
-   * V59: Enhanced heading smoothing with adaptive filtering
+   * Enhanced heading smoothing with adaptive filtering
    */
   private smoothHeading(newHeading: number): number {
     if (!this.currentState) return newHeading;
 
     const prevHeading = this.currentState.heading;
     
-    // V59: Adaptive smoothing based on speed
+    // Adaptive smoothing based on speed
     // Higher speed = less smoothing for responsive turning
     // Lower speed = more smoothing to reduce jitter
     const speedFactor = Math.min(this.currentState.speedMps / 5.0, 1.0); // 0-5 m/s range
@@ -182,7 +182,7 @@ class LocationFluidityEngine {
   }
 
   /**
-   * V59: Get interpolated position at 120Hz with micro-jerk reduction
+   * Get interpolated position at 120Hz with micro-jerk reduction
    */
   public getInterpolatedLocation(deltaMs: number): LocationState | null {
     if (!this.currentState || !this.previousState) return this.currentState;
@@ -192,7 +192,7 @@ class LocationFluidityEngine {
     this.interpolationFactor += deltaMs / updateInterval;
     this.interpolationFactor = Math.min(this.interpolationFactor, 1.0);
 
-    // V59: Apply smooth easing curve instead of linear interpolation
+    // Apply smooth easing curve instead of linear interpolation
     // This reduces micro-jerks during GPS updates
     const t = this.interpolationFactor;
     const smoothT = this.easeInOutQuad(t);
@@ -211,7 +211,7 @@ class LocationFluidityEngine {
   }
 
   /**
-   * V59: Ease-in-out quadratic for smooth GPS interpolation
+   * Ease-in-out quadratic for smooth GPS interpolation
    */
   private easeInOutQuad(t: number): number {
     return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;

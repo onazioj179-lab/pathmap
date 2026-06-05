@@ -13,14 +13,14 @@ import sys
 import logging
 import traceback
 
-# V98: Configure logging
+# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("PathMap")
 
-# V98: Environment configuration (must be early for exception handler)
+# Environment configuration (must be early for exception handler)
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-# V99: JWT Secret enforcement
+# JWT Secret enforcement
 JWT_SECRET = os.getenv("JWT_SECRET") or os.getenv("JWT_SECRET_KEY")
 if ENVIRONMENT == "production" and not JWT_SECRET:
     logger.error("[FATAL] JWT_SECRET or JWT_SECRET_KEY must be set in production")
@@ -41,47 +41,47 @@ from page_engine.sync_layer import get_sync_layer
 from page_engine.asset_manager import get_asset_manager
 from page_engine.location_access import get_location_access_page
 
-# V48: Real Location Engine + Icon Engine
+# Real Location Engine + Icon Engine
 from location.real_location_engine import get_rle, LocationUpdate
 from ui.icon_engine import get_icon_engine
 
-# V53: Ultra Stable 20-Year System
+# Ultra Stable 20-Year System
 from engines.ultra_stable_engine import UltraStableEngine
 from api.versioned_api_v1 import router_v1
 from services.long_life_backend import LongLifeBackendEngine
 from engines.engine_metadata import get_metadata
 
-# V54: Trust-Based Location + Auto-Calibration
+# Trust-Based Location + Auto-Calibration
 from location.trust_location_flow import get_trust_location_flow
 from location.auto_calibration_engine import get_auto_calibration_engine
 from location.always_on_live_location import get_always_on_live_location
 
-# V83: Tile Binding Engine
+# Tile Binding Engine
 from engines.tile_binding_engine import get_tile_binding_engine
 
-# V89: Tile Diagnostics
+# Tile Diagnostics
 from engines.tile_diagnostics import get_tile_diagnostics
 
-# V91: Tile Server Hard Fix
+# Tile Server Hard Fix
 from engines.tile_hard_fix import (
     get_tile_heartbeat,
     get_tile_fallback,
     get_tile_enforcer
 )
 
-# V92: Python Tile Proxy (Ultimate Stability)
+# Python Tile Proxy (Ultimate Stability)
 from services.tile_proxy import get_tile_proxy
 
-# V93: Social Features - Find My Friends
+# Social Features - Find My Friends
 from api.social_api import router_social as social_router
 
-# V94: Precision Tracking System
+# Precision Tracking System
 from api.tracking_api import router_tracking
 
-# V95: Device Tracking API with Auth & Encryption (now in api folder)
+# Device Tracking API with Auth & Encryption (now in api folder)
 from api.tracking_api import router as device_tracking_router
 
-# V96: Military-Grade Encrypted Tunnel System
+# Military-Grade Encrypted Tunnel System
 from api.tunnel_api import router as tunnel_router
 
 # Global variables
@@ -91,21 +91,21 @@ route_cache = None
 spatial_index = None
 safe_return_router = None
 landmark_db = None
-safety_core = None  # V21: Safety Core
-context_engine = None  # V27.1: Context-Aware Navigation
-real_location_engine = None  # V48: Real Location Engine
-icon_engine = None  # V48: Icon Engine
-ultra_stable_engine = None  # V53: Ultra Stable Engine
-long_life_backend = None  # V53: Long-Life Backend Engine
-trust_location_flow = None  # V54: Trust-Based Location Flow
-auto_calibration_engine = None  # V54: Auto-Calibration Engine v2
-always_on_live_location = None  # V54: Always-On Live Location
-tile_binding_engine = None  # V83: Tile Binding Engine
-tile_diagnostics = None  # V89: Tile Diagnostics
-tile_heartbeat = None  # V91: Tile Server Heartbeat
-tile_fallback = None  # V91: Tile Fallback Provider
-tile_enforcer = None  # V91: Tile Format Enforcer
-tile_proxy = None  # V92: Python Tile Proxy
+safety_core = None  # Safety Core
+context_engine = None  # Context-Aware Navigation
+real_location_engine = None  # Real Location Engine
+icon_engine = None  # Icon Engine
+ultra_stable_engine = None  # Ultra Stable Engine
+long_life_backend = None  # Long-Life Backend Engine
+trust_location_flow = None  # Trust-Based Location Flow
+auto_calibration_engine = None  # Auto-Calibration Engine v2
+always_on_live_location = None  # Always-On Live Location
+tile_binding_engine = None  # Tile Binding Engine
+tile_diagnostics = None  # Tile Diagnostics
+tile_heartbeat = None  # Tile Server Heartbeat
+tile_fallback = None  # Tile Fallback Provider
+tile_enforcer = None  # Tile Format Enforcer
+tile_proxy = None  # Python Tile Proxy
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -146,19 +146,19 @@ async def lifespan(app: FastAPI):
 
     asyncio.create_task(asyncio.to_thread(_load_graph_subsystems))
     
-    # V27.1: Context Engine initialization
+    # Context Engine initialization
     context_engine = ContextEngine()
     
-    # V44: Python Page Engine initialization
+    # Python Page Engine initialization
     get_page_engine()
     get_sync_layer()
     asset_manager = get_asset_manager()
     asset_manager.preload_common_icons()
     
-    # V45: Location Access Page initialization
+    # Location Access Page initialization
     get_location_access_page()
     
-    # V48: Real Location Engine + Icon Engine initialization
+    # Real Location Engine + Icon Engine initialization
     real_location_engine = get_rle()
     icon_engine = get_icon_engine()
     
@@ -171,14 +171,14 @@ async def lifespan(app: FastAPI):
     print("V48: Real Location Engine (RLE) initialized - GPS tracking ready")
     print("V48: Icon Engine (IE) initialized - professional SVG icons loaded")
     
-    # V53: Initialize Ultra Stable 20-Year System
+    # Initialize Ultra Stable 20-Year System
     ultra_stable_engine = UltraStableEngine()
     long_life_backend = LongLifeBackendEngine("pathfinder_v53.db")
     print("V53: Ultra Stable Engine (USE) initialized - Dijkstra/A*/BFS routing ready")
     print("V53: Long-Life Backend Engine (LLBE) initialized - SQLite persistence active")
     print("V53: Versioned API Contract (VIC) /v1/ - frozen until 2045-11-22")
     
-    # V54: Initialize Trust-Based Location + Auto-Calibration
+    # Initialize Trust-Based Location + Auto-Calibration
     trust_location_flow = get_trust_location_flow()
     auto_calibration_engine = get_auto_calibration_engine()
     always_on_live_location = get_always_on_live_location()
@@ -186,24 +186,24 @@ async def lifespan(app: FastAPI):
     print("V54: Auto-Calibration Engine v2 (ACE v2) initialized - 30-min refresh cycle")
     print("V54: Always-On Live Location (AOLL) initialized - no toggles, auto-tracking")
     
-    # V83: Initialize Tile Binding Engine
+    # Initialize Tile Binding Engine
     tile_binding_engine = get_tile_binding_engine()
     await tile_binding_engine.init()
     print("V83: Tile Binding Engine (TBE) initialized - tile servers verified, caching active")
     
-    # V89: Initialize Tile Diagnostics
+    # Initialize Tile Diagnostics
     tile_diagnostics = get_tile_diagnostics()
     await tile_diagnostics.init()
     diag_result = await tile_diagnostics.run('carto_dark')
     print(f"V89: Tile Diagnostics (TD) initialized - server status: {diag_result['recommendation']}")
     
-    # V91: Initialize Tile Server Hard Fix
+    # Initialize Tile Server Hard Fix
     tile_heartbeat = get_tile_heartbeat()
     tile_fallback = get_tile_fallback()
     tile_enforcer = get_tile_enforcer()
     await tile_heartbeat.init()
     
-    # V91: Validate primary tile server with blocking heartbeat
+    # Validate primary tile server with blocking heartbeat
     primary_tile_url = 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
     is_primary_valid = await tile_heartbeat.validate_with_retries(primary_tile_url)
     
@@ -213,7 +213,7 @@ async def lifespan(app: FastAPI):
         primary_tile_url = fallback_provider['url']
         print(f"[V91] Using fallback: {fallback_provider['name']}")
     
-    # V91: Test actual tile fetch with format validation
+    # Test actual tile fetch with format validation
     test_tile_url = primary_tile_url.replace('{z}', '2').replace('{x}', '2').replace('{y}', '2')
     tile_valid = await tile_heartbeat.fetch_and_validate_tile(test_tile_url)
     
@@ -230,7 +230,7 @@ async def lifespan(app: FastAPI):
     else:
         print("[V91:WARNING] All tile servers failed validation - map may show blank")
     
-    # V92: Initialize Python Tile Proxy (Ultimate Stability Layer)
+    # Initialize Python Tile Proxy (Ultimate Stability Layer)
     tile_proxy = get_tile_proxy()
     await tile_proxy.initialize()
     print("V92: Python Tile Proxy initialized - ALL tiles route through backend")
@@ -262,9 +262,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="PathFinder V98", version="98.0.0", lifespan=lifespan)
-app.state.metadata = get_metadata()  # V67: IMW — stored in core engine configuration
+app.state.metadata = get_metadata()  # IMW — stored in core engine configuration
 
-# V98: Global Exception Handler - catches all unhandled exceptions
+# Global Exception Handler - catches all unhandled exceptions
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """
@@ -304,11 +304,11 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
-# V77: Tile cache for GOTC integration
+# Tile cache for GOTC integration
 _tile_cache = {}
 _terrain_cache = {}
 
-# V97: Setup centralized logging
+# Setup centralized logging
 try:
     from middleware.logging_middleware import setup_logging, LoggingMiddleware
     setup_logging(json_output=os.environ.get('LOG_JSON', '').lower() == 'true', level='INFO')
@@ -317,7 +317,7 @@ except ImportError:
     LOGGING_MIDDLEWARE_AVAILABLE = False
     print("[WARN] Logging middleware not available")
 
-# V97: Setup rate limiting middleware
+# Setup rate limiting middleware
 try:
     from middleware.rate_limit_middleware import RateLimitMiddleware
     RATE_LIMIT_MIDDLEWARE_AVAILABLE = True
@@ -325,7 +325,7 @@ except ImportError:
     RATE_LIMIT_MIDDLEWARE_AVAILABLE = False
     print("[WARN] Rate limit middleware not available")
 
-# V98: Setup security headers middleware
+# Setup security headers middleware
 try:
     from security.hardening import SecurityHeadersMiddleware
     SECURITY_HEADERS_AVAILABLE = True
@@ -333,7 +333,7 @@ except ImportError:
     SECURITY_HEADERS_AVAILABLE = False
     print("[WARN] Security headers middleware not available")
 
-# V99: Setup cache control middleware
+# Setup cache control middleware
 try:
     from middleware.cache_control import CacheControlMiddleware
     CACHE_CONTROL_AVAILABLE = True
@@ -341,10 +341,10 @@ except ImportError:
     CACHE_CONTROL_AVAILABLE = False
     print("[WARN] Cache control middleware not available")
 
-# V98: Environment-based CORS configuration
+# Environment-based CORS configuration
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3002,http://127.0.0.1:3002").split(",")
 
-# V99: Strict CORS - no wildcards
+# Strict CORS - no wildcards
 allowed_origins = [origin.strip() for origin in CORS_ORIGINS if origin.strip() and origin.strip() != "*"]
 if ENVIRONMENT == "development" and not allowed_origins:
     allowed_origins = [
@@ -353,7 +353,7 @@ if ENVIRONMENT == "development" and not allowed_origins:
         "http://0.0.0.0:3002"
     ]
 
-# V98: HTTPS redirect in production
+# HTTPS redirect in production
 if ENVIRONMENT == "production" and os.getenv("FORCE_HTTPS", "true").lower() == "true":
     app.add_middleware(HTTPSRedirectMiddleware)
     print("[V98] HTTPS redirect enabled for production")
@@ -368,40 +368,40 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
-# V98: Add security headers middleware (before CORS)
+# Add security headers middleware (before CORS)
 if SECURITY_HEADERS_AVAILABLE:
     app.add_middleware(SecurityHeadersMiddleware)
     print("[V98] Security headers middleware enabled")
 
-# V99: Add cache control middleware
+# Add cache control middleware
 if CACHE_CONTROL_AVAILABLE:
     app.add_middleware(CacheControlMiddleware)
     print("[V99] Cache control middleware enabled for auth/sensitive endpoints")
 
-# V97: Add logging middleware (after CORS so CORS headers are added first)
+# Add logging middleware (after CORS so CORS headers are added first)
 if LOGGING_MIDDLEWARE_AVAILABLE:
     app.add_middleware(LoggingMiddleware, log_level='INFO')
 
-# V97: Add rate limiting middleware (after logging so requests are logged even if rate limited)
+# Add rate limiting middleware (after logging so requests are logged even if rate limited)
 if RATE_LIMIT_MIDDLEWARE_AVAILABLE:
     app.add_middleware(RateLimitMiddleware)
 
-# V53: Include Versioned API v1 router (frozen until 2045)
+# Include Versioned API v1 router (frozen until 2045)
 app.include_router(router_v1)
 
-# V93: Include Social Features router (Find My Friends)
+# Include Social Features router (Find My Friends)
 app.include_router(social_router)
 
-# V94: Include Precision Tracking router
+# Include Precision Tracking router
 app.include_router(router_tracking)
 
-# V95: Include Device Tracking router (Auth + Encryption)
+# Include Device Tracking router (Auth + Encryption)
 app.include_router(device_tracking_router)
 
-# V96: Include Military-Grade Encrypted Tunnel router
+# Include Military-Grade Encrypted Tunnel router
 app.include_router(tunnel_router)
 
-# V99: Initialize Prometheus metrics
+# Initialize Prometheus metrics
 try:
     from api.metrics_api import init_metrics
     init_metrics(app)
@@ -409,7 +409,7 @@ try:
 except ImportError:
     print("[WARN] Prometheus metrics not available - install prometheus-fastapi-instrumentator")
 
-# V97: Include Push Notification router
+# Include Push Notification router
 try:
     from api.push_api import router as push_router
     app.include_router(push_router)
@@ -417,7 +417,7 @@ try:
 except ImportError as e:
     print(f"[WARN] Push API not loaded: {e}")
 
-# V67: Diagnostics endpoint (guarded). Not exposed unless PATHMAP_DEBUG truthy
+# Diagnostics endpoint (guarded). Not exposed unless PATHMAP_DEBUG truthy
 if os.environ.get("PATHMAP_DEBUG", "").lower() in {"1", "true", "yes", "on"}:
     @app.get("/diagnostics/metadata")
     async def diagnostics_metadata():
@@ -438,12 +438,12 @@ class RouteRequest(BaseModel):
     end: List[float]    # [lat, lon]
     # V11-V20: New algorithm names
     algo: Optional[Literal["ShadowPath", "HomeGuard", "PathfinderX"]] = "ShadowPath"
-    # V6: Multi-modal routing
+    # Multi-modal routing
     profile: Optional[Literal["driving", "walking", "offroad"]] = "walking"
     elevation_weight: Optional[float] = 1.0
-    # V7: Performance mode
+    # Performance mode
     performance_mode: Optional[Literal["standard", "high-speed"]] = "standard"
-    # V9: Simulation mode
+    # Simulation mode
     simulation_mode: Optional[bool] = False
 
 
@@ -451,7 +451,7 @@ class CompareRequest(BaseModel):
     start: List[float]  # [lat, lon]
     end: List[float]    # [lat, lon]
     algorithms: List[Literal["ShadowPath", "HomeGuard", "PathfinderX"]]  # Compare these
-    # V6: Profile support
+    # Profile support
     profile: Optional[Literal["driving", "walking", "offroad"]] = "walking"
     elevation_weight: Optional[float] = 1.0
 
@@ -462,7 +462,7 @@ class Step(BaseModel):
     lon: float
 
 
-# V10: Analytics and heatmap (must be defined before RouteResponse)
+# Analytics and heatmap (must be defined before RouteResponse)
 class HeatmapPoint(BaseModel):
     lat: float
     lon: float
@@ -483,16 +483,16 @@ class RouteResponse(BaseModel):
     cost: float
     steps: List[Step]
     algo_used: Literal["ShadowPath", "HomeGuard", "PathfinderX"]
-    # V6: Elevation data
+    # Elevation data
     elevation_gain: Optional[float] = 0.0
     elevation_loss: Optional[float] = 0.0
     weighted_cost: Optional[float] = 0.0
-    # V9: Simulation preview
+    # Simulation preview
     preview_path: Optional[List[List[float]]] = None
     estimated_cost: Optional[float] = None
-    # V10: Analytics (no forward reference needed)
+    # Analytics (no forward reference needed)
     analytics: Optional[AnalyticsData] = None
-    # V21: Safety validation
+    # Safety validation
     safety_score: Optional[float] = None
     validation_report: Optional[Dict[str, Any]] = None
     auto_corrections: Optional[bool] = False
@@ -505,7 +505,7 @@ class AlgorithmResult(BaseModel):
     cost: float
     steps: List[Step]
     runtime_ms: float
-    # V6: Elevation
+    # Elevation
     elevation_gain: Optional[float] = 0.0
     elevation_loss: Optional[float] = 0.0
     weighted_cost: Optional[float] = 0.0
@@ -515,7 +515,7 @@ class CompareResponse(BaseModel):
     results: Dict[str, AlgorithmResult]
 
 
-# V8: Multi-stop routing
+# Multi-stop routing
 class MultiRouteRequest(BaseModel):
     points: List[List[float]]  # [start, w1, w2, ..., end]
     algo: Optional[Literal["ShadowPath", "HomeGuard", "PathfinderX"]] = "ShadowPath"
@@ -535,7 +535,7 @@ class MultiRouteResponse(BaseModel):
     waypoint_count: int
 
 
-# V27.1: Context Engine Models
+# Context Engine Models
 
 class DeviceState(BaseModel):
     battery_percent: float = 100.0
@@ -686,7 +686,7 @@ async def route(request: RouteRequest, speed: float = 1.0):
         if algo_name not in algo_impl:
             raise HTTPException(status_code=400, detail="Invalid algorithm. Use 'ShadowPath', 'HomeGuard', or 'PathfinderX'")
 
-        # V9: Simulation mode - return preview instead of full route
+        # Simulation mode - return preview instead of full route
         if request.simulation_mode:
             import math
             preview_steps = 10
@@ -714,7 +714,7 @@ async def route(request: RouteRequest, speed: float = 1.0):
         if not path:
             raise HTTPException(status_code=404, detail="No route found")
 
-        # V6: Calculate elevation metrics
+        # Calculate elevation metrics
         elev_manager = ElevationManager(graph)
         node_ids = visited[:min(len(visited), 100)]
         elev_data = elev_manager.calculate_elevation_gain_loss(node_ids) if node_ids else {'gain': 0.0, 'loss': 0.0}
@@ -724,7 +724,7 @@ async def route(request: RouteRequest, speed: float = 1.0):
             request.profile or 'walking', request.elevation_weight or 1.0
         )
 
-        # V10: Generate analytics and heatmap
+        # Generate analytics and heatmap
         analytics = None
         if len(steps) > 0:
             total_steps = len(steps)
@@ -758,7 +758,7 @@ async def route(request: RouteRequest, speed: float = 1.0):
                 heatmap=heatmap_data
             )
 
-        # V21: Apply SafetyCore validation to enhance response
+        # Apply SafetyCore validation to enhance response
         response_dict = {
             'path': path,
             'visited': visited,
@@ -1213,7 +1213,7 @@ async def analyze_context(request: ContextRequest):
 
 
 # ====================================================================================
-# V44: PYTHON PAGE ENGINE (PPE) ROUTES
+# PYTHON PAGE ENGINE (PPE) ROUTES
 # ====================================================================================
 
 # WebSocket connection manager
@@ -1510,7 +1510,7 @@ async def get_diagnostics():
 
 
 # ====================================================================================
-# V45: UNIVERSAL LOCATION ACCESS PAGE ROUTES
+# UNIVERSAL LOCATION ACCESS PAGE ROUTES
 # ====================================================================================
 
 @app.get("/v45", response_class=HTMLResponse)
@@ -2227,14 +2227,14 @@ async def v77_health_check():
             "status": "online",
             "algorithms": ["ShadowPath", "HomeGuard", "PathfinderX"]
         },
-        # V82: BFIS versions
+        # BFIS versions
         "api_version": "v1",
         "tile_format_version": "terrarium_v1",
         "terrain_layer_version": "v75",
         "ui_integration_version": "v78",
         "build_id": get_metadata().get("build_id", "dev-unknown"),
         "version": "77.0.0",
-        # V83: Tile config status
+        # Tile config status
         "tile_config_ready": tile_config_ready,
         "tile_proxy": "operational" if tile_config_ready else "initializing"
     }

@@ -21,11 +21,11 @@ export interface AppState {
   visualizationSpeed: number;
   contextData: any | null;
   safetyScore: number;
-  visualizationMode: VisualizationMode; // V30: Algorithm reveal mode
-  showAlgorithmBehavior: boolean; // V30: Comparison mode toggle
-  liveNavigation: NavigationState | null; // V31: Real-time navigation state
-  isLiveNavActive: boolean; // V31: Live navigation enabled
-  // V93: Social features
+  visualizationMode: VisualizationMode; // Algorithm reveal mode
+  showAlgorithmBehavior: boolean; // Comparison mode toggle
+  liveNavigation: NavigationState | null; // Real-time navigation state
+  isLiveNavActive: boolean; // Live navigation enabled
+  // Social features
   showSocialHub: boolean;
   showAuthModal: boolean;
 }

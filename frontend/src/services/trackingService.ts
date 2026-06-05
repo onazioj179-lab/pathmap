@@ -1,7 +1,7 @@
 /**
  * PathMap Tracking Service
  * Complete device tracking API client with real-time WebSocket support
- * V96: Integrated with Military-Grade Encrypted Tunnel
+ * Integrated with Military-Grade Encrypted Tunnel
  */
 
 import { tunnelService } from './tunnelService';
@@ -83,14 +83,14 @@ class TrackingService {
   private authCallbacks: Set<AuthCallback> = new Set();
   private locationCallbacks: Set<(location: LocationData) => void> = new Set();
   private geofenceCallbacks: Set<(event: { type: string; geofence: Geofence }) => void> = new Set();
-  private tunnelEnabled: boolean = true; // V96: Encrypted tunnel mode
+  private tunnelEnabled: boolean = true; // Encrypted tunnel mode
 
   constructor() {
     this.loadFromStorage();
-    this.initTunnel(); // V96: Initialize encrypted tunnel
+    this.initTunnel(); // Initialize encrypted tunnel
   }
 
-  // V96: Initialize encrypted tunnel connection
+  // Initialize encrypted tunnel connection
   private async initTunnel(): Promise<void> {
     if (this.tunnelEnabled) {
       console.log('[TrackingService] Initializing encrypted tunnel...');
@@ -133,12 +133,12 @@ class TrackingService {
     }
   }
 
-  // V96: Check if encrypted tunnel is active
+  // Check if encrypted tunnel is active
   isTunnelActive(): boolean {
     return this.tunnelEnabled && tunnelService.isConnected();
   }
 
-  // V96: Get tunnel statistics
+  // Get tunnel statistics
   getTunnelStats(): object {
     return tunnelService.getStats();
   }
@@ -305,7 +305,7 @@ class TrackingService {
     const deviceId = this.deviceId;
     if (!deviceId) throw new Error('No device registered');
 
-    // V96: Route through encrypted tunnel if active
+    // Route through encrypted tunnel if active
     if (this.isTunnelActive()) {
       const success = await tunnelService.sendLocation(
         location.lat,
