@@ -185,19 +185,29 @@ def mock_gps():
 
 @pytest.fixture
 def mock_graph():
-    """Mock OSM graph."""
+    """Mock OSM graph (osmnx-style MultiDiGraph so the pathfinders work on it)."""
     import networkx as nx
-    G = nx.Graph()
-    # Add test nodes
+    G = nx.MultiDiGraph()
+    G.graph["crs"] = "epsg:4326"
+    # Add test nodes (y=lat, x=lon)
     G.add_node(1, y=9.0820, x=7.4900)
     G.add_node(2, y=9.0830, x=7.4910)
     G.add_node(3, y=9.0840, x=7.4920)
     G.add_node(4, y=9.0850, x=7.4950)
-    # Add test edges
-    G.add_edge(1, 2, length=100, name="Test Road 1")
-    G.add_edge(2, 3, length=100, name="Test Road 2")
-    G.add_edge(3, 4, length=150, name="Test Road 3")
+    # Add test edges (both directions, like a drivable OSM graph)
+    for u, v, length, name in [(1, 2, 100, "Test Road 1"),
+                               (2, 3, 100, "Test Road 2"),
+                               (3, 4, 150, "Test Road 3")]:
+        G.add_edge(u, v, length=length, name=name)
+        G.add_edge(v, u, length=length, name=name)
     return G
+
+
+@pytest.fixture
+def mock_graph_coords():
+    """Node id -> (lat, lon) for the mock graph above."""
+    return {1: (9.0820, 7.4900), 2: (9.0830, 7.4910),
+            3: (9.0840, 7.4920), 4: (9.0850, 7.4950)}
 
 
 # ============== CLEANUP ==============
