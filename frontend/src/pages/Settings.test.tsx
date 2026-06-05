@@ -54,10 +54,12 @@ describe('Settings Page', () => {
     expect(screen.getByRole('button', { name: 'settings.unitsImperial' })).toBeInTheDocument();
   });
 
-  test('saves preferences locally', () => {
+  test('saves preferences locally', async () => {
     renderSettings();
     fireEvent.click(screen.getByRole('button', { name: 'settings.save' }));
-    expect(screen.getByText('settings.saved')).toBeInTheDocument();
+    // handleSave is async (persists settings) and sets the saved flag after an
+    // await, so wait for the indicator instead of asserting synchronously.
+    expect(await screen.findByText('settings.saved')).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Dismiss settings.saveSuccess' })
     ).toBeInTheDocument();
@@ -96,12 +98,12 @@ describe('Settings Page', () => {
     expect(screen.getByRole('radio', { name: 'settings.planEnterpriseName' })).toBeInTheDocument();
   });
 
-  test('save-then-reset clears the saved indicator', () => {
+  test('save-then-reset clears the saved indicator', async () => {
     renderSettings();
     const saveBtn = screen.getByRole('button', { name: 'settings.save' });
     const resetBtn = screen.getByRole('button', { name: 'settings.reset' });
     fireEvent.click(saveBtn);
-    expect(screen.getByText('settings.saved')).toBeInTheDocument();
+    expect(await screen.findByText('settings.saved')).toBeInTheDocument();
     fireEvent.click(resetBtn);
     expect(screen.queryByText('settings.saved')).not.toBeInTheDocument();
     expect(

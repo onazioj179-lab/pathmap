@@ -70,6 +70,7 @@ class TileProxyEngine:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         self.http_client: Optional[httpx.AsyncClient] = None
+        self.initialized = False
         self.stats = {
             "requests": 0,
             "cache_hits": 0,
@@ -92,6 +93,7 @@ class TileProxyEngine:
             },
             follow_redirects=True
         )
+        self.initialized = True
         logger.info("[V92:PROXY] HTTP client initialized")
 
     async def shutdown(self):

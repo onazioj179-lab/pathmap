@@ -51,6 +51,8 @@ cache/
 
 # Test coverage
 .coverage
+coverage.xml
+backend/coverage.xml
 htmlcov/
 .pytest_cache/
 

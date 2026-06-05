@@ -17,7 +17,7 @@ describe('OnboardingTerms', () => {
     );
 
     expect(
-      screen.getByRole('heading', { name: 'Agree before entering PathMap' })
+      screen.getByRole('heading', { name: 'Welcome to PathMap' })
     ).toBeInTheDocument();
     expect(screen.queryByText('PathMap app')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Enter PathMap' })).toBeDisabled();
