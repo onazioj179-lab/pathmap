@@ -130,9 +130,10 @@ class TestRouteAPI:
         for algo in ["ShadowPath", "HomeGuard", "PathfinderX"]:
             request = {**base_request, "algo": algo}
             response = client.post("/route", json=request)
-            
-            # Just verify endpoint accepts all algorithms
-            assert response.status_code in [200, 404, 500]
+
+            # Endpoint accepts all algorithms; 503 if the graph is still loading
+            # in the background at startup.
+            assert response.status_code in [200, 404, 500, 503]
     
     def test_compare_endpoint(self, client):
         """POST /compare should compare algorithms."""
