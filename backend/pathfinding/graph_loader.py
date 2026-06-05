@@ -1,14 +1,18 @@
+import os
 import osmnx as ox
 from pathlib import Path
 
 
 class GraphLoader:
     """Loads and manages OpenStreetMap graph data"""
-    
-    def __init__(self, cache_path: str = "data/graph.graphml"):
+
+    def __init__(self, cache_path: str = None):
+        # Cache path is configurable via OSM_GRAPH_CACHE so operators can point
+        # at a prebuilt graph without code changes.
+        cache_path = cache_path or os.getenv("OSM_GRAPH_CACHE", "data/graph.graphml")
         self.cache_path = Path(__file__).parent.parent / cache_path
         self.graph = None
-    
+
     def load_graph(self, location: str = None, force_reload: bool = False):
         """
         Load graph from cache or download from OSM
@@ -26,10 +30,12 @@ class GraphLoader:
             self.graph = ox.load_graphml(self.cache_path)
             return self.graph
         
-        # Download from OSM
+        # Download from OSM. Operators set OSM_GRAPH_LOCATION (e.g.
+        # "Manhattan, New York, USA") to build a graph for their real coverage
+        # area; defaults to a small real sample so the app runs out of the box.
         if location is None:
-            location = "Piedmont, California, USA"
-        
+            location = os.getenv("OSM_GRAPH_LOCATION", "Piedmont, California, USA")
+
         print(f"Downloading OSM graph for: {location}")
         print("This may take a few minutes on first run...")
         

@@ -73,24 +73,29 @@ class JWTHandler:
         username: str,
         email: str,
         token_type: str = 'access',
-        custom_claims: Optional[Dict[str, Any]] = None
+        custom_claims: Optional[Dict[str, Any]] = None,
+        expires_delta: Optional[float] = None
     ) -> str:
         """
         Create a JWT token.
-        
+
         Args:
             user_id: User's unique ID
             username: User's username
             email: User's email
             token_type: 'access' or 'refresh'
             custom_claims: Additional claims to include
-            
+            expires_delta: Override expiry, in seconds from now (may be negative
+                to create an already-expired token)
+
         Returns:
             JWT token string
         """
         now = time.time()
-        
-        if token_type == 'refresh':
+
+        if expires_delta is not None:
+            expires = now + expires_delta
+        elif token_type == 'refresh':
             expires = now + self.REFRESH_TOKEN_EXPIRE
         else:
             expires = now + self.ACCESS_TOKEN_EXPIRE
@@ -123,7 +128,39 @@ class JWTHandler:
         signature = self._sign(message)
         
         return f"{message}.{signature}"
-    
+
+    def create_access_token(
+        self,
+        user_id: str,
+        username: str = "",
+        email: str = "",
+        custom_claims: Optional[Dict[str, Any]] = None,
+        expires_delta: Optional[float] = None
+    ) -> str:
+        """Convenience wrapper to create an access token."""
+        return self.create_token(
+            user_id, username, email,
+            token_type='access',
+            custom_claims=custom_claims,
+            expires_delta=expires_delta
+        )
+
+    def create_refresh_token(
+        self,
+        user_id: str,
+        username: str = "",
+        email: str = "",
+        custom_claims: Optional[Dict[str, Any]] = None,
+        expires_delta: Optional[float] = None
+    ) -> str:
+        """Convenience wrapper to create a refresh token."""
+        return self.create_token(
+            user_id, username, email,
+            token_type='refresh',
+            custom_claims=custom_claims,
+            expires_delta=expires_delta
+        )
+
     def verify_token(self, token: str) -> Optional[Dict[str, Any]]:
         """
         Verify and decode a JWT token.

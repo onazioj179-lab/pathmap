@@ -19,12 +19,10 @@ Watermark: OJ
 """
 
 import asyncio
-import hashlib
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 import httpx
-from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +68,7 @@ class TileProxyEngine:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         self.http_client: Optional[httpx.AsyncClient] = None
+        self.initialized = False
         self.stats = {
             "requests": 0,
             "cache_hits": 0,
@@ -92,6 +91,7 @@ class TileProxyEngine:
             },
             follow_redirects=True
         )
+        self.initialized = True
         logger.info("[V92:PROXY] HTTP client initialized")
 
     async def shutdown(self):

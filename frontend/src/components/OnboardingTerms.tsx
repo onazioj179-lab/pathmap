@@ -36,48 +36,48 @@ export default function OnboardingTerms({ children }: OnboardingTermsProps) {
     <main className="onboarding-terms" aria-labelledby="onboarding-title">
       <section className="onboarding-terms__visual" aria-hidden="true">
         <div className="onboarding-terms__scan-card">
-          <span>PATHMAP GRID</span>
-          <strong>Commercial Access</strong>
-          <small>License gate active</small>
+          <span>PATHMAP</span>
+          <strong>Open Core</strong>
+          <small>Self-hosted &amp; private</small>
         </div>
       </section>
 
       <section className="onboarding-terms__panel">
-        <div className="onboarding-terms__eyebrow">Company terms</div>
-        <h1 id="onboarding-title">Agree before entering PathMap</h1>
+        <div className="onboarding-terms__eyebrow">Before you start</div>
+        <h1 id="onboarding-title">Welcome to PathMap</h1>
         <p className="onboarding-terms__lead">
-          PathMap is proprietary commercial software owned by onazi Treasure Oj. Access requires
-          these company-protective terms or a separate paid agreement.
+          Private, encrypted live location tracking you host yourself. The core is free and
+          open to run and modify — hosted and Enterprise features are optional paid add-ons.
         </p>
 
-        <div className="onboarding-terms__rules" aria-label="Terms and conditions summary">
+        <div className="onboarding-terms__rules" aria-label="How PathMap works">
           <article>
             <span>01</span>
             <div>
-              <h2>Commercial license required</h2>
+              <h2>Free, self-hosted core</h2>
               <p>
-                Local evaluation is allowed. Production, resale, SaaS, hosted, white-label,
-                embedded, or paid use requires an active plan.
+                Run the full PathMap core yourself, read the code, and adapt it to your team —
+                no license fee to operate your own deployment.
               </p>
             </div>
           </article>
           <article>
             <span>02</span>
             <div>
-              <h2>No removal or misuse</h2>
+              <h2>Your data stays yours</h2>
               <p>
-                Do not remove ownership notices, watermarks, anti-tamper checks, license notices, or
-                PathMap attribution.
+                Location updates are end-to-end encrypted before they leave the device. The
+                server routes ciphertext and never sees raw coordinates.
               </p>
             </div>
           </article>
           <article>
             <span>03</span>
             <div>
-              <h2>Company control</h2>
+              <h2>Hosted &amp; Enterprise are optional</h2>
               <p>
-                PathMap may suspend or revoke access for non-payment, misuse, security risk,
-                unauthorized distribution, or out-of-scope use.
+                Don&apos;t want to run servers? Managed hosting, SSO, and priority support are
+                available as paid plans — but you never need them to use PathMap.
               </p>
             </div>
           </article>
@@ -86,8 +86,8 @@ export default function OnboardingTerms({ children }: OnboardingTermsProps) {
             <div>
               <h2>Your deployment responsibility</h2>
               <p>
-                You handle user consent, location laws, billing compliance, contracts, and safe
-                operation in every deployment.
+                You handle user consent, location laws, and safe operation in every deployment
+                you run.
               </p>
             </div>
           </article>
@@ -100,7 +100,7 @@ export default function OnboardingTerms({ children }: OnboardingTermsProps) {
             onChange={event => setConfirmed(event.target.checked)}
           />
           <span>
-            I agree to the PathMap commercial terms and understand paid use needs an active license.
+            I understand how PathMap works and agree to the terms in LICENSE.md.
           </span>
         </label>
 

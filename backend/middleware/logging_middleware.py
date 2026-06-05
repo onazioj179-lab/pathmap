@@ -107,11 +107,9 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         
         # Process request
         response = None
-        error = None
         try:
             response = await call_next(request)
         except Exception as e:
-            error = e
             logger.error(
                 f"[{request_id}] Request failed: {str(e)}",
                 extra={

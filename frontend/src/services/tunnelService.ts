@@ -50,9 +50,6 @@ const DEFAULT_CONFIG: TunnelConfig = {
   stealthMode: true,
 };
 
-// TLS-like magic bytes for stealth
-const TLS_MAGIC = new Uint8Array([0x17, 0x03, 0x03]);
-
 class TunnelService {
   private config: TunnelConfig;
   private session: TunnelSession | null = null;
@@ -74,7 +71,9 @@ class TunnelService {
     try {
       console.log('[TUNNEL] Initiating secure tunnel...');
 
-      // Generate X25519 keypair (using P-256 as WebCrypto fallback)
+      // Generate an ECDH P-256 keypair. P-256 is used end-to-end (browser and
+      // server) because it is natively supported by WebCrypto everywhere with
+      // no fallback; the backend (security/tunnel_engine.py) matches this curve.
       this.keyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, [
         'deriveKey',
         'deriveBits',
@@ -114,36 +113,38 @@ class TunnelService {
         256
       );
 
-      // Derive session keys using HKDF
-      const keyMaterial = await crypto.subtle.importKey('raw', sharedBits, 'HKDF', false, [
-        'deriveKey',
-      ]);
+      // Tunnel protocol v2 key derivation. Must match backend
+      // security/tunnel_engine.py exactly:
+      //   salt = SHA-256("pathmap-tunnel-v2" || clientPub(65) || serverPub(65))
+      //   okm  = HKDF-SHA256(ikm=sharedBits, salt, info="pathmap-tunnel-keys:0", 64 bytes)
+      //   key_c2s = okm[0:32] (client->server), key_s2c = okm[32:64] (server->client)
+      const clientPub = new Uint8Array(publicKeyRaw);
+      const serverPub = new Uint8Array(serverPublicKeyRaw);
+      const label = new TextEncoder().encode('pathmap-tunnel-v2');
+      const saltInput = new Uint8Array(label.length + clientPub.length + serverPub.length);
+      saltInput.set(label, 0);
+      saltInput.set(clientPub, label.length);
+      saltInput.set(serverPub, label.length + clientPub.length);
+      const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', saltInput));
 
-      const sendKey = await crypto.subtle.deriveKey(
-        {
-          name: 'HKDF',
-          hash: 'SHA-256',
-          salt: new Uint8Array(32),
-          info: new TextEncoder().encode('pathmap-send'),
-        },
-        keyMaterial,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt']
+      const ikm = await crypto.subtle.importKey('raw', sharedBits, 'HKDF', false, ['deriveBits']);
+      const okm = new Uint8Array(
+        await crypto.subtle.deriveBits(
+          {
+            name: 'HKDF',
+            hash: 'SHA-256',
+            salt,
+            info: new TextEncoder().encode('pathmap-tunnel-keys:0'),
+          },
+          ikm,
+          64 * 8
+        )
       );
-
-      const recvKey = await crypto.subtle.deriveKey(
-        {
-          name: 'HKDF',
-          hash: 'SHA-256',
-          salt: new Uint8Array(32),
-          info: new TextEncoder().encode('pathmap-recv'),
-        },
-        keyMaterial,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['decrypt']
-      );
+      const keyC2S = await crypto.subtle.importKey('raw', okm.slice(0, 32), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+      const keyS2C = await crypto.subtle.importKey('raw', okm.slice(32, 64), { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+      // Client encrypts outbound (client->server) and decrypts inbound (server->client).
+      const sendKey = keyC2S;
+      const recvKey = keyS2C;
 
       // Create session
       this.session = {
@@ -228,28 +229,23 @@ class TunnelService {
     try {
       const plaintext = new TextEncoder().encode(JSON.stringify(message));
 
-      // Generate nonce (counter + random)
-      const nonce = new Uint8Array(12);
-      const view = new DataView(nonce.buffer);
-      view.setBigUint64(0, BigInt(this.session.sendNonce++), false);
-      crypto.getRandomValues(nonce.subarray(8));
-
-      // Encrypt with AES-256-GCM
+      // 96-bit random nonce; AAD binds the ciphertext to this session id.
+      const nonce = crypto.getRandomValues(new Uint8Array(12));
+      const aad = new TextEncoder().encode(this.session.sessionId);
       const ciphertext = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: nonce },
+        { name: 'AES-GCM', iv: nonce, additionalData: aad },
         this.session.sendKey!,
         plaintext
       );
 
-      // Build encrypted frame
-      const frame = this.buildFrame(0, nonce, new Uint8Array(ciphertext));
+      // JSON envelope matches backend security/tunnel_engine.py exactly.
+      const envelope = JSON.stringify({
+        n: this.arrayBufferToBase64(nonce.buffer),
+        ct: this.arrayBufferToBase64(ciphertext),
+      });
+      this.ws.send(envelope);
 
-      // Apply stealth obfuscation
-      const obfuscated = this.config.stealthMode ? this.obfuscate(frame) : frame;
-
-      this.ws.send(obfuscated);
-
-      this.session.bytesTransferred += obfuscated.byteLength;
+      this.session.bytesTransferred += envelope.length;
       this.session.messagesTransferred++;
       this.session.lastActivity = Date.now();
 
@@ -263,110 +259,27 @@ class TunnelService {
   /**
    * Handle incoming encrypted message
    */
-  private async handleIncomingMessage(data: ArrayBuffer): Promise<void> {
+  private async handleIncomingMessage(data: string | ArrayBuffer): Promise<void> {
     if (!this.session) return;
 
     try {
-      let frame: Uint8Array = new Uint8Array(data);
+      const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
+      const envelope = JSON.parse(text) as { n: string; ct: string };
+      const nonce = new Uint8Array(this.base64ToArrayBuffer(envelope.n));
+      const ciphertext = new Uint8Array(this.base64ToArrayBuffer(envelope.ct));
+      const aad = new TextEncoder().encode(this.session.sessionId);
 
-      // Remove stealth obfuscation
-      if (this.config.stealthMode) {
-        const deobfuscated = this.deobfuscate(frame);
-        if (!deobfuscated) return;
-        frame = new Uint8Array(deobfuscated);
-      }
-
-      // Parse frame
-      const { nonce, ciphertext } = this.parseFrame(frame);
-
-      // Decrypt
       const plaintext = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(nonce) },
+        { name: 'AES-GCM', iv: nonce, additionalData: aad },
         this.session.recvKey!,
-        new Uint8Array(ciphertext)
+        ciphertext
       );
 
       const message: TunnelMessage = JSON.parse(new TextDecoder().decode(plaintext));
-
       this.session.lastActivity = Date.now();
-
-      // Dispatch to handlers
       this.dispatchMessage(message);
     } catch (error) {
       console.error('[TUNNEL] Message handling failed:', error);
-    }
-  }
-
-  /**
-   * Build encrypted frame
-   */
-  private buildFrame(frameType: number, nonce: Uint8Array, ciphertext: Uint8Array): Uint8Array {
-    // Format: [version:1][type:1][nonce:12][len:4][ciphertext]
-    const frame = new Uint8Array(2 + 12 + 4 + ciphertext.byteLength);
-    frame[0] = 1; // Version
-    frame[1] = frameType;
-    frame.set(nonce, 2);
-    new DataView(frame.buffer).setUint32(14, ciphertext.byteLength, false);
-    frame.set(ciphertext, 18);
-    return frame;
-  }
-
-  /**
-   * Parse encrypted frame
-   */
-  private parseFrame(frame: Uint8Array): {
-    frameType: number;
-    nonce: Uint8Array;
-    ciphertext: Uint8Array;
-  } {
-    const frameType = frame[1];
-    const nonce = frame.slice(2, 14);
-    const ciphertextLen = new DataView(frame.buffer).getUint32(14, false);
-    const ciphertext = frame.slice(18, 18 + ciphertextLen);
-    return { frameType, nonce, ciphertext };
-  }
-
-  /**
-   * Apply stealth obfuscation (TLS camouflage + padding)
-   */
-  private obfuscate(data: Uint8Array): Uint8Array {
-    // Calculate padding to make uniform size
-    const targetSize = Math.ceil((data.byteLength + 8) / 64) * 64;
-    const paddingLen = targetSize - data.byteLength - 8;
-    const padding = new Uint8Array(paddingLen);
-    crypto.getRandomValues(padding);
-
-    // Build obfuscated packet
-    const packet = new Uint8Array(5 + 4 + 4 + data.byteLength + paddingLen);
-
-    // TLS header camouflage
-    packet.set(TLS_MAGIC, 0);
-    new DataView(packet.buffer).setUint16(3, packet.byteLength - 5, false);
-
-    // Data length + padding length + data + padding
-    new DataView(packet.buffer).setUint32(5, data.byteLength, false);
-    new DataView(packet.buffer).setUint32(9, paddingLen, false);
-    packet.set(data, 13);
-    packet.set(padding, 13 + data.byteLength);
-
-    return packet;
-  }
-
-  /**
-   * Remove stealth obfuscation
-   */
-  private deobfuscate(packet: Uint8Array): Uint8Array | null {
-    try {
-      // Check TLS header
-      if (packet[0] !== TLS_MAGIC[0] || packet[1] !== TLS_MAGIC[1] || packet[2] !== TLS_MAGIC[2]) {
-        return packet; // Not obfuscated
-      }
-
-      const dataLen = new DataView(packet.buffer).getUint32(5, false);
-      const data = packet.slice(13, 13 + dataLen);
-      return data;
-    } catch {
-      return null;
     }
   }
 

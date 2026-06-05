@@ -4,7 +4,7 @@ PATHMAP V97 - Push Notification API
 Handles Web Push subscription management and notification sending.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import logging
@@ -109,15 +109,13 @@ async def send_push_notification(
     Otherwise, sends to all subscribers.
     """
     try:
-        from services.vapid_keys import get_cached_private_key, get_cached_public_key
-        
         targets = subscription_ids or list(_subscriptions.keys())
         
         if not targets:
             return {"success": False, "message": "No subscribers", "sent": 0}
         
         # Build notification payload
-        payload = json.dumps({
+        json.dumps({
             "title": message.title,
             "body": message.body,
             "icon": message.icon,
@@ -136,7 +134,7 @@ async def send_push_notification(
             if sub_id not in _subscriptions:
                 continue
                 
-            subscription = _subscriptions[sub_id]
+            _subscriptions[sub_id]
             
             try:
                 # In production, use pywebpush library:
@@ -190,7 +188,7 @@ async def test_push_endpoint():
             "vapid_configured": bool(public_key),
             "subscriptions": len(_subscriptions)
         }
-    except:
+    except Exception:
         return {
             "status": "ok",
             "vapid_configured": False,

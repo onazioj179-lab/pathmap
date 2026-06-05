@@ -1,17 +1,18 @@
 """
-PATHMAP - Military-Grade Encrypted Tunnel Engine
-=================================================
-X25519 key exchange, AES-256-GCM encryption, forward secrecy,
-automatic key rotation, and AI-powered threat detection.
+PATHMAP - Encrypted Tunnel Engine (protocol v2)
+===============================================
+ECDH P-256 key exchange, HKDF-SHA256 key derivation, and AES-256-GCM
+authenticated encryption. P-256 is used so the browser client can use native
+WebCrypto with no fallback; both ends derive identical directional keys from a
+salt computed over both public keys. See frontend/src/services/tunnelService.ts
+for the matching client and backend/tests/test_tunnel.py for the round-trip
+tests.
 
-Security Level: MILITARY GRADE
-- Perfect Forward Secrecy (PFS)
-- Zero-Knowledge Architecture
-- Anti-Traffic Analysis
-- Self-Learning Threat Detection
+- Ephemeral keys per connection (forward secrecy across sessions)
+- Authenticated encryption (tamper-evident)
+- AAD binds every message to its session id
 """
 
-import os
 import json
 import time
 import hashlib
@@ -27,8 +28,8 @@ from enum import Enum
 from collections import deque
 
 try:
-    from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
-    from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.backends import default_backend
@@ -138,46 +139,57 @@ class TunnelEngine:
         if not CRYPTO_AVAILABLE:
             logger.warning("Cryptography library not available - using fallback mode")
     
-    def generate_keypair(self) -> Tuple[bytes, bytes]:
+    # Curve is NIST P-256 (secp256r1) end-to-end so the browser can use native
+    # WebCrypto (ECDH P-256) with no fallback. Public keys are the 65-byte
+    # uncompressed point (0x04 || X || Y). This protocol is "v2"; the KDF salt is
+    # derived from both public keys so the client can reproduce it (the old
+    # design used a server-only secret as salt, which the client could never know).
+    PROTO_LABEL = b"pathmap-tunnel-v2"
+    KDF_INFO = b"pathmap-tunnel-keys"
+
+    def generate_keypair(self):
+        """Return (private_key_obj_or_bytes, public_raw_uncompressed_bytes)."""
         if CRYPTO_AVAILABLE:
-            private_key = X25519PrivateKey.generate()
-            public_key = private_key.public_key()
-            private_bytes = private_key.private_bytes(
-                encoding=serialization.Encoding.Raw,
-                format=serialization.PrivateFormat.Raw,
-                encryption_algorithm=serialization.NoEncryption()
+            private_key = ec.generate_private_key(ec.SECP256R1())
+            public_bytes = private_key.public_key().public_bytes(
+                encoding=serialization.Encoding.X962,
+                format=serialization.PublicFormat.UncompressedPoint,
             )
-            public_bytes = public_key.public_bytes(
-                encoding=serialization.Encoding.Raw,
-                format=serialization.PublicFormat.Raw
-            )
-            return private_bytes, public_bytes
+            return private_key, public_bytes
         else:
             private = secrets.token_bytes(32)
-            public = hashlib.sha256(private).digest()
+            public = b"\x04" + hashlib.sha256(private).digest() + hashlib.sha256(private[::-1]).digest()
             return private, public
-    
-    def compute_shared_secret(self, local_private: bytes, remote_public: bytes) -> bytes:
+
+    def compute_shared_secret(self, local_private, remote_public: bytes) -> bytes:
         if CRYPTO_AVAILABLE:
-            private_key = X25519PrivateKey.from_private_bytes(local_private)
-            public_key = X25519PublicKey.from_public_bytes(remote_public)
-            return private_key.exchange(public_key)
+            peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), remote_public)
+            return local_private.exchange(ec.ECDH(), peer)
         else:
-            return bytes(a ^ b for a, b in zip(local_private, remote_public))
-    
-    def derive_session_keys(self, shared_secret: bytes, session_id: str, rotation: int = 0) -> Tuple[bytes, bytes]:
-        info = f"pathmap-tunnel-v{self.VERSION}:{session_id}:{rotation}".encode()
+            return hashlib.sha256(bytes(local_private) + remote_public).digest()
+
+    def _kdf_salt(self, client_pub: bytes, server_pub: bytes) -> bytes:
+        # Both ends know both public keys, so both derive the same salt.
+        return hashlib.sha256(self.PROTO_LABEL + client_pub + server_pub).digest()
+
+    def derive_session_keys(
+        self, shared_secret: bytes, client_pub: bytes, server_pub: bytes, rotation: int = 0
+    ) -> Tuple[bytes, bytes]:
+        """Return (key_c2s, key_s2c). key_c2s encrypts client->server traffic,
+        key_s2c encrypts server->client traffic."""
+        salt = self._kdf_salt(client_pub, server_pub)
+        info = self.KDF_INFO + b":" + str(rotation).encode()
         if CRYPTO_AVAILABLE:
             hkdf = HKDF(
                 algorithm=hashes.SHA256(),
                 length=self.KEY_SIZE * 2,
-                salt=self.master_secret,
+                salt=salt,
                 info=info,
                 backend=default_backend()
             )
             key_material = hkdf.derive(shared_secret)
         else:
-            key_material = hashlib.pbkdf2_hmac('sha256', shared_secret + info, self.master_secret, 100000, dklen=64)
+            key_material = hashlib.pbkdf2_hmac('sha256', shared_secret + info, salt, 100000, dklen=64)
         return key_material[:self.KEY_SIZE], key_material[self.KEY_SIZE:]
     
     def create_session(self) -> Tuple[str, bytes]:
@@ -202,9 +214,18 @@ class TunnelEngine:
             session = self.sessions.get(session_id)
             if not session or session.state != TunnelState.HANDSHAKING:
                 return False
-            session.remote_public_key = remote_public_key
-            session.shared_secret = self.compute_shared_secret(session.local_private_key, remote_public_key)
-            session.send_key, session.recv_key = self.derive_session_keys(session.shared_secret, session_id, 0)
+            try:
+                session.remote_public_key = remote_public_key
+                session.shared_secret = self.compute_shared_secret(session.local_private_key, remote_public_key)
+                key_c2s, key_s2c = self.derive_session_keys(
+                    session.shared_secret, remote_public_key, session.local_public_key, 0
+                )
+            except Exception as e:
+                logger.warning(f"Handshake key agreement failed for {session_id[:8]}: {e}")
+                return False
+            # Server receives client->server traffic and sends server->client.
+            session.recv_key = key_c2s
+            session.send_key = key_s2c
             session.state = TunnelState.ESTABLISHED
             logger.info(f"Tunnel established: {session_id[:8]}...")
             return True
@@ -216,9 +237,12 @@ class TunnelEngine:
                 return False
             session.state = TunnelState.REKEYING
             session.key_rotation_count += 1
-            session.send_key, session.recv_key = self.derive_session_keys(
-                session.shared_secret, session_id, session.key_rotation_count
+            key_c2s, key_s2c = self.derive_session_keys(
+                session.shared_secret, session.remote_public_key,
+                session.local_public_key, session.key_rotation_count
             )
+            session.recv_key = key_c2s
+            session.send_key = key_s2c
             session.send_nonce_counter = 0
             session.recv_nonce_counter = 0
             session.last_rekey_at = time.time()
@@ -228,15 +252,12 @@ class TunnelEngine:
             return True
     
     def should_rotate_keys(self, session_id: str) -> bool:
-        session = self.sessions.get(session_id)
-        if not session:
-            return False
-        if time.time() - session.last_rekey_at > self.KEY_ROTATION_INTERVAL:
-            return True
-        if session.bytes_sent + session.bytes_received > self.KEY_ROTATION_BYTES:
-            return True
-        if session.messages_sent + session.messages_received > self.KEY_ROTATION_MESSAGES:
-            return True
+        # Protocol v2 does not yet negotiate mid-session re-keying with the
+        # browser client, so auto-rotation is disabled to avoid silently
+        # breaking an established tunnel. Keys remain ephemeral per connection
+        # (a reconnect performs a fresh ECDH handshake), preserving forward
+        # secrecy across sessions. Re-enable once a rekey frame is added to
+        # both ends.
         return False
     
     def close_session(self, session_id: str):
@@ -293,7 +314,7 @@ class TunnelEngine:
             
             session_id = frame_data[2:2 + self.SESSION_ID_SIZE].hex()
             nonce = frame_data[2 + self.SESSION_ID_SIZE:2 + self.SESSION_ID_SIZE + self.NONCE_SIZE]
-            ciphertext_len = struct.unpack('>I', frame_data[2 + self.SESSION_ID_SIZE + self.NONCE_SIZE:2 + self.SESSION_ID_SIZE + self.NONCE_SIZE + 4])[0]
+            struct.unpack('>I', frame_data[2 + self.SESSION_ID_SIZE + self.NONCE_SIZE:2 + self.SESSION_ID_SIZE + self.NONCE_SIZE + 4])[0]
             ciphertext = frame_data[2 + self.SESSION_ID_SIZE + self.NONCE_SIZE + 4:]
             
             with self._lock:
@@ -336,6 +357,50 @@ class TunnelEngine:
             logger.error(f"Frame decryption error: {e}")
             return None
     
+    def encrypt_message(self, session_id: str, plaintext: bytes) -> Optional[str]:
+        """Encrypt a server->client message into a JSON envelope string.
+
+        Envelope: {"n": base64(nonce12), "ct": base64(ciphertext+tag)}.
+        AES-256-GCM, AAD = utf8(session_id). Matches the browser client exactly.
+        """
+        with self._lock:
+            session = self.sessions.get(session_id)
+            if not session or session.state != TunnelState.ESTABLISHED:
+                return None
+            if self.should_rotate_keys(session_id):
+                self.rotate_keys(session_id)
+            if not CRYPTO_AVAILABLE:
+                return None
+            nonce = secrets.token_bytes(self.NONCE_SIZE)
+            ct = AESGCM(session.send_key).encrypt(nonce, plaintext, session_id.encode())
+            session.bytes_sent += len(ct)
+            session.messages_sent += 1
+            return json.dumps({
+                "n": base64.b64encode(nonce).decode(),
+                "ct": base64.b64encode(ct).decode(),
+            })
+
+    def decrypt_message(self, session_id: str, envelope: str) -> Optional[bytes]:
+        """Decrypt a client->server JSON envelope. Returns plaintext or None."""
+        with self._lock:
+            session = self.sessions.get(session_id)
+            if not session or session.state not in (TunnelState.ESTABLISHED, TunnelState.REKEYING):
+                return None
+            if not CRYPTO_AVAILABLE:
+                return None
+            try:
+                obj = json.loads(envelope)
+                nonce = base64.b64decode(obj["n"])
+                ct = base64.b64decode(obj["ct"])
+                pt = AESGCM(session.recv_key).decrypt(nonce, ct, session_id.encode())
+                session.bytes_received += len(ct)
+                session.messages_received += 1
+                return pt
+            except Exception as e:
+                self.ai_model.invalid_macs += 1
+                logger.warning(f"decrypt_message failed for {session_id[:8]}: {e}")
+                return None
+
     def _calculate_padding(self, data_len: int) -> int:
         base_padding = self.PADDING_BLOCK - ((data_len + 4) % self.PADDING_BLOCK)
         extra_padding = secrets.randbelow(self.MAX_PADDING - self.MIN_PADDING)

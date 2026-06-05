@@ -23,7 +23,12 @@ jobs:
           if [ -f package.json ]; then npm ci; fi
 
       - name: Run Build Guard
-        run: node scripts/build-guard.mjs
+        run: |
+          if [ -f scripts/build-guard.mjs ]; then
+            node scripts/build-guard.mjs
+          else
+            echo "scripts/build-guard.mjs not present - skipping build guard"
+          fi
 
       - name: Run CEE (optional)
         run: |

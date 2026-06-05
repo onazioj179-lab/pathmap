@@ -4,9 +4,6 @@ PATHMAP - Tracking API Tests
 Tests for device tracking, location updates, geofences, and sharing.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
 
 
 class TestDeviceRegistration:
