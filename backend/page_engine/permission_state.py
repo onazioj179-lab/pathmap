@@ -7,7 +7,7 @@ fallback modes, and universal error handling across all platforms.
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 import time
 
 

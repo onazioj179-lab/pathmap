@@ -15,7 +15,6 @@ Performance: <150ms page load, <40ms button response, <20ms ISL sync
 
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
-from enum import Enum
 from .permission_state import (
     LocationPermissionState,
     PermissionDiagnostics,

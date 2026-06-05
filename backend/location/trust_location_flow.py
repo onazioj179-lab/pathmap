@@ -24,7 +24,6 @@ Trust Model:
 from typing import Optional, Dict, Literal
 from datetime import datetime
 from pydantic import BaseModel
-import json
 
 
 class LocationPermissionState(BaseModel):

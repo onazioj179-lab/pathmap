@@ -9,11 +9,10 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field, asdict
+from typing import Any, Dict, Optional
+from dataclasses import dataclass, field
 from enum import Enum
 from collections import deque
-import uuid
 
 logger = logging.getLogger(__name__)
 

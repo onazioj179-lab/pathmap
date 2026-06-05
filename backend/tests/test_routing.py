@@ -5,9 +5,6 @@ Unit tests for pathfinding algorithms: ShadowPath, HomeGuard, PathfinderX.
 """
 
 import pytest
-import networkx as nx
-from unittest.mock import patch, MagicMock
-import math
 
 
 class TestShadowPath:
@@ -175,7 +172,7 @@ class TestPerformance:
         import time
         
         start = time.time()
-        response = client.post("/route", json=sample_route_request)
+        client.post("/route", json=sample_route_request)
         elapsed = time.time() - start
         
         # Should complete within 2 seconds

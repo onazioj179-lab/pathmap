@@ -1,7 +1,6 @@
 # V6: Elevation and Profile Support
 
-from typing import Dict, Any, Optional
-import math
+from typing import Dict, Any
 
 
 class ElevationManager:
@@ -106,5 +105,5 @@ def get_edge_cost_with_elevation(graph: Any, u: int, v: int, profile_name: str,
         return RoutingProfile.calculate_weighted_cost(
             base_length, gain, loss, profile_name, elevation_weight
         )
-    except:
+    except Exception:
         return base_length

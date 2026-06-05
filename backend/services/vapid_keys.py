@@ -10,7 +10,7 @@ import json
 import base64
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict
 
 logger = logging.getLogger("VAPIDKeys")
 

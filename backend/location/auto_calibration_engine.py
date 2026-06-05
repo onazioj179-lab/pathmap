@@ -21,7 +21,7 @@ Philosophy:
 """
 
 from typing import Optional, Dict, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 import math
 import asyncio
 from dataclasses import dataclass

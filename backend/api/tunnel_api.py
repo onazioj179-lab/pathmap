@@ -5,8 +5,8 @@ E2E encrypted WebSocket tunnel with backpressure handling.
 All data travels through encrypted tunnel with stealth obfuscation.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 import json
@@ -409,7 +409,7 @@ async def close_tunnel_session(session_id: str):
             conn.is_healthy = False
             try:
                 await conn.websocket.close()
-            except:
+            except Exception:
                 pass
             unregister_connection(session_id)
         

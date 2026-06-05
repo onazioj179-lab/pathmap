@@ -7,16 +7,14 @@ SendGrid integration for email notifications.
 
 import os
 import logging
-from typing import Optional, List, Dict, Any, TYPE_CHECKING
+from typing import List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
 try:
     from sendgrid import SendGridAPIClient  # type: ignore[import-not-found]
     from sendgrid.helpers.mail import (  # type: ignore[import-not-found]
-        Mail, Email, To, Content, Attachment,
-        FileContent, FileName, FileType, Disposition,
-        TemplateId, DynamicTemplateData
+        Mail, Email, To, Content,
     )
     HAS_SENDGRID = True
 except ImportError:

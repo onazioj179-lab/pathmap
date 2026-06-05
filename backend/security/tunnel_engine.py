@@ -13,7 +13,6 @@ tests.
 - AAD binds every message to its session id
 """
 
-import os
 import json
 import time
 import hashlib
@@ -30,7 +29,7 @@ from collections import deque
 
 try:
     from cryptography.hazmat.primitives.asymmetric import ec
-    from cryptography.hazmat.primitives.ciphers.aead import AESGCM, ChaCha20Poly1305
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.kdf.hkdf import HKDF
     from cryptography.hazmat.backends import default_backend
@@ -315,7 +314,7 @@ class TunnelEngine:
             
             session_id = frame_data[2:2 + self.SESSION_ID_SIZE].hex()
             nonce = frame_data[2 + self.SESSION_ID_SIZE:2 + self.SESSION_ID_SIZE + self.NONCE_SIZE]
-            ciphertext_len = struct.unpack('>I', frame_data[2 + self.SESSION_ID_SIZE + self.NONCE_SIZE:2 + self.SESSION_ID_SIZE + self.NONCE_SIZE + 4])[0]
+            struct.unpack('>I', frame_data[2 + self.SESSION_ID_SIZE + self.NONCE_SIZE:2 + self.SESSION_ID_SIZE + self.NONCE_SIZE + 4])[0]
             ciphertext = frame_data[2 + self.SESSION_ID_SIZE + self.NONCE_SIZE + 4:]
             
             with self._lock:
