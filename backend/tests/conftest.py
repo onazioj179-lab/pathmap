@@ -6,6 +6,7 @@ Shared test fixtures, mocks, and configuration.
 
 import pytest
 import asyncio
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 from unittest.mock import MagicMock
 import tempfile
@@ -54,6 +55,24 @@ def mock_db():
     return mock
 
 
+@pytest.fixture(autouse=True)
+def isolate_stateful_singletons(tmp_path, monkeypatch):
+    """Keep API tests hermetic.
+
+    - Point the shared ``AuthCore`` singleton at a throwaway SQLite file so the
+      register/login endpoints never read or write the real ``pathmap_users.db``.
+    - Reset the rate-limiter singleton so per-client request counters from one
+      test cannot trip limits in another.
+    """
+    import auth.auth_core as auth_core_mod
+    import security.rate_limiter as rate_limiter_mod
+
+    db_file = str(tmp_path / "test_users.db")
+    monkeypatch.setattr(auth_core_mod, "_auth_core", auth_core_mod.AuthCore(db_path=db_file))
+    monkeypatch.setattr(rate_limiter_mod, "_rate_limiter", None)
+    yield
+
+
 # ============== AUTH FIXTURES ==============
 
 @pytest.fixture
@@ -88,17 +107,40 @@ def auth_headers(auth_token):
 
 # ============== APP FIXTURES ==============
 
+@asynccontextmanager
+async def _offline_lifespan(_app):
+    """A no-op replacement for the production lifespan.
+
+    The real lifespan (main.lifespan) performs network I/O on startup: it
+    validates and fetches map tiles from external CDNs (tile binding engine,
+    tile diagnostics, tile heartbeat, tile proxy) and kicks off a background
+    OSM graph load. Running that for every ``client`` fixture made the suite
+    take ~5.5 minutes and require internet access (it fails/blocks in offline
+    CI).
+
+    For tests we skip all of it. The graph-dependent routing endpoints simply
+    return 503 ("graph not loaded"), which the routing integration tests are
+    written to tolerate; every other tested endpoint (auth, tunnel, tracking)
+    uses lazily-created singletons that do not depend on the lifespan.
+    """
+    yield
+
+
 @pytest.fixture
 def app():
-    """Create FastAPI app instance for testing."""
+    """Create FastAPI app instance for testing (with the network-free lifespan)."""
     # Import here to avoid circular imports
     from main import app as fastapi_app
+    # Swap the production lifespan for a no-op so TestClient starts instantly
+    # and performs no network calls. TestClient still establishes its portal
+    # via the (now trivial) lifespan context.
+    fastapi_app.router.lifespan_context = _offline_lifespan
     return fastapi_app
 
 
 @pytest.fixture
 def client(app):
-    """Synchronous test client."""
+    """Synchronous test client (offline, no lifespan network I/O)."""
     with TestClient(app) as c:
         yield c
 
