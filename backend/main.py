@@ -7,6 +7,7 @@ from typing import List, Literal, Optional, Any, Dict
 from datetime import datetime
 import uvicorn
 from contextlib import asynccontextmanager
+import asyncio
 import os
 import sys
 import logging
@@ -116,26 +117,34 @@ async def lifespan(app: FastAPI):
     from safety.safety_core import SafetyCore
     from context.context_engine import ContextEngine
     
-    print("Loading OSM street graph...")
-    g = graph_loader.load_graph()
-    # assign to globals after load to avoid partial state
-    graph = g
-    algo_impl = {
-        "ShadowPath": ShadowPath(graph),      # A* - Fastest, intelligent routing
-        "HomeGuard": HomeGuard(graph),        # Dijkstra - Safe return, stable
-        "PathfinderX": PathfinderX(graph),    # Greedy - Explorer scouting
-    }
-    
-    # V7: Performance optimizations
-    route_cache = RouteCache(max_size=100)
-    spatial_index = SpatialIndex(graph)
-    
-    # V11: Safe-return mode
+    # Landmark DB does not need the street graph.
     landmark_db = LandmarkDatabase()
-    safe_return_router = SafeReturnRouter(graph, algo_impl["HomeGuard"], landmark_db.get_all_landmarks())
-    
-    # V21: Safety Core initialization (scan_graph called in __init__)
-    safety_core = SafetyCore(graph)
+
+    def _load_graph_subsystems():
+        """Load the OSM graph and the graph-dependent subsystems.
+
+        Runs in a worker thread so a slow (or failing) OSM download never blocks
+        server startup: /health and the rest of the API serve immediately, and
+        the routing endpoints return 503 until the graph is ready.
+        """
+        global graph, algo_impl, route_cache, spatial_index, safe_return_router, safety_core
+        print("Loading OSM street graph (background)...")
+        g = graph_loader.load_graph()
+        impls = {
+            "ShadowPath": ShadowPath(g),      # A* - Fastest, intelligent routing
+            "HomeGuard": HomeGuard(g),        # Dijkstra - Safe return, stable
+            "PathfinderX": PathfinderX(g),    # Greedy - Explorer scouting
+        }
+        rc = RouteCache(max_size=100)
+        si = SpatialIndex(g)
+        srr = SafeReturnRouter(g, impls["HomeGuard"], landmark_db.get_all_landmarks())
+        sc = SafetyCore(g)
+        # Publish to module globals only once everything is built.
+        algo_impl, route_cache, spatial_index, safe_return_router, safety_core = impls, rc, si, srr, sc
+        graph = g
+        print(f"Graph loaded: {len(g.nodes)} nodes, {len(g.edges)} edges")
+
+    asyncio.create_task(asyncio.to_thread(_load_graph_subsystems))
     
     # V27.1: Context Engine initialization
     context_engine = ContextEngine()
@@ -153,10 +162,8 @@ async def lifespan(app: FastAPI):
     real_location_engine = get_rle()
     icon_engine = get_icon_engine()
     
-    print(f"Graph loaded: {len(graph.nodes)} nodes, {len(graph.edges)} edges")
-    print("Performance cache and spatial index initialized")
-    print(f"V11: SafeReturn initialized with {len(landmark_db.get_landmarks_by_category('safe'))} safe landmarks")
-    print(f"V21: SafetyCore initialized - {safety_core.get_diagnostics()['unsafe_nodes']} unsafe nodes detected")
+    print(f"V11: SafeReturn landmarks loaded: {len(landmark_db.get_landmarks_by_category('safe'))} safe landmarks")
+    print("Graph + routing subsystems loading in background (endpoints return 503 until ready)")
     print("V27.1: ContextEngine initialized - auto-adapt mode ready")
     print("V44: Python Page Engine (PPE) initialized - high-resolution rendering active")
     print("V45: Universal Location Access Page initialized - cross-platform support")
