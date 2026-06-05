@@ -11,8 +11,6 @@ import json
 import base64
 import hashlib
 
-import pytest
-
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes, serialization
