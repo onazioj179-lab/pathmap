@@ -47,10 +47,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Install CycloneDX
         run: |
           pip install cyclonedx-bom
           npm install -g @cyclonedx/cyclonedx-npm
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        # cyclonedx-npm runs `npm ls`, which needs installed node_modules.
+        run: npm ci
 
       - name: Generate Backend SBOM
         working-directory: ./backend
@@ -98,10 +110,19 @@ jobs:
           output: "trivy-frontend.sarif"
           severity: "CRITICAL,HIGH"
 
-      - name: Upload Trivy results
+      # Each SARIF must be uploaded under a distinct category; GitHub no longer
+      # accepts multiple runs combined in one upload.
+      - name: Upload Trivy results (backend)
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: "."
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend
+
+      - name: Upload Trivy results (frontend)
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend
 
   security-headers:
     name: Test Security Headers
