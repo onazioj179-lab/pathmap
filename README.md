@@ -82,12 +82,12 @@ The promise is simple: **the server should never be able to read your location.*
 
 | Layer | Algorithm |
 | --- | --- |
-| Key exchange | X25519 ECDH |
+| Key exchange | ECDH P-256 |
 | Payload encryption | AES-256-GCM |
 | Key derivation | HKDF-SHA256 |
 | Passwords | bcrypt (cost 12) |
 
-Session keys rotate every 5 minutes or 10,000 messages.
+Tunnel keys are ephemeral per connection; each reconnect performs a fresh ECDH handshake.
 
 > **Important:** install the Python `cryptography` package (it's in `requirements.txt`). Without it, PathMap falls back to weak obfuscation meant only for local development — never run real data without it.
 
