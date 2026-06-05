@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
+import './styles/tokens.css';
 import './index.css';
 import './i18n';
 import { validateWatermarkPresence } from './services/watermark';
@@ -11,7 +12,7 @@ import { uiScaleEngine } from './services/uiScaleEngine';
 import { fullDarkModeEngine } from './services/fullDarkModeEngine';
 import { initWebVitals } from './services/webVitals';
 
-// V98: Wrap App with ErrorBoundary for graceful error handling
+// Wrap App with ErrorBoundary for graceful error handling
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
@@ -22,7 +23,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
-// V98: Initialize Web Vitals performance monitoring
+// Initialize Web Vitals performance monitoring
 initWebVitals();
 
 // Ensure any old service workers are unregistered (pure online mode)
@@ -35,24 +36,24 @@ if ('serviceWorker' in navigator) {
     .catch(() => {});
 }
 
-// V67: WIS — Validate watermark presence at startup (strict in PROD)
+// WIS — Validate watermark presence at startup (strict in PROD)
 validateWatermarkPresence(true);
 
-// V68: Start Anti-Tamper Engine and initial RSV
+// Start Anti-Tamper Engine and initial RSV
 antiTamperEngine.start();
 
-// V70: Initialize dormant Identity Core (device-bound local profile)
+// Initialize dormant Identity Core (device-bound local profile)
 // Non-blocking, silent init; errors are swallowed to remain dormant
 Promise.resolve()
   .then(() => identityCore.init())
   .catch(() => {});
 
-// V77: Enforce full dark mode across UI surfaces
+// Enforce full dark mode across UI surfaces
 try {
   fullDarkModeEngine.init();
 } catch {}
 
-// V73: Start responsive UI scaling (FRA-UI + DIS + CVE foundation)
+// Start responsive UI scaling (FRA-UI + DIS + CVE foundation)
 try {
   uiScaleEngine.start();
 } catch {}

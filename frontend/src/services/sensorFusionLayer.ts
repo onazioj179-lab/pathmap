@@ -189,7 +189,7 @@ class SensorFusionLayer {
 
   // Sensor Monitoring
   private startSensorMonitoring(): void {
-    // V39: Use Device Location Service instead of direct GPS monitoring
+    // Use Device Location Service instead of direct GPS monitoring
     const deviceLocationService = (window as any).deviceLocationService;
     if (deviceLocationService) {
       deviceLocationService.addLocationListener((location: any) => {

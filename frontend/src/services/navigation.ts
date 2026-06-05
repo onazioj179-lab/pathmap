@@ -6,7 +6,7 @@ import type { RouteResponse } from './api';
 import { fetchRoute } from './api';
 import { getTimeEngine } from './timeEngine';
 
-// V31: Navigation state types
+// Navigation state types
 export interface GPSPosition {
   lat: number;
   lon: number;
@@ -198,7 +198,7 @@ export class NavigationLoop {
    * Update current position and breadcrumb trail
    */
   private updatePosition(position: GPSPosition) {
-    // V32: Track GPS update timing
+    // Track GPS update timing
     const timeEngine = getTimeEngine();
     const timingId = timeEngine.startEvent('gps_update', {
       accuracy: position.accuracy,
@@ -228,7 +228,7 @@ export class NavigationLoop {
    * Main navigation cycle - runs every 1-3 seconds
    */
   private async runNavigationCycle() {
-    // V32: Track navigation cycle timing
+    // Track navigation cycle timing
     const timeEngine = getTimeEngine();
     const cycleTimingId = timeEngine.startEvent('navigation_cycle', {
       cycleNumber: this.cycleCount + 1,
@@ -245,7 +245,7 @@ export class NavigationLoop {
     try {
       // Check deviation from planned route
       if (this.state.activeRoute) {
-        // V32: Time deviation check
+        // Time deviation check
         const deviationTimingId = timeEngine.startEvent('deviation_check');
         const deviation = this.calculateDeviation(
           this.state.currentPosition,
@@ -279,7 +279,7 @@ export class NavigationLoop {
       
       timeEngine.endEvent(cycleTimingId, true);
       
-      // V32: Adapt cycle interval if device is slow
+      // Adapt cycle interval if device is slow
       this.adaptCycleInterval();
     } catch (error) {
       console.error('[RTNL] Cycle error:', error);
@@ -331,7 +331,7 @@ export class NavigationLoop {
 
     console.log('[RTNL] Performing reroute...');
 
-    // V32: Track reroute timing
+    // Track reroute timing
     const timeEngine = getTimeEngine();
     const rerouteTimingId = timeEngine.startEvent('reroute_trigger', {
       algorithm: this.state.algorithm,
@@ -365,7 +365,7 @@ export class NavigationLoop {
   }
   
   /**
-   * V32: Adapt navigation cycle interval based on performance
+   * Adapt navigation cycle interval based on performance
    */
   private adaptCycleInterval() {
     const timeEngine = getTimeEngine();

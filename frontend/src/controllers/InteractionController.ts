@@ -2,9 +2,9 @@
  * PATHFINDER V41/V42/V43 — INTERACTION CONTROLLER
  * 
  * Unified interaction layer that handles all UI button events.
- * V41: Debouncing, async state management, error handling
- * V42: Action Pipeline integration for sequential execution
- * V43: Scan Animation Engine integration for visual feedback
+ * Debouncing, async state management, error handling
+ * Action Pipeline integration for sequential execution
+ * Scan Animation Engine integration for visual feedback
  * 
  * All UI buttons MUST call InteractionController methods, not direct API calls.
  */
@@ -94,7 +94,7 @@ class InteractionController {
     this.updateState({ isRouteLoading: true });
 
     try {
-      // V43: Start scan animation
+      // Start scan animation
       scanAnimationEngine.startScan({
         mode: ScanMode.ROUTE,
         origin: startPoint,
@@ -102,7 +102,7 @@ class InteractionController {
         color: '#3b82f6'
       });
 
-      // V42: Execute through Action Pipeline
+      // Execute through Action Pipeline
       const routeData = await actionPipeline.startAction(
         PipelineAction.ROUTE_CALCULATION,
         async () => {
@@ -117,7 +117,7 @@ class InteractionController {
         }
       );
 
-      // V43: Stop scan animation
+      // Stop scan animation
       scanAnimationEngine.stopScan();
       
       if (onSuccess) {
@@ -126,7 +126,7 @@ class InteractionController {
 
       console.log('[V42] Route calculated successfully');
     } catch (error) {
-      // V43: Force stop animation on error
+      // Force stop animation on error
       scanAnimationEngine.forceStop();
       
       const errorMsg = error instanceof Error ? error.message : 'Route calculation failed';
@@ -157,14 +157,14 @@ class InteractionController {
     this.updateState({ isSafeReturnLoading: true });
 
     try {
-      // V43: Start scan animation
+      // Start scan animation
       scanAnimationEngine.startScan({
         mode: ScanMode.SAFE_RETURN,
         origin: currentPosition,
         color: '#10b981'
       });
 
-      // V42: Execute through Action Pipeline
+      // Execute through Action Pipeline
       const routeData = await actionPipeline.startAction(
         PipelineAction.SAFE_RETURN,
         async () => {
@@ -177,7 +177,7 @@ class InteractionController {
         }
       );
 
-      // V43: Stop scan animation
+      // Stop scan animation
       scanAnimationEngine.stopScan();
       
       if (onSuccess) {
@@ -186,7 +186,7 @@ class InteractionController {
 
       console.log('[V42] Safe return route calculated');
     } catch (error) {
-      // V43: Force stop animation on error
+      // Force stop animation on error
       scanAnimationEngine.forceStop();
       
       const errorMsg = error instanceof Error ? error.message : 'Safe return calculation failed';
@@ -218,7 +218,7 @@ class InteractionController {
     this.updateState({ isExploreLoading: true });
 
     try {
-      // V43: Start scan animation
+      // Start scan animation
       scanAnimationEngine.startScan({
         mode: ScanMode.EXPLORATION,
         origin: currentPosition,
@@ -226,7 +226,7 @@ class InteractionController {
         color: '#8b5cf6'
       });
 
-      // V42: Execute through Action Pipeline
+      // Execute through Action Pipeline
       const routeData = await actionPipeline.startAction(
         PipelineAction.EXPLORATION,
         async () => {
@@ -239,7 +239,7 @@ class InteractionController {
         }
       );
 
-      // V43: Stop scan animation
+      // Stop scan animation
       scanAnimationEngine.stopScan();
       
       if (onSuccess) {
@@ -248,7 +248,7 @@ class InteractionController {
 
       console.log('[V42] Exploration route calculated');
     } catch (error) {
-      // V43: Force stop animation on error
+      // Force stop animation on error
       scanAnimationEngine.forceStop();
       
       const errorMsg = error instanceof Error ? error.message : 'Exploration calculation failed';

@@ -150,7 +150,7 @@ export class VisualizationEngine {
   ): Promise<void> {
     if (!this.ctx || mode === 'path-only') return;
 
-    // V32: Track visualization rendering time
+    // Track visualization rendering time
     const timeEngine = getTimeEngine();
     const timingId = timeEngine.startEvent('map_render', {
       algorithm,
@@ -186,7 +186,7 @@ export class VisualizationEngine {
   ) {
     if (!this.ctx) return;
 
-    // V32: Track frame rendering time
+    // Track frame rendering time
     const timeEngine = getTimeEngine();
     const frameTimingId = timeEngine.startEvent('visualization_frame', {
       chunkSize: nodes.length,
@@ -227,7 +227,7 @@ export class VisualizationEngine {
   ) {
     if (!this.ctx || path.length < 2) return;
 
-    // V32: Track path rendering time
+    // Track path rendering time
     const timeEngine = getTimeEngine();
     const timingId = timeEngine.startEvent('map_render', {
       algorithm,

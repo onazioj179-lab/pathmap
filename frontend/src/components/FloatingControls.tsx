@@ -66,8 +66,9 @@ export default function FloatingControls() {
             }
           }}
           title="Current Location"
+          aria-label="Use my location"
         >
-          <svg className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -81,8 +82,9 @@ export default function FloatingControls() {
             // AR functionality placeholder
           }}
           title="AR View"
+          aria-label="AR view"
         >
-          <svg className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg aria-hidden="true" className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
         </button>
@@ -106,8 +108,9 @@ export default function FloatingControls() {
           usagePatternMemory.record({ type: 'zoom', delta: +1, timestamp: Date.now() });
         }}
         title="Zoom In"
+        aria-label="Zoom in"
       >
-        <svg className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
         </svg>
       </button>
@@ -127,8 +130,9 @@ export default function FloatingControls() {
           usagePatternMemory.record({ type: 'zoom', delta: -1, timestamp: Date.now() });
         }}
         title="Zoom Out"
+        aria-label="Zoom out"
       >
-        <svg className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="v58-control-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
         </svg>
       </button>

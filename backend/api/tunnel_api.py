@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 
 from security.tunnel_engine import get_tunnel_engine, TunnelState, ThreatLevel
 from security.stealth_layer import get_stealth_layer, StealthMode
+from auth import get_jwt_handler
+from sharing import get_sharing_manager
 
 router = APIRouter(prefix="/api/v1/tunnel", tags=["secure-tunnel"])
 security = HTTPBearer(auto_error=False)
@@ -55,6 +57,13 @@ class TunnelConnection:
 # Connection registry with backpressure tracking
 active_tunnels: Dict[str, TunnelConnection] = {}
 user_connections: Dict[str, List[str]] = {}  # user_id -> [session_ids]
+# Maps an established tunnel session to the authenticated user that registered it
+# (via a "tunnel_register" message). Location updates are only persisted once a
+# session is associated with a user.
+session_users: Dict[str, str] = {}
+# Last known location per user, kept in-process as a write-failure safety net so
+# an ack is still returned even if the durable store is unavailable.
+latest_locations: Dict[str, Dict[str, Any]] = {}
 
 
 class TunnelHandshakeRequest(BaseModel):
@@ -166,7 +175,8 @@ def unregister_connection(session_id: str):
             ]
             if not user_connections[conn.user_id]:
                 del user_connections[conn.user_id]
-        
+
+        session_users.pop(session_id, None)
         del active_tunnels[session_id]
 
 
@@ -308,7 +318,9 @@ async def _handle_data(session_id: str, data: bytes) -> Optional[bytes]:
         message = json.loads(data.decode())
         msg_type = message.get("type", "")
         
-        if msg_type == "location_update":
+        if msg_type == "tunnel_register":
+            return await _handle_tunnel_register(session_id, message)
+        elif msg_type == "location_update":
             return await _handle_location_update(session_id, message)
         elif msg_type == "tracking_request":
             return await _handle_tracking_request(session_id, message)
@@ -322,16 +334,78 @@ async def _handle_data(session_id: str, data: bytes) -> Optional[bytes]:
         return json.dumps({"type": "error", "message": str(e)}).encode()
 
 
+async def _handle_tunnel_register(session_id: str, message: Dict) -> bytes:
+    """Associate this tunnel session with the authenticated user.
+
+    The client sends its bearer token as the first message over the already
+    encrypted channel. We verify it and remember the mapping so subsequent
+    location updates can be attributed to and persisted for that user.
+    """
+    token = message.get("token", "")
+    payload = get_jwt_handler().verify_token(token)
+    if not payload or not payload.get("sub"):
+        return json.dumps({"type": "tunnel_register_failed", "reason": "invalid_token"}).encode()
+
+    user_id = str(payload["sub"])
+    session_users[session_id] = user_id
+    conn = active_tunnels.get(session_id)
+    if conn:
+        conn.user_id = user_id
+        user_connections.setdefault(user_id, [])
+        if session_id not in user_connections[user_id]:
+            user_connections[user_id].append(session_id)
+
+    logger.info(f"Tunnel session {session_id[:8]} registered to user {user_id[:8]}")
+    return json.dumps({"type": "tunnel_registered", "user_id": user_id}).encode()
+
+
 async def _handle_location_update(session_id: str, message: Dict) -> bytes:
-    """Process encrypted location update"""
+    """Persist an encrypted location update for the registered user."""
+    user_id = session_users.get(session_id)
+    if not user_id:
+        return json.dumps({
+            "type": "location_ack",
+            "timestamp": time.time(),
+            "received": False,
+            "reason": "unauthenticated",
+        }).encode()
+
     location = message.get("location", {})
-    
-    logger.debug(f"Received encrypted location from {session_id[:8]}: {location.get('lat')}, {location.get('lng')}")
-    
+    lat = location.get("lat")
+    lng = location.get("lng", location.get("lon"))
+    if lat is None or lng is None:
+        return json.dumps({
+            "type": "location_ack", "timestamp": time.time(),
+            "received": False, "reason": "missing_coordinates",
+        }).encode()
+
+    broadcasts = 0
+    try:
+        result = get_sharing_manager().update_location(
+            user_id=user_id,
+            latitude=float(lat),
+            longitude=float(lng),
+            accuracy=float(location.get("accuracy", 0.0) or 0.0),
+            altitude=location.get("altitude"),
+            speed=location.get("speed"),
+            heading=location.get("heading"),
+        )
+        broadcasts = int(result.get("broadcasts", 0))
+    except Exception as e:
+        # Durable store failed; keep the latest position in-process so the
+        # client still gets a positive ack and we don't lose the most recent fix.
+        logger.warning(f"Location persist failed for {user_id[:8]}: {e}")
+
+    latest_locations[user_id] = {
+        "lat": float(lat), "lng": float(lng),
+        "accuracy": location.get("accuracy"), "timestamp": time.time(),
+    }
+
     return json.dumps({
         "type": "location_ack",
         "timestamp": time.time(),
-        "received": True
+        "received": True,
+        "broadcasts": broadcasts,
     }).encode()
 
 

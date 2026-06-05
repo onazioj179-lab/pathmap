@@ -52,10 +52,10 @@ export class DeviceLocationService {
   
   private config: LocationServiceConfig = {
     enableHighAccuracy: true,
-    timeout: 5000, // V40: Faster timeout for high-frequency updates
-    maximumAge: 0, // V40: Always get fresh position
-    updateInterval: 1500, // V40: 1.5 seconds (1-2 sec target)
-    distanceFilter: 3, // V40: 3 meters for higher precision
+    timeout: 5000, // Faster timeout for high-frequency updates
+    maximumAge: 0, // Always get fresh position
+    updateInterval: 1500, // 1.5 seconds (1-2 sec target)
+    distanceFilter: 3, // 3 meters for higher precision
   };
   
   private locationListeners: LocationListener[] = [];

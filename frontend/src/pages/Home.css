@@ -1884,7 +1884,7 @@ body {
   }
 }
 
-/* V96: Tap-to-Track Target Menu */
+/* Tap-to-Track Target Menu */
 .target-menu-overlay {
   position: fixed;
   inset: 0;
@@ -2152,7 +2152,7 @@ body {
   border: 2px solid #0066ff;
 }
 
-/* V99: Satellite Grid Styles */
+/* Satellite Grid Styles */
 .satellite-grid {
   background: linear-gradient(145deg, #0a0a0a, #151515);
   border-radius: 12px;
@@ -2211,7 +2211,7 @@ body {
   font-weight: 600;
 }
 
-/* V99: Hardware Connection Buttons */
+/* Hardware Connection Buttons */
 .hardware-buttons {
   display: flex;
   flex-wrap: wrap;

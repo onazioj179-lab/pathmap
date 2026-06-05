@@ -32,20 +32,20 @@ class PageState:
     route_active: bool = False
     route_polyline: Optional[List[List[float]]] = None
     tracking_active: bool = False
-    # V45: Location permission tracking
+    # Location permission tracking
     gps_enabled: bool = False
     location_permission: str = "unknown"  # 'unknown', 'granted', 'denied', 'skipped'
     no_gps_mode: bool = False
-    # V50: Map layer + navigation/action state (added without version banners)
+    # Map layer + navigation/action state (added without version banners)
     map_layer: str = "normal"            # 'normal', 'satellite', 'hybrid', '3d'
     map_pitch: float = 0.0               # degrees
     map_bearing: float = 0.0             # degrees
     navigation_state: str = "idle"       # 'idle','navigating','safe_return','exploring'
     action_in_progress: Optional[str] = None  # current action key while locked
-    # V51: Gesture and preview state
+    # Gesture and preview state
     gesture_active: bool = False         # any gesture currently in progress
     preview_active: bool = False         # route preview mode active
-    # V52: Offline mode tracking
+    # Offline mode tracking
     offline_mode: bool = False           # currently operating offline
     tiles_cached: int = 0                # number of tiles in offline cache
     routes_cached: int = 0               # number of routes in cache

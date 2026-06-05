@@ -102,7 +102,7 @@ const currentDotSVG = svgToDataUrl(`
   </svg>
 `);
 
-// V97: Main component (exported with memo at bottom)
+// Main component (exported with memo at bottom)
 function MapView3D(props: MapView3DProps) {
   const {
     startPoint,
@@ -122,7 +122,7 @@ function MapView3D(props: MapView3DProps) {
   const startMarkerRef = useRef<any | null>(null);
   const endMarkerRef = useRef<any | null>(null);
   const currentMarkerRef = useRef<any | null>(null);
-  // V96: Landmark/target markers
+  // Landmark/target markers
   const landmarkMarkersRef = useRef<Map<string, any>>(new Map());
   const [ready, setReady] = useState(false);
 
@@ -131,13 +131,13 @@ function MapView3D(props: MapView3DProps) {
     // Theme control removed per V63 request
   }, []);
 
-  // V71: Initialize analytics stores on mount and start session
+  // Initialize analytics stores on mount and start session
   useEffect(() => {
-    // V73: Set scaling mode for 3D view
+    // Set scaling mode for 3D view
     try {
       uiScaleEngine.setMode('3D');
     } catch {}
-    // V77: Initialize dark mode engine
+    // Initialize dark mode engine
     try {
       fullDarkModeEngine.init();
     } catch {}
@@ -259,12 +259,12 @@ function MapView3D(props: MapView3DProps) {
       mapRef.current = map;
       (window as any).glMap = map;
 
-      // V92: Initialize map mode controller
+      // Initialize map mode controller
       const mapModeController = getMapModeController();
       mapModeController.bindMap(map);
       console.log('[V92] Map Mode Controller bound - Standard/Satellite/Globe modes ready');
 
-      // V87: Run full boot pipeline before map initialization
+      // Run full boot pipeline before map initialization
       console.log('[V87] Starting map boot pipeline...');
       const bootSuccess = await mapBootPipeline.onBoot(map);
       if (!bootSuccess) {
@@ -279,11 +279,11 @@ function MapView3D(props: MapView3DProps) {
       mapRendererFix.attachToMap(map);
       console.log('[V84] Map renderer fix attached - tile retry logic active');
 
-      // V91: Live heartbeat monitoring now active
+      // Live heartbeat monitoring now active
       console.log('[V91] Live tile heartbeat monitoring active - 3s interval');
 
       map.on('load', () => {
-        // V57: Initialize 120Hz rendering pipeline
+        // Initialize 120Hz rendering pipeline
         console.log('[V57] Initializing ultra-fluid 120Hz rendering');
 
         if (!isCompactViewport) {
@@ -300,7 +300,7 @@ function MapView3D(props: MapView3DProps) {
           }
         }
 
-        // V76: Start Global Offline Terrain Cache (GOTC) & AQSS
+        // Start Global Offline Terrain Cache (GOTC) & AQSS
         try {
           globalOfflineTerrainCache.start({ maxBytes: 400 * 1024 * 1024 });
         } catch {}
@@ -310,15 +310,15 @@ function MapView3D(props: MapView3DProps) {
 
         // Start frame pacing engine with V56 lighting + V57 fluidity
         framePacingEngine.start(deltaMs => {
-          // V56: Cinematic lighting (update every 30s)
+          // Cinematic lighting (update every 30s)
           if (performance.now() % 30000 < deltaMs) {
             cinematicLighting.update(30000);
           }
 
-          // V57: Update camera fluidity
+          // Update camera fluidity
           const cameraState = cameraFluidityEngine.update(deltaMs);
 
-          // V57: Update location fluidity if in navigation
+          // Update location fluidity if in navigation
           if (liveNavigation?.currentPosition) {
             const loc = locationFluidityEngine.getInterpolatedLocation(deltaMs);
             if (loc && map.getSource('current-position')) {
@@ -341,7 +341,7 @@ function MapView3D(props: MapView3DProps) {
               globalElevationTerrainMorphingEngine.tick(map, deltaMs);
             } catch {}
           }
-          // V78: Update global lighting and shadows
+          // Update global lighting and shadows
           try {
             const cpos = map.getCenter();
             const lig = aiGlobalLightingEngine.compute({
@@ -360,7 +360,7 @@ function MapView3D(props: MapView3DProps) {
           } catch {}
         });
 
-        // V56: Cinematic lighting with real-time sun simulation
+        // Cinematic lighting with real-time sun simulation
         const applyLighting = () => {
           try {
             const lightCfg: LightConfig = cinematicLighting.getLightConfig();
@@ -386,7 +386,7 @@ function MapView3D(props: MapView3DProps) {
               });
             }
 
-            // V56: Sky layer for HDR realism
+            // Sky layer for HDR realism
             if (isMapbox && !map.getLayer('sky')) {
               map.addLayer({
                 id: 'sky',
@@ -407,14 +407,14 @@ function MapView3D(props: MapView3DProps) {
 
         applyLighting();
 
-        // V75: Expose quick test hook for Earth Zoom Pipeline
+        // Expose quick test hook for Earth Zoom Pipeline
         try {
           (window as any).pfEarthZoom = async (lat: number, lon: number) => {
             await earthZoomPipeline.fly(map, { lat, lon });
           };
         } catch {}
 
-        // V57: GPU streaming pipeline - prefetch tiles
+        // GPU streaming pipeline - prefetch tiles
         const center = map.getCenter();
         const zoom = Math.floor(map.getZoom());
         // Convert lng/lat to tile coordinates (simplified)
@@ -448,7 +448,7 @@ function MapView3D(props: MapView3DProps) {
                   'source-layer': sourceLayer,
                   minzoom: 15,
                   paint: {
-                    // V56: Dynamic building color based on material type
+                    // Dynamic building color based on material type
                     'fill-extrusion-color': [
                       'case',
                       ['==', ['get', 'type'], 'glass'],
@@ -469,7 +469,7 @@ function MapView3D(props: MapView3DProps) {
                       ['get', 'render_min_height'],
                       0,
                     ],
-                    // V56: Glass transparency
+                    // Glass transparency
                     'fill-extrusion-opacity': [
                       'case',
                       ['==', ['get', 'type'], 'glass'],
@@ -485,7 +485,7 @@ function MapView3D(props: MapView3DProps) {
               );
             }
 
-            // V56: Add roof detail layer for photorealistic rooftops
+            // Add roof detail layer for photorealistic rooftops
             if (isMapbox && !map.getLayer('building-roof-detail')) {
               map.addLayer({
                 id: 'building-roof-detail',
@@ -571,7 +571,7 @@ function MapView3D(props: MapView3DProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // V67: Ensure UI watermark exists and integrity is enforced
+  // Ensure UI watermark exists and integrity is enforced
   useEffect(() => {
     // Try to mount into the map root
     const root =
@@ -614,7 +614,7 @@ function MapView3D(props: MapView3DProps) {
     }
   }, [startPoint, endPoint, ready]);
 
-  // V96: Landmark/Target markers rendering
+  // Landmark/Target markers rendering
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -771,7 +771,7 @@ function MapView3D(props: MapView3DProps) {
       deadZoneRecoverySystem.update(pos.lat, pos.lon, pos.heading, pos.speedMps);
 
       const suggestion = aiCameraEngine.suggest(routeData, 800);
-      // V62: refine camera by motion mode, lane hint, micro-route optimizer
+      // refine camera by motion mode, lane hint, micro-route optimizer
       const motion = motionClassificationEngine.getState();
       const view = getViewSettings(motion.mode);
       const lane =
@@ -799,7 +799,7 @@ function MapView3D(props: MapView3DProps) {
         )
       );
 
-      // V64: Safety-aware camera adjustments
+      // Safety-aware camera adjustments
       const gse = globalSafetyEngine.getState();
       let duration = 450;
       if (gse.visibility_level === 'low' || gse.visibility_level === 'critical') {
@@ -812,7 +812,7 @@ function MapView3D(props: MapView3DProps) {
         duration = Math.max(duration, 540);
       }
 
-      // V71: Movement analytics + heatmap + path scoring + session metrics
+      // Movement analytics + heatmap + path scoring + session metrics
       movementAnalyticsEngine.update(
         { lat: pos.lat, lon: pos.lon, speedMps: pos.speedMps, heading: pos.heading },
         now
@@ -903,7 +903,7 @@ function MapView3D(props: MapView3DProps) {
     }
   }, [isLiveNavActive, liveNavigation?.currentPosition, startPoint, ready]);
 
-  // V64: Keep GSE route in sync for scoring/hazards
+  // Keep GSE route in sync for scoring/hazards
   useEffect(() => {
     try {
       globalSafetyEngine.setRoute(routeData || null);
@@ -974,12 +974,12 @@ function MapView3D(props: MapView3DProps) {
     <div id="map" className="glmap-root map-surface-root">
       <div ref={containerRef} className="glmap-canvas" />
 
-      {/* V67: Global Author Watermark (UIWO) */}
+      {/* Global Author Watermark (UIWO) */}
       <div id="pf-uiwm" className="ui-watermark">
         {AUTHOR_NAME} — {WATERMARK_SHORT}
       </div>
 
-      {/* V95: Left floating controls - Search + AR balanced on left side */}
+      {/* Left floating controls - Search + AR balanced on left side */}
       {!isLiveNavActive && (
         <div className="v58-floating-controls-left">
           <SearchControl />
@@ -992,7 +992,7 @@ function MapView3D(props: MapView3DProps) {
         <EnableGPSButton />
       </div>
 
-      {/* V92: Map mode switcher (Standard/Satellite/Globe) */}
+      {/* Map mode switcher (Standard/Satellite/Globe) */}
       {!isLiveNavActive && (
         <div className="v92-mode-switcher">
           <MapModeSwitcher />
@@ -1084,7 +1084,7 @@ function SearchControl() {
   );
 }
 
-// V97: Memoized AR button for performance
+// Memoized AR button for performance
 const ARModeButton = memo(function ARModeButton({ routeData }: { routeData: any | null }) {
   const [active, setActive] = useState(() => arxController.isActive());
   const [busy, setBusy] = useState(false);
@@ -1121,7 +1121,7 @@ const ARModeButton = memo(function ARModeButton({ routeData }: { routeData: any 
   );
 });
 
-// V97: Memoized GPS button for performance
+// Memoized GPS button for performance
 const EnableGPSButton = memo(function EnableGPSButton() {
   const [busy, setBusy] = useState(false);
   const [enabled, setEnabled] = useState(() => realGPSBridge.isRunning());
@@ -1155,5 +1155,5 @@ const EnableGPSButton = memo(function EnableGPSButton() {
   );
 });
 
-// V97: Memoized export of MapView3D for parent component optimization
+// Memoized export of MapView3D for parent component optimization
 export default memo(MapView3D);

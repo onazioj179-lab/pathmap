@@ -1,4 +1,4 @@
-# V6: Elevation and Profile Support
+# Elevation and Profile Support
 
 from typing import Dict, Any
 

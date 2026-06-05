@@ -1,9 +1,12 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable jsx-a11y/label-has-associated-control */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapView3D from '../components/MapView3D';
 import { trackingService, type LocationData, type Geofence } from '../services/trackingService';
+import { tunnelService } from '../services/tunnelService';
+import { sharingService } from '../services/sharingService';
+import { authService } from '../services/authService';
 import { holographicMapEngine } from '../services/holographicMapEngine';
 import { sharpLocationEngine } from '../services/sharpLocationEngine';
 import { universalDeviceEngine, type DeviceInfo } from '../services/universalDeviceEngine';
@@ -21,11 +24,64 @@ import { getApiHttpBase } from '../services/apiConfig';
 import '../styles/holographic.css';
 import './Home.css';
 
+interface PushLocation {
+  lat: number;
+  lng: number;
+  accuracy: number;
+  altitude?: number;
+  speed?: number;
+  heading?: number;
+}
+
+// Rough great-circle distance in metres (equirectangular approximation).
+function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6_371_000;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const meanLat = (((aLat + bLat) / 2) * Math.PI) / 180;
+  const x = dLng * Math.cos(meanLat);
+  return Math.hypot(x, dLat) * R;
+}
+
+// Send the current position to the backend when signed in, throttled to real
+// movement (> ~5 m) or every ~3 s. Prefers the encrypted tunnel; falls back to
+// the HTTP sharing endpoint when the tunnel isn't established/registered.
+function pushLocationToBackend(
+  loc: PushLocation,
+  lastRef: React.MutableRefObject<{ t: number; lat: number; lng: number } | null>
+): void {
+  if (!authService.isAuthenticated()) return;
+  const now = Date.now();
+  const last = lastRef.current;
+  const movedEnough = !last || metersBetween(last.lat, last.lng, loc.lat, loc.lng) > 5;
+  const longEnough = !last || now - last.t > 3000;
+  if (!movedEnough && !longEnough) return;
+  lastRef.current = { t: now, lat: loc.lat, lng: loc.lng };
+
+  if (tunnelService.isConnected() && tunnelService.isRegistered()) {
+    void tunnelService.sendLocation(loc.lat, loc.lng, loc.accuracy, {
+      altitude: loc.altitude,
+      speed: loc.speed,
+      heading: loc.heading,
+      source: 'gps',
+    });
+  } else {
+    void sharingService.updateLocation(
+      loc.lat,
+      loc.lng,
+      loc.accuracy,
+      loc.altitude,
+      loc.speed,
+      loc.heading
+    );
+  }
+}
+
 type Tab = 'track' | 'devices' | 'routes' | 'settings';
 type TrackingMethod = 'gps' | 'wifi' | 'cellular' | 'bluetooth' | 'ip';
 type AuthScreen = 'none' | 'login' | 'register';
 
-// V96: Map Target - tap to track any location
+// Map Target - tap to track any location
 interface MapTarget {
   id: string;
   name: string;
@@ -253,7 +309,7 @@ export default function Home() {
   const [watchId, setWatchId] = useState<number | null>(null);
   const [trackingHistory, setTrackingHistory] = useState<[number, number][]>([]);
 
-  // V96: Map targets - tap to track locations
+  // Map targets - tap to track locations
   const [mapTargets, setMapTargets] = useState<MapTarget[]>([]);
   const [showTargetMenu, setShowTargetMenu] = useState<{ lat: number; lng: number } | null>(null);
   const [activeTarget, setActiveTarget] = useState<MapTarget | null>(null);
@@ -264,7 +320,7 @@ export default function Home() {
   const [aiAutopilotActive, setAiAutopilotActive] = useState(false);
   const [_autopilotStatus, setAutopilotStatus] = useState('Initializing...');
 
-  // V99: Universal Device + Satellite Integration
+  // Universal Device + Satellite Integration
   const [universalDevice, setUniversalDevice] = useState<DeviceInfo | null>(null);
   const [satelliteData, setSatelliteData] = useState<{
     satellites: SatelliteInfo[];
@@ -284,7 +340,7 @@ export default function Home() {
       console.log('[AI Autopilot] Starting autonomous control...');
       setAutopilotStatus('Analyzing device...');
 
-      // V99: Initialize Universal Device Engine (Desktop/Laptop/iOS/Android/HomePod/Embedded)
+      // Initialize Universal Device Engine (Desktop/Laptop/iOS/Android/HomePod/Embedded)
       try {
         const deviceInfo = await universalDeviceEngine.init();
         setUniversalDevice(deviceInfo);
@@ -299,7 +355,7 @@ export default function Home() {
         console.warn('[AI Autopilot] Device engine:', e);
       }
 
-      // V99: Initialize Multi-GNSS Satellite Integration
+      // Initialize Multi-GNSS Satellite Integration
       try {
         await satelliteIntegration.init();
         satelliteIntegration.onPositionUpdate(pos => {
@@ -313,7 +369,7 @@ export default function Home() {
         console.warn('[AI Autopilot] Satellite integration:', e);
       }
 
-      // V99: Initialize Embedded/IoT Bridge
+      // Initialize Embedded/IoT Bridge
       try {
         await embeddedBridge.init();
         embeddedBridge.onDeviceUpdate(devices => {
@@ -417,7 +473,7 @@ export default function Home() {
           `[AI Autopilot] Location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)} (±${Math.round(location.accuracy)}m)`
         );
 
-        // V98: Initialize Sharp Location Engine with Compass integration
+        // Initialize Sharp Location Engine with Compass integration
         try {
           await sharpLocationEngine.init(); // Now async with compass
           sharpLocationEngine.startTracking({
@@ -492,7 +548,7 @@ export default function Home() {
                 ].slice(-100) as [number, number][]
             );
 
-            // V97: Update holographic engine with current position
+            // Update holographic engine with current position
             try {
               holographicMapEngine.updateCurrentPosition({
                 lat: newLocation.lat,
@@ -786,6 +842,9 @@ export default function Home() {
     return data;
   }, []);
 
+  // Throttle for backend location pushes (last sent point + time).
+  const lastPushRef = useRef<{ t: number; lat: number; lng: number } | null>(null);
+
   // Get real-time location
   const startLocationTracking = useCallback(() => {
     if (!navigator.geolocation) return;
@@ -818,6 +877,11 @@ export default function Home() {
           const updated = [...prev, newPoint].slice(-100);
           return updated;
         });
+
+        // Push to the backend so friends can see live movement. Only when
+        // signed in; throttled to moves > ~5 m or > 3 s. Encrypted tunnel is
+        // preferred, with an HTTP fallback when it isn't established yet.
+        pushLocationToBackend(newLocation, lastPushRef);
       },
       err => console.error('Location error:', err),
       {
@@ -1081,13 +1145,13 @@ export default function Home() {
     stopLocationTracking();
   };
 
-  // V96: Handle map tap - create tracking target
+  // Handle map tap - create tracking target
   const handleMapClick = useCallback((lat: number, lng: number) => {
     console.log('Map tapped:', lat, lng);
     setShowTargetMenu({ lat, lng });
   }, []);
 
-  // V96: Create a new map target
+  // Create a new map target
   const createMapTarget = useCallback(
     (lat: number, lng: number, name: string, type: MapTarget['type']) => {
       const colors = {
@@ -1120,7 +1184,7 @@ export default function Home() {
     [mapTargets.length]
   );
 
-  // V96: Start tracking a map target
+  // Start tracking a map target
   const startTrackingTarget = useCallback(
     (target: MapTarget) => {
       console.log('Starting tracking for target:', target.name);
@@ -1167,7 +1231,7 @@ export default function Home() {
     [deviceData?.location, startLocationTracking]
   );
 
-  // V96: Find AI route to map target
+  // Find AI route to map target
   const findRouteToTarget = async (target: MapTarget) => {
     if (!deviceData?.location) {
       showToast({
@@ -1237,7 +1301,7 @@ export default function Home() {
     setRouteLoading(false);
   };
 
-  // V96: Delete a map target
+  // Delete a map target
   const deleteMapTarget = useCallback(
     (targetId: string) => {
       setMapTargets(prev => prev.filter(t => t.id !== targetId));
@@ -1538,7 +1602,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* V96: Tap-to-Track Target Menu */}
+      {/* Tap-to-Track Target Menu */}
       {showTargetMenu && (
         <div className="target-menu-overlay" onClick={() => setShowTargetMenu(null)}>
           <div className="target-menu" onClick={e => e.stopPropagation()}>
@@ -1828,7 +1892,7 @@ export default function Home() {
           {/* Track Tab */}
           {tab === 'track' && (
             <>
-              {/* V96: Map Targets */}
+              {/* Map Targets */}
               {mapTargets.length > 0 && (
                 <div className="section">
                   <div className="section-header">

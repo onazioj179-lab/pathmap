@@ -285,7 +285,7 @@ class PrecisionTrackingService {
   private lastGpsTime = 0;
   private lastUpdateTime = 0;
   private gpsDropoutThreshold = 5000; // ms
-  private updateRateHz = 30; // V96: Increased to 30Hz for smoother tracking
+  private updateRateHz = 30; // Increased to 30Hz for smoother tracking
   private adaptiveRateEnabled = true;
 
   private positionHistory: TrackedPosition[] = [];
@@ -311,7 +311,7 @@ class PrecisionTrackingService {
   private latestAccel: { x: number; y: number; z: number } | null = null;
   private latestGyro: { alpha: number; beta: number; gamma: number } | null = null;
 
-  // V96: Multi-source location integration
+  // Multi-source location integration
   private multiSourceEnabled = true;
   private multiSourceService = getMultiSourceLocationService();
   private latestSignalQuality: SignalQuality | null = null;
@@ -348,7 +348,7 @@ class PrecisionTrackingService {
     this.trail = [];
     this.positionHistory = [];
 
-    // V96: Start multi-source location fusion first
+    // Start multi-source location fusion first
     if (this.multiSourceEnabled) {
       this.multiSourceService.configure({
         enableGPS: true,
@@ -385,7 +385,7 @@ class PrecisionTrackingService {
     this.isTracking = false;
     this.stopSensors();
 
-    // V96: Stop multi-source service
+    // Stop multi-source service
     if (this.multiSourceEnabled) {
       if (this.multiSourceListener) {
         this.multiSourceService.removeLocationListener(this.multiSourceListener);
@@ -398,7 +398,7 @@ class PrecisionTrackingService {
     return this.getStats();
   }
 
-  // V96: Handle multi-source fused location updates
+  // Handle multi-source fused location updates
   private handleMultiSourceUpdate(fusedLocation: FusedLocation): void {
     const reading: SensorReading = {
       timestamp: fusedLocation.timestamp,
@@ -423,13 +423,13 @@ class PrecisionTrackingService {
     this.lastGpsTime = Date.now();
     this.gpsFixes++;
 
-    // V96: Adaptive rate based on signal quality
+    // Adaptive rate based on signal quality
     if (this.adaptiveRateEnabled && fusedLocation.signalQuality) {
       this.adjustUpdateRate(fusedLocation.signalQuality.overall);
     }
   }
 
-  // V96: Adaptive update rate based on conditions
+  // Adaptive update rate based on conditions
   private adjustUpdateRate(quality: SignalQuality['overall']): void {
     const currentRate = this.updateRateHz;
     let newRate = currentRate;
@@ -839,7 +839,7 @@ class PrecisionTrackingService {
     this.kalman = new ExtendedKalmanFilter();
   }
 
-  // V96: Multi-source location control
+  // Multi-source location control
   setMultiSourceEnabled(enabled: boolean): void {
     this.multiSourceEnabled = enabled;
     if (this.isTracking) {
@@ -859,7 +859,7 @@ class PrecisionTrackingService {
     return this.latestSignalQuality;
   }
 
-  // V96: Set update rate (5-60Hz)
+  // Set update rate (5-60Hz)
   setUpdateRate(hz: number): void {
     this.updateRateHz = Math.max(5, Math.min(60, hz));
     this.adaptiveRateEnabled = false; // Manual override disables adaptive

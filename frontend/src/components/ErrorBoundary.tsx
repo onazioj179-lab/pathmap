@@ -1,5 +1,5 @@
 /**
- * V98: Global Error Boundary Component
+ * Global Error Boundary Component
  *
  * Catches JavaScript errors anywhere in the child component tree,
  * logs those errors, and displays a fallback UI instead of crashing.
@@ -48,7 +48,7 @@ class ErrorBoundary extends Component<Props, State> {
 
     this.setState({ errorInfo });
 
-    // V98: Send error to backend for logging (optional)
+    // Send error to backend for logging (optional)
     this.reportError(error, errorInfo);
   }
 

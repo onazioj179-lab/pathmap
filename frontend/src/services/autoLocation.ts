@@ -1,5 +1,5 @@
 /**
- * V96: AUTO LOCATION SERVICE
+ * AUTO LOCATION SERVICE
  * Reliable location detection with GPS priority + IP fallback
  */
 

@@ -18,7 +18,7 @@ export default function PanelRoutingEngine({
   const [error, setError] = useState<string | null>(null);
   const [controllerState, setControllerState] = useState(interactionController.getState());
 
-  // V41: Subscribe to InteractionController state
+  // Subscribe to InteractionController state
   useEffect(() => {
     const unsubscribe = interactionController.subscribe(setControllerState);
     return unsubscribe;
@@ -32,7 +32,7 @@ export default function PanelRoutingEngine({
 
     setError(null);
 
-    // V41: Use InteractionController with debouncing + async handling
+    // Use InteractionController with debouncing + async handling
     await interactionController.onStartRoute(
       state.startPoint,
       state.endPoint,

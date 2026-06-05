@@ -18,7 +18,7 @@ export type SatelliteOptions = {
 
 // EOX Sentinel-2 cloudless public tiles (demo-friendly)
 const DEFAULT_S2 = "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2019_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg";
-// V77: Backend proxy endpoint (with fallback to direct)
+// Backend proxy endpoint (with fallback to direct)
 const BACKEND_PROXY_S2 = "/api/v1/tiles/eox/{z}/{x}/{y}";
 
 export const satelliteImageryLayer = {
@@ -28,7 +28,7 @@ export const satelliteImageryLayer = {
 
   init(map: GLMap, opts?: SatelliteOptions) {
     if (this._added) return;
-    // V77: Try backend proxy only if backend reported ready
+    // Try backend proxy only if backend reported ready
     const useBackend = (window as any).__pfBackendReady === true && window.location.hostname === 'localhost';
     const url = opts?.urlTemplate || (useBackend ? BACKEND_PROXY_S2 : DEFAULT_S2);
     const minzoom = opts?.minzoom ?? 0;

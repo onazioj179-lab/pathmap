@@ -86,6 +86,12 @@ export default defineConfig({
       url: "http://localhost:8000/v1/health",
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
+      env: {
+        // Bots register/log in many users quickly; relax the auth rate limit
+        // for the test backend (production keeps the strict default).
+        AUTH_RATE_LIMIT_PER_MINUTE: "1000",
+        JWT_SECRET: process.env.JWT_SECRET || "e2e-test-secret",
+      },
     },
   ],
 });
