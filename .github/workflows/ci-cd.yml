@@ -248,6 +248,9 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
+      security-events: write  # required to upload Trivy SARIF to code scanning
 
     steps:
       - name: Checkout code
