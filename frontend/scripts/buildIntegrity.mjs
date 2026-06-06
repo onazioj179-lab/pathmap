@@ -10,7 +10,6 @@ const CORE_FILES = [
   'src/services/watermark.ts',
   'src/engines/EngineMetadata.ts',
   'src/components/MapView3D.tsx',
-  'src/styles/unified-system.css',
 ].map(p => path.join(ROOT, p));
 
 function sha256(buf) {

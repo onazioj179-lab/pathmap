@@ -3,6 +3,39 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MapView3D from '../components/MapView3D';
+import {
+  Activity,
+  AlertTriangle,
+  Bell,
+  Bluetooth,
+  Brain,
+  Briefcase,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Circle,
+  Crosshair,
+  Download,
+  Hand,
+  Home as HomeIcon,
+  Laptop,
+  Loader2,
+  MapPin,
+  Navigation,
+  Package,
+  Plus,
+  Radar,
+  Route,
+  Settings as SettingsIcon,
+  Shield,
+  Smartphone,
+  Sparkles,
+  Star,
+  Tablet,
+  Trash2,
+  User,
+  X,
+} from 'lucide-react';
 import { trackingService, type LocationData, type Geofence } from '../services/trackingService';
 import { tunnelService } from '../services/tunnelService';
 import { sharingService } from '../services/sharingService';
@@ -41,6 +74,35 @@ function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number): 
   const meanLat = (((aLat + bLat) / 2) * Math.PI) / 180;
   const x = dLng * Math.cos(meanLat);
   return Math.hypot(x, dLat) * R;
+}
+
+// Build a straight-line "estimate" route for when the backend routing engines
+// are unreachable (e.g. backend offline). Ensures the user always sees a clear
+// direction, a rough distance, and an ETA instead of a silent failure.
+function buildOfflineRoute(
+  start: [number, number],
+  end: [number, number],
+  speedMps?: number
+): AIRoute {
+  const meters = metersBetween(start[0], start[1], end[0], end[1]);
+  const segments = 24;
+  const path: [number, number][] = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    path.push([start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t]);
+  }
+  const speedKmh = speedMps && speedMps > 0.3 ? speedMps * 3.6 : 5; // default walking pace
+  const etaMinutes = Math.max(1, Math.round((meters / 1000 / speedKmh) * 60));
+  return {
+    algorithm: 'Offline estimate',
+    distance: Math.round(meters),
+    steps: path.length,
+    visited: 0,
+    path,
+    eta:
+      etaMinutes < 60 ? `${etaMinutes} min` : `${Math.round(etaMinutes / 60)}h ${etaMinutes % 60}m`,
+    safety: 0,
+  };
 }
 
 // Send the current position to the backend when signed in, throttled to real
@@ -162,73 +224,12 @@ const targetTypeBadgeClass: Record<MapTarget['type'], string> = {
 
 const API_BASE = getApiHttpBase();
 
-// SVG Icons for target types
+// Monoline (Lucide) icons for target types. Sizing/color come from CSS.
 const TargetTypeIcons: Record<string, JSX.Element> = {
-  person: (
-    <svg
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-      />
-    </svg>
-  ),
-  place: (
-    <svg
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  ),
-  object: (
-    <svg
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-      />
-    </svg>
-  ),
-  star: (
-    <svg
-      viewBox="0 0 24 24"
-      width="24"
-      height="24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-      />
-    </svg>
-  ),
+  person: <User aria-hidden="true" />,
+  place: <MapPin aria-hidden="true" />,
+  object: <Package aria-hidden="true" />,
+  star: <Star aria-hidden="true" />,
 };
 
 export default function Home() {
@@ -250,11 +251,7 @@ export default function Home() {
     {
       id: 'location',
       name: 'Location (GPS)',
-      icon: (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-        </svg>
-      ),
+      icon: <MapPin aria-hidden="true" />,
       description: 'High-accuracy GPS tracking',
       granted: false,
       required: true,
@@ -262,11 +259,7 @@ export default function Home() {
     {
       id: 'location_bg',
       name: 'Background Location',
-      icon: (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 1.74.5 3.37 1.41 4.84.95 1.54 2.2 2.86 3.16 4.4.47.75.81 1.45 1.17 2.26.26.55.47 1.5.47 2.5h2c0-1 .21-1.95.47-2.5.36-.81.7-1.51 1.17-2.26.96-1.54 2.21-2.86 3.16-4.4C18.5 12.37 19 10.74 19 9c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-        </svg>
-      ),
+      icon: <Navigation aria-hidden="true" />,
       description: 'Track when app is closed',
       granted: false,
       required: true,
@@ -274,11 +267,7 @@ export default function Home() {
     {
       id: 'bluetooth',
       name: 'Bluetooth',
-      icon: (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          <path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z" />
-        </svg>
-      ),
+      icon: <Bluetooth aria-hidden="true" />,
       description: 'Bluetooth beacon tracking',
       granted: false,
       required: false,
@@ -286,11 +275,7 @@ export default function Home() {
     {
       id: 'notifications',
       name: 'Notifications',
-      icon: (
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-          <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z" />
-        </svg>
-      ),
+      icon: <Bell aria-hidden="true" />,
       description: 'Location alerts',
       granted: false,
       required: false,
@@ -1071,10 +1056,17 @@ export default function Home() {
     }
 
     if (!routeFound) {
+      setAiRoute(
+        buildOfflineRoute(
+          start as [number, number],
+          end as [number, number],
+          deviceData.location.speed
+        )
+      );
       showToast({
-        kind: 'error',
-        title: 'Route unavailable',
-        message: 'The routing engines could not find a path for this target yet.',
+        kind: 'info',
+        title: 'Showing estimated direction',
+        message: 'Live directions need a connection. Showing a straight-line estimate for now.',
       });
     }
 
@@ -1291,10 +1283,17 @@ export default function Home() {
     }
 
     if (!routeFound) {
+      setAiRoute(
+        buildOfflineRoute(
+          start as [number, number],
+          end as [number, number],
+          deviceData.location.speed
+        )
+      );
       showToast({
-        kind: 'error',
-        title: 'Route unavailable',
-        message: 'The route engines could not reach this target yet.',
+        kind: 'info',
+        title: 'Showing estimated direction',
+        message: 'Live directions need a connection. Showing a straight-line estimate for now.',
       });
     }
 
@@ -1409,30 +1408,13 @@ export default function Home() {
 
   const getDeviceIcon = (type: string) => {
     switch (type) {
-      case 'phone':
-        return (
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" />
-          </svg>
-        );
       case 'tablet':
-        return (
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-2 14H5V6h14v12z" />
-          </svg>
-        );
+        return <Tablet aria-hidden="true" />;
       case 'laptop':
-        return (
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M20 18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z" />
-          </svg>
-        );
+        return <Laptop aria-hidden="true" />;
+      case 'phone':
       default:
-        return (
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" />
-          </svg>
-        );
+        return <Smartphone aria-hidden="true" />;
     }
   };
 
@@ -1443,9 +1425,7 @@ export default function Home() {
         <div className="permission-screen">
           <div className="permission-header">
             <div className="permission-icon">
-              <svg viewBox="0 0 24 24" width="48" height="48" fill="#007aff">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-              </svg>
+              <MapPin size={48} aria-hidden="true" />
             </div>
             <h1>PathMap AI Tracking</h1>
             <p>Grant permissions for full device tracking & AI routing</p>
@@ -1495,6 +1475,7 @@ export default function Home() {
 
   return (
     <div className="app holo-mode">
+      <h1 className="sr-only">PathMap — private live location tracking</h1>
       <header className="sys-bar" role="banner">
         <div className="sys-bar-left">
           <span className="sys-brand">
@@ -1608,26 +1589,7 @@ export default function Home() {
           <div className="target-menu" onClick={e => e.stopPropagation()}>
             <div className="target-menu-header">
               <h3>
-                <svg
-                  className="inline-icon"
-                  viewBox="0 0 24 24"
-                  width="18"
-                  height="18"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                </svg>{' '}
+                <MapPin className="inline-icon" width={18} height={18} aria-hidden="true" />{' '}
                 Create Target
               </h3>
               <span className="target-coords">
@@ -1650,20 +1612,7 @@ export default function Home() {
                 onClick={() => setNewTargetType('person')}
               >
                 <span className="type-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
+                  <User aria-hidden="true" />
                 </span>
                 <span>Person</span>
               </button>
@@ -1672,25 +1621,7 @@ export default function Home() {
                 onClick={() => setNewTargetType('place')}
               >
                 <span className="type-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
+                  <MapPin aria-hidden="true" />
                 </span>
                 <span>Place</span>
               </button>
@@ -1699,20 +1630,7 @@ export default function Home() {
                 onClick={() => setNewTargetType('object')}
               >
                 <span className="type-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                    />
-                  </svg>
+                  <Package aria-hidden="true" />
                 </span>
                 <span>Object</span>
               </button>
@@ -1721,20 +1639,7 @@ export default function Home() {
                 onClick={() => setNewTargetType('custom')}
               >
                 <span className="type-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                    />
-                  </svg>
+                  <Star aria-hidden="true" />
                 </span>
                 <span>Custom</span>
               </button>
@@ -1768,18 +1673,12 @@ export default function Home() {
         <div className="ai-route-card">
           <div className="route-header">
             <span className="route-algo">
-              <svg
-                className="inline-icon"
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="currentColor"
-              >
-                <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-              </svg>
+              <Route className="inline-icon" width={16} height={16} aria-hidden="true" />
               {aiRoute.algorithm}
             </span>
-            <span className="route-safety">{aiRoute.safety}% safe</span>
+            <span className="route-safety">
+              {aiRoute.algorithm === 'Offline estimate' ? 'Estimate' : `${aiRoute.safety}% safe`}
+            </span>
           </div>
           <div className="route-stats">
             <div className="stat">
@@ -1807,20 +1706,7 @@ export default function Home() {
         <div className="training-overlay">
           <div className="training-card">
             <div className="training-icon">
-              <svg
-                viewBox="0 0 24 24"
-                width="48"
-                height="48"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                />
-              </svg>
+              <Brain width={48} height={48} aria-hidden="true" />
             </div>
             <div className="training-title">Training Device AI</div>
             <div className="training-bar">
@@ -1833,56 +1719,64 @@ export default function Home() {
       )}
 
       {/* Bottom Sheet */}
-      <div className={`sheet ${sheetCollapsed ? 'collapsed' : ''}`}>
+      <div className={`sheet ${sheetCollapsed ? 'collapsed' : ''}`} role="main" aria-label="Controls">
         <button
           className="sheet-toggle"
           title={sheetCollapsed ? 'Expand controls' : 'Collapse controls'}
           aria-label={sheetCollapsed ? 'Expand controls' : 'Collapse controls'}
+          aria-expanded={!sheetCollapsed}
           onClick={() => setSheetCollapsed(!sheetCollapsed)}
         >
-          <svg
-            viewBox="0 0 24 24"
-            width="16"
-            height="16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+          <ChevronDown aria-hidden="true" width={16} height={16} />
         </button>
         <div className="handle" onClick={() => setSheetCollapsed(!sheetCollapsed)}></div>
 
-        <div className="tabs">
-          <button className={tab === 'track' ? 'active' : ''} onClick={() => setTab('track')}>
+        <div className="tabs" role="tablist" aria-label="Views">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'track'}
+            className={tab === 'track' ? 'active' : ''}
+            onClick={() => setTab('track')}
+          >
             <span className="tab-icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-              </svg>
+              <Crosshair aria-hidden="true" />
             </span>
             <span>Map</span>
           </button>
-          <button className={tab === 'devices' ? 'active' : ''} onClick={() => setTab('devices')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'devices'}
+            className={tab === 'devices' ? 'active' : ''}
+            onClick={() => setTab('devices')}
+          >
             <span className="tab-icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M4 6h18V4H4c-1.1 0-2 .9-2 2v11H0v3h14v-3H4V6zm19 2h-6c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1zm-1 9h-4v-7h4v7z" />
-              </svg>
+              <Activity aria-hidden="true" />
             </span>
             <span>Status</span>
           </button>
-          <button className={tab === 'routes' ? 'active' : ''} onClick={() => setTab('routes')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'routes'}
+            className={tab === 'routes' ? 'active' : ''}
+            onClick={() => setTab('routes')}
+          >
             <span className="tab-icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-              </svg>
+              <Route aria-hidden="true" />
             </span>
             <span>Directions</span>
           </button>
-          <button className={tab === 'settings' ? 'active' : ''} onClick={() => setTab('settings')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'settings'}
+            className={tab === 'settings' ? 'active' : ''}
+            onClick={() => setTab('settings')}
+          >
             <span className="tab-icon">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-              </svg>
+              <SettingsIcon aria-hidden="true" />
             </span>
             <span>Settings</span>
           </button>
@@ -1896,19 +1790,12 @@ export default function Home() {
               {mapTargets.length > 0 && (
                 <div className="section">
                   <div className="section-header">
-                    <svg
+                    <Crosshair
                       className="section-icon"
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <circle cx="12" cy="12" r="6" />
-                      <circle cx="12" cy="12" r="2" fill="currentColor" />
-                    </svg>{' '}
+                      width={16}
+                      height={16}
+                      aria-hidden="true"
+                    />{' '}
                     Saved targets
                   </div>
                   <div className="device-list">
@@ -1941,33 +1828,9 @@ export default function Home() {
                             onClick={() => startTrackingTarget(target)}
                           >
                             {activeTarget?.id === target.id ? (
-                              <svg
-                                viewBox="0 0 24 24"
-                                width="16"
-                                height="16"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728m-9.9-2.829a5 5 0 010-7.07m7.072 0a5 5 0 010 7.07M13 12a1 1 0 11-2 0 1 1 0 012 0z"
-                                />
-                              </svg>
+                              <Radar width={16} height={16} aria-hidden="true" />
                             ) : (
-                              <svg
-                                viewBox="0 0 24 24"
-                                width="16"
-                                height="16"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <circle cx="12" cy="12" r="10" />
-                                <circle cx="12" cy="12" r="6" />
-                                <circle cx="12" cy="12" r="2" fill="currentColor" />
-                              </svg>
+                              <Crosshair width={16} height={16} aria-hidden="true" />
                             )}
                           </button>
                           <button
@@ -1988,20 +1851,7 @@ export default function Home() {
               {/* Tap to track hint */}
               <div className="section tap-hint">
                 <div className="hint-icon">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="28"
-                    height="28"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11"
-                    />
-                  </svg>
+                  <Hand width={28} height={28} aria-hidden="true" />
                 </div>
                 <div className="hint-text">
                   <strong>No target selected</strong>
@@ -2049,25 +1899,7 @@ export default function Home() {
                     );
                   }}
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                    />
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                    />
-                  </svg>
+                  <MapPin width={20} height={20} aria-hidden="true" />
                   Use my location
                 </button>
               )}
@@ -2130,15 +1962,12 @@ export default function Home() {
             <>
               <div className="section">
                 <div className="section-header">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
+                  <Route
                     className="section-header-icon"
-                  >
-                    <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-.5-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
-                  </svg>
+                    width={16}
+                    height={16}
+                    aria-hidden="true"
+                  />
                   Directions
                 </div>
                 <div className="algo-grid">
@@ -2167,39 +1996,12 @@ export default function Home() {
                 >
                   {routeLoading ? (
                     <>
-                      <svg
-                        className="spin"
-                        viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>{' '}
+                      <Loader2 className="spin" width={16} height={16} aria-hidden="true" />{' '}
                       Finding directions...
                     </>
                   ) : (
                     <>
-                      <svg
-                        viewBox="0 0 24 24"
-                        width="16"
-                        height="16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
-                        />
-                      </svg>{' '}
+                      <Sparkles width={16} height={16} aria-hidden="true" />{' '}
                       Find directions
                     </>
                   )}
@@ -2210,11 +2012,7 @@ export default function Home() {
                 <EmptyState
                   title="Choose a target first"
                   message="Choose a target first, then PathMap can find directions on the map."
-                  icon={
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                      <path d="M9 11.5c0-.83.67-1.5 1.5-1.5S12 10.67 12 11.5 11.33 13 10.5 13 9 12.33 9 11.5zm4.5 0c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S15.83 13 15 13s-1.5-.67-1.5-1.5zM20 9V7c0-1.1-.9-2-2-2h-3c-.41-1.16-1.52-2-2.82-2h-.36C10.52 3 9.41 3.84 9 5H6C4.9 5 4 5.9 4 7v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3z" />
-                    </svg>
-                  }
+                  icon={<Route width={22} height={22} aria-hidden="true" />}
                 />
               )}
 
@@ -2255,9 +2053,7 @@ export default function Home() {
                 <div className="settings-command-card">
                   <div className="settings-command-copy">
                     <div className="settings-command-icon">
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L5.09 9.66c-.11.2-.06.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.11-.22.06-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-                      </svg>
+                      <SettingsIcon aria-hidden="true" width={20} height={20} />
                     </div>
                     <div>
                       <div className="settings-command-title">App Preferences</div>
@@ -2275,9 +2071,7 @@ export default function Home() {
                   </div>
                   <button className="settings-command-button" onClick={() => navigate('/settings')}>
                     Open preferences
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                      <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                    </svg>
+                    <ChevronRight width={18} height={18} aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -2285,24 +2079,14 @@ export default function Home() {
               {/* Account Section */}
               <div className="section">
                 <div className="section-header">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    className="section-header-icon"
-                  >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
+                  <User className="section-header-icon" width={16} height={16} aria-hidden="true" />
                   Account
                 </div>
                 {isAuthenticated ? (
                   <div className="settings-list">
                     <div className="setting-item">
                       <span className="setting-icon">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="#4CAF50">
-                          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                        </svg>
+                        <Check width={20} height={20} aria-hidden="true" />
                       </span>
                       <div className="setting-info">
                         <div className="setting-name">Signed In</div>
@@ -2327,35 +2111,26 @@ export default function Home() {
               {/* Safe Zones / Geofences */}
               <div className="section">
                 <div className="section-header">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    className="section-header-icon"
-                  >
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                  </svg>
+                  <MapPin className="section-header-icon" width={16} height={16} aria-hidden="true" />
                   Safe Zones
                 </div>
                 <div className="settings-list">
                   {geofences.map(fence => (
                     <div key={fence.id} className="setting-item">
                       <span className="setting-icon">
-                        <svg
-                          viewBox="0 0 24 24"
-                          width="20"
-                          height="20"
-                          fill={
+                        <Circle
+                          width={14}
+                          height={14}
+                          aria-hidden="true"
+                          fill="currentColor"
+                          color={
                             fence.type === 'home'
-                              ? '#4CAF50'
+                              ? '#7fa86a'
                               : fence.type === 'work'
-                                ? '#2196F3'
-                                : '#FF9800'
+                                ? '#6f86c4'
+                                : '#d6a44a'
                           }
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                        </svg>
+                        />
                       </span>
                       <div className="setting-info">
                         <div className="setting-name">{fence.name}</div>
@@ -2367,9 +2142,7 @@ export default function Home() {
                     </div>
                   ))}
                   <button className="add-btn" onClick={() => setShowGeofenceForm(true)}>
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                    </svg>
+                    <Plus aria-hidden="true" width={20} height={20} />
                     Add Safe Zone
                   </button>
                 </div>
@@ -2394,23 +2167,13 @@ export default function Home() {
 
               <div className="section">
                 <div className="section-header">
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="16"
-                    height="16"
-                    fill="currentColor"
-                    className="section-header-icon"
-                  >
-                    <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3z" />
-                  </svg>
+                  <Brain className="section-header-icon" width={16} height={16} aria-hidden="true" />
                   AI Settings
                 </div>
                 <div className="settings-list">
                   <div className="setting-item">
                     <span className="setting-icon">
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3z" />
-                      </svg>
+                      <Brain aria-hidden="true" width={20} height={20} />
                     </span>
                     <div className="setting-info">
                       <div className="setting-name">Auto-Train Devices</div>
@@ -2419,9 +2182,7 @@ export default function Home() {
                   </div>
                   <div className="setting-item">
                     <span className="setting-icon">
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06z" />
-                      </svg>
+                      <Crosshair aria-hidden="true" width={20} height={20} />
                     </span>
                     <div className="setting-info">
                       <div className="setting-name">High Accuracy GPS</div>
@@ -2430,9 +2191,7 @@ export default function Home() {
                   </div>
                   <div className="setting-item">
                     <span className="setting-icon">
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
-                      </svg>
+                      <Shield aria-hidden="true" width={20} height={20} />
                     </span>
                     <div className="setting-info">
                       <div className="setting-name">Prefer Safe Routes</div>
@@ -2446,15 +2205,7 @@ export default function Home() {
               {isAuthenticated && (
                 <div className="section">
                   <div className="section-header">
-                    <svg
-                      viewBox="0 0 24 24"
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      className="section-header-icon"
-                    >
-                      <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
-                    </svg>
+                    <Shield className="section-header-icon" width={16} height={16} aria-hidden="true" />
                     Data & Privacy
                   </div>
                   <div className="settings-list">
@@ -2470,16 +2221,12 @@ export default function Home() {
                       }}
                     >
                       <span className="setting-icon">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
-                        </svg>
+                        <Download aria-hidden="true" width={20} height={20} />
                       </span>
                       <div className="setting-info">
                         <div className="setting-name">Export My Data</div>
                       </div>
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="#999">
-                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                      </svg>
+                      <ChevronRight width={20} height={20} aria-hidden="true" />
                     </button>
                     <button
                       className="setting-item clickable danger"
@@ -2490,16 +2237,12 @@ export default function Home() {
                       }}
                     >
                       <span className="setting-icon">
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="#f44336">
-                          <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
-                        </svg>
+                        <Trash2 width={20} height={20} aria-hidden="true" />
                       </span>
                       <div className="setting-info">
                         <div className="setting-name setting-name--danger">Delete All Data</div>
                       </div>
-                      <svg viewBox="0 0 24 24" width="20" height="20" fill="#999">
-                        <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-                      </svg>
+                      <ChevronRight width={20} height={20} aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -2742,9 +2485,7 @@ export default function Home() {
               aria-label="Close dialog"
               onClick={() => setAuthScreen('none')}
             >
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-              </svg>
+              <X width={24} height={24} aria-hidden="true" />
             </button>
 
             {authScreen === 'login' ? (
@@ -2860,13 +2601,9 @@ export default function Home() {
         onClick={() => devices[0] && startTracking(devices[0])}
       >
         {tracking ? (
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
-            <path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3c-.46-4.17-3.77-7.48-7.94-7.94V1h-2v2.06C6.83 3.52 3.52 6.83 3.06 11H1v2h2.06c.46 4.17 3.77 7.48 7.94 7.94V23h2v-2.06c4.17-.46 7.48-3.77 7.94-7.94H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-          </svg>
+          <Crosshair width={24} height={24} aria-hidden="true" />
         ) : (
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-          </svg>
+          <MapPin width={24} height={24} aria-hidden="true" />
         )}
       </button>
       <ToastStack messages={messages} onDismiss={dismiss} />
@@ -2918,9 +2655,7 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
           aria-label="Close dialog"
           onClick={onClose}
         >
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
+          <X width={24} height={24} aria-hidden="true" />
         </button>
 
         <h2 className="modal-title">Add Safe Zone</h2>
@@ -2946,24 +2681,16 @@ function GeofenceForm({ onClose, onCreate, currentLocation }: GeofenceFormProps)
                 onClick={() => setType(t)}
               >
                 {t === 'home' && (
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-                  </svg>
+                  <HomeIcon aria-hidden="true" width={20} height={20} />
                 )}
                 {t === 'work' && (
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
-                  </svg>
+                  <Briefcase aria-hidden="true" width={20} height={20} />
                 )}
                 {t === 'safe' && (
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
-                  </svg>
+                  <Shield aria-hidden="true" width={20} height={20} />
                 )}
                 {t === 'alert' && (
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
-                  </svg>
+                  <AlertTriangle aria-hidden="true" width={20} height={20} />
                 )}
                 <span>{t}</span>
               </button>
