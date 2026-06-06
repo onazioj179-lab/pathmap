@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: 18px;
-  background: rgba(2, 4, 5, 0.76);
+  background: rgba(26, 24, 19, 0.76);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
 }

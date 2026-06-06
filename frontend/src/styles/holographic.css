@@ -12,14 +12,14 @@
    ═══════════════════════════════════════════════════════════ */
 
 .holo-mode {
-  --holo-primary: #00ffff;
-  --holo-secondary: #00d4ff;
-  --holo-accent: #ff6b35;
-  --holo-danger: #ff3366;
-  --holo-bg-dark: #050a15;
-  --holo-bg-mid: #0a1628;
-  --holo-text: #e0f0ff;
-  --holo-text-muted: #668899;
+  --holo-primary: #d97757;
+  --holo-secondary: #d97757;
+  --holo-accent: #cf6a52;
+  --holo-danger: #cf6a52;
+  --holo-bg-dark: #1a1813;
+  --holo-bg-mid: #232019;
+  --holo-text: #f4efe3;
+  --holo-text-muted: #a59a85;
   --holo-glow: rgba(0, 212, 255, 0.3);
 }
 
@@ -215,7 +215,7 @@
   position: absolute;
   top: 80px;
   right: 16px;
-  background: linear-gradient(135deg, rgba(5, 10, 21, 0.96), rgba(10, 30, 50, 0.94));
+  background: linear-gradient(135deg, rgba(26, 24, 19, 0.96), rgba(44, 40, 32, 0.94));
   border: 1px solid var(--holo-secondary);
   border-radius: 10px;
   padding: 16px 20px;
@@ -266,7 +266,7 @@
   animation: holo-pulse 1.2s ease-in-out infinite;
   box-shadow:
     0 0 10px var(--holo-accent),
-    0 0 20px rgba(255, 107, 53, 0.5);
+    0 0 20px rgba(207, 106, 82, 0.5);
 }
 
 .hdc-status-text {
@@ -330,7 +330,7 @@
 }
 
 .hfl-content {
-  background: rgba(5, 10, 21, 0.94);
+  background: rgba(26, 24, 19, 0.94);
   border: 1px solid var(--holo-secondary);
   border-left: 3px solid var(--holo-accent);
   border-radius: 4px;
@@ -390,7 +390,7 @@
 .holo-marker-core {
   width: 18px;
   height: 18px;
-  background: radial-gradient(circle at 30% 30%, var(--holo-danger), #cc2255);
+  background: radial-gradient(circle at 30% 30%, var(--holo-danger), #b04632);
   border-radius: 50%;
   box-shadow:
     0 0 20px var(--holo-danger),
@@ -450,7 +450,7 @@
   bottom: 100px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(5, 10, 21, 0.95);
+  background: rgba(26, 24, 19, 0.95);
   border: 1px solid var(--holo-accent);
   border-radius: 8px;
   padding: 12px 24px;
@@ -460,8 +460,8 @@
   gap: 30px;
   align-items: center;
   box-shadow:
-    0 0 20px rgba(255, 107, 53, 0.2),
-    inset 0 0 30px rgba(255, 107, 53, 0.05);
+    0 0 20px rgba(207, 106, 82, 0.2),
+    inset 0 0 30px rgba(207, 106, 82, 0.05);
 }
 
 .holo-route-stat {
@@ -490,7 +490,7 @@
   position: absolute;
   bottom: 20px;
   left: 20px;
-  background: rgba(5, 10, 21, 0.9);
+  background: rgba(26, 24, 19, 0.9);
   border: 1px solid var(--holo-secondary);
   border-radius: 6px;
   padding: 10px 16px;
@@ -522,7 +522,7 @@
   height: 60px;
   border: 2px solid var(--holo-secondary);
   border-radius: 50%;
-  background: rgba(5, 10, 21, 0.9);
+  background: rgba(26, 24, 19, 0.9);
   z-index: 150;
   display: flex;
   align-items: center;
@@ -592,7 +592,7 @@
 
   .hdc-value,
   .hfl-value {
-    color: #00ffff;
+    color: #d97757;
     font-weight: 700;
   }
 }

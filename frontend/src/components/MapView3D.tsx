@@ -84,21 +84,21 @@ function svgToDataUrl(svg: string) {
 
 const startSVG = svgToDataUrl(`
   <svg width="34" height="46" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17 0 L34 46 L17 40 L0 46 Z" fill="#10b981" stroke="#064e3b" stroke-width="2"/>
-    <circle cx="17" cy="17" r="7" fill="#0a0a0a" stroke="#10b981" stroke-width="2"/>
+    <path d="M17 0 L34 46 L17 40 L0 46 Z" fill="#2fc79b" stroke="#18705a" stroke-width="2"/>
+    <circle cx="17" cy="17" r="7" fill="#1f1c16" stroke="#2fc79b" stroke-width="2"/>
   </svg>
 `);
 const endSVG = svgToDataUrl(`
   <svg width="34" height="46" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17 0 L34 46 L17 40 L0 46 Z" fill="#ef4444" stroke="#450a0a" stroke-width="2"/>
-    <circle cx="17" cy="17" r="7" fill="#0a0a0a" stroke="#ef4444" stroke-width="2"/>
+    <path d="M17 0 L34 46 L17 40 L0 46 Z" fill="#7b74f2" stroke="#463c9e" stroke-width="2"/>
+    <circle cx="17" cy="17" r="7" fill="#1f1c16" stroke="#7b74f2" stroke-width="2"/>
   </svg>
 `);
 const currentDotSVG = svgToDataUrl(`
   <svg width="28" height="28" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="14" cy="14" r="8" fill="#2563eb" opacity="0.35" />
-    <circle cx="14" cy="14" r="6" fill="#2563eb" />
-    <circle cx="14" cy="14" r="3" fill="#ffffff" />
+    <circle cx="14" cy="14" r="8" fill="#3da5f5" opacity="0.35" />
+    <circle cx="14" cy="14" r="6" fill="#3da5f5" />
+    <circle cx="14" cy="14" r="3" fill="#f4efe3" />
   </svg>
 `);
 
@@ -218,9 +218,9 @@ function MapView3D(props: MapView3DProps) {
             carto: {
               type: 'raster',
               tiles: [
-                'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
+                'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
+                'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
               ],
               tileSize: 256,
               attribution: '© OpenStreetMap contributors © CARTO',
@@ -452,10 +452,10 @@ function MapView3D(props: MapView3DProps) {
                     'fill-extrusion-color': [
                       'case',
                       ['==', ['get', 'type'], 'glass'],
-                      '#b0c4de', // Glass facade
+                      '#b3a890', // Glass facade
                       ['==', ['get', 'material'], 'glass'],
-                      '#b0c4de',
-                      '#9ca3af', // Default concrete/brick
+                      '#b3a890',
+                      '#a59a85', // Default concrete/brick
                     ],
                     'fill-extrusion-height': [
                       'coalesce',
@@ -494,7 +494,7 @@ function MapView3D(props: MapView3DProps) {
                 'source-layer': sourceLayer,
                 minzoom: 17,
                 paint: {
-                  'fill-color': '#4a5568',
+                  'fill-color': '#4c4538',
                   'fill-opacity': 0.15,
                   'fill-pattern': 'roof-texture', // Falls back gracefully if not in style
                 },
@@ -516,7 +516,7 @@ function MapView3D(props: MapView3DProps) {
             type: 'line',
             source: 'route',
             paint: {
-              'line-color': '#10b981',
+              'line-color': '#2fc79b',
               'line-width': 5,
               'line-opacity': 0.95,
             },
@@ -535,7 +535,7 @@ function MapView3D(props: MapView3DProps) {
               type: 'line',
               source: id,
               paint: {
-                'line-color': idx === 0 ? '#10b981' : idx === 1 ? '#f59e0b' : '#ef4444',
+                'line-color': idx === 0 ? '#2fc79b' : idx === 1 ? '#e0a43c' : '#ef6b6b',
                 'line-width': 5,
                 'line-opacity': 0.95,
               },
@@ -645,7 +645,7 @@ function MapView3D(props: MapView3DProps) {
         el.style.cssText = `
           width: 40px;
           height: 40px;
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+          background: linear-gradient(135deg, #6f86c4, #5a6fb0);
           border-radius: 50% 50% 50% 0;
           transform: rotate(-45deg);
           border: 3px solid white;
@@ -690,14 +690,14 @@ function MapView3D(props: MapView3DProps) {
 
         // Color by type
         const typeColors: Record<string, string> = {
-          person: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-          place: 'linear-gradient(135deg, #10b981, #047857)',
-          object: 'linear-gradient(135deg, #f59e0b, #d97706)',
-          custom: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
-          home: 'linear-gradient(135deg, #22c55e, #16a34a)',
-          work: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-          safe: 'linear-gradient(135deg, #22c55e, #15803d)',
-          alert: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          person: 'linear-gradient(135deg, #6f86c4, #5a6fb0)',
+          place: 'linear-gradient(135deg, #7fa86a, #5f8a55)',
+          object: 'linear-gradient(135deg, #d6a44a, #c4603f)',
+          custom: 'linear-gradient(135deg, #a585c4, #7d5fa8)',
+          home: 'linear-gradient(135deg, #7fa86a, #5f8a55)',
+          work: 'linear-gradient(135deg, #6f86c4, #d97757)',
+          safe: 'linear-gradient(135deg, #7fa86a, #5f8a55)',
+          alert: 'linear-gradient(135deg, #cf6a52, #b04632)',
         };
         el.style.background = typeColors[landmark.type] || typeColors.place;
 

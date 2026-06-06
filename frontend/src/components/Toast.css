@@ -34,7 +34,7 @@
 }
 
 .pm-toast--info {
-  border-color: rgba(124, 231, 255, 0.42);
+  border-color: rgba(217, 119, 87, 0.42);
 }
 
 .pm-toast__dot {
@@ -72,12 +72,12 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #91a8b0;
+  color: #a59a85;
   cursor: pointer;
 }
 
 .pm-toast__close:hover {
-  color: #ffffff;
+  color: #f4efe3;
   background: rgba(255, 255, 255, 0.08);
 }
 

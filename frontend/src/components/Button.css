@@ -44,8 +44,8 @@
 
 .pm-btn--primary {
   background: var(--sys-action);
-  color: #1a1407;
-  box-shadow: 0 10px 24px -10px rgba(245, 177, 74, 0.55);
+  color: #1a1813;
+  box-shadow: 0 10px 24px -10px rgba(217, 119, 87, 0.55);
 }
 
 .pm-btn--primary:hover:not(:disabled) {
@@ -99,9 +99,9 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  border: 1px solid var(--color-border, rgba(124, 231, 255, 0.16));
-  background: rgba(7, 13, 16, 0.86);
-  color: var(--color-text, #edf7fb);
+  border: 1px solid var(--color-border, rgba(217, 119, 87, 0.16));
+  background: rgba(35, 32, 25, 0.86);
+  color: var(--color-text, #f4efe3);
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -110,7 +110,7 @@
 
 .pm-icon-btn:hover:not(:disabled) {
   background: rgba(13, 28, 34, 0.94);
-  color: #ffffff;
+  color: #f4efe3;
 }
 
 .pm-icon-btn:disabled {

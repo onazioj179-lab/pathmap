@@ -3,11 +3,11 @@
   place-items: center;
   gap: 12px;
   padding: 28px 18px;
-  border: 1px dashed rgba(124, 231, 255, 0.22);
+  border: 1px dashed rgba(217, 119, 87, 0.22);
   border-radius: 8px;
-  background: rgba(7, 13, 16, 0.72);
+  background: rgba(35, 32, 25, 0.72);
   text-align: center;
-  color: #edf7fb;
+  color: #f4efe3;
 }
 
 .pm-empty-state__icon {
@@ -16,8 +16,8 @@
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: rgba(242, 169, 59, 0.14);
-  color: #f2a93b;
+  background: rgba(217, 119, 87, 0.14);
+  color: #d97757;
 }
 
 .pm-empty-state__title {
@@ -29,7 +29,7 @@
 .pm-empty-state__message {
   max-width: 34rem;
   margin: 0;
-  color: #91a8b0;
+  color: #a59a85;
   font-size: 13px;
   line-height: 1.5;
 }

@@ -7,7 +7,7 @@
 
 .optimized-image--error {
   min-height: 72px;
-  background-color: #2a2a2a;
+  background-color: #3a3429;
 }
 
 .optimized-image__error-text {
@@ -31,17 +31,17 @@
 }
 
 .optimized-image__placeholder--empty {
-  background-color: #1a1a1a;
+  background-color: #2c2820;
 }
 
 .optimized-image__placeholder--skeleton {
-  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background: linear-gradient(90deg, #2c2820 25%, #3a3429 50%, #2c2820 75%);
   background-size: 200% 100%;
   animation: optimized-image-shimmer 1.5s infinite;
 }
 
 .optimized-image__placeholder--blur {
-  background-color: #1a1a1a;
+  background-color: #2c2820;
 }
 
 .optimized-image__blur-layer {
