@@ -1,10 +1,9 @@
 /* eslint-disable react/no-unknown-property */
 /* eslint-disable jsx-a11y/label-has-associated-control */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import MapView3D from '../components/MapView3D';
 import {
-  Activity,
   AlertTriangle,
   Bell,
   Bluetooth,
@@ -21,23 +20,39 @@ import {
   Laptop,
   Loader2,
   MapPin,
+  Moon,
   Navigation,
   Package,
   Plus,
   Radar,
   Route,
+  Save,
   Settings as SettingsIcon,
   Shield,
+  SlidersHorizontal,
   Smartphone,
   Sparkles,
   Star,
+  Sun,
   Tablet,
   Trash2,
   User,
   X,
 } from 'lucide-react';
 import { trackingService, type LocationData, type Geofence } from '../services/trackingService';
+import { accountBillingService } from '../services/accountBillingService';
 import { tunnelService } from '../services/tunnelService';
+import { liveStatus } from '../services/liveStatus';
+import { mapCommandBus } from '../services/mapCommandBus';
+import { telemetryBus } from '../services/telemetryBus';
+import { eventBus } from '../services/eventBus';
+import { commandRegistry } from '../services/commandRegistry';
+import { CONTROL_STATE_EVENT } from '../services/controlState';
+import CommandPalette from '../components/CommandPalette/CommandPalette';
+import ControlCenter from '../components/ControlCenter/ControlCenter';
+import TelemetryHUD from '../components/TelemetryHUD/TelemetryHUD';
+import SheetTabs from './home/SheetTabs';
+import { applyPrefs } from '../utils/applyPrefs';
 import { sharingService } from '../services/sharingService';
 import { authService } from '../services/authService';
 import { holographicMapEngine } from '../services/holographicMapEngine';
@@ -56,6 +71,8 @@ import { useToast } from '../hooks/useToast';
 import { getApiHttpBase } from '../services/apiConfig';
 import '../styles/holographic.css';
 import './Home.css';
+import MapSearch from '../components/MapSearch/MapSearch';
+import '../styles/maps-ui.css';
 
 interface PushLocation {
   lat: number;
@@ -112,31 +129,46 @@ function pushLocationToBackend(
   loc: PushLocation,
   lastRef: React.MutableRefObject<{ t: number; lat: number; lng: number } | null>
 ): void {
+  // Always feed the live-status coordinator so it can track GPS health, cache
+  // the last-known position, and adapt the sampling interval (even pre-auth).
+  liveStatus.updatePosition(loc.lat, loc.lng, loc.accuracy);
+  // Feed the map command bus for follow-me recentering and bearing-lock.
+  mapCommandBus.notifyPosition(loc.lat, loc.lng, loc.heading);
+
   if (!authService.isAuthenticated()) return;
   const now = Date.now();
   const last = lastRef.current;
+  // Pace pushes to real movement (> ~5 m) or the coordinator's adaptive interval.
+  const interval = liveStatus.recommendedInterval();
   const movedEnough = !last || metersBetween(last.lat, last.lng, loc.lat, loc.lng) > 5;
-  const longEnough = !last || now - last.t > 3000;
+  const longEnough = !last || now - last.t > interval;
   if (!movedEnough && !longEnough) return;
   lastRef.current = { t: now, lat: loc.lat, lng: loc.lng };
 
-  if (tunnelService.isConnected() && tunnelService.isRegistered()) {
-    void tunnelService.sendLocation(loc.lat, loc.lng, loc.accuracy, {
-      altitude: loc.altitude,
-      speed: loc.speed,
-      heading: loc.heading,
-      source: 'gps',
-    });
-  } else {
-    void sharingService.updateLocation(
-      loc.lat,
-      loc.lng,
-      loc.accuracy,
-      loc.altitude,
-      loc.speed,
-      loc.heading
-    );
-  }
+  void tunnelService.sendOrFallback(
+    'location_update',
+    {
+      location: {
+        lat: loc.lat,
+        lng: loc.lng,
+        accuracy: loc.accuracy,
+        timestamp: Date.now(),
+        altitude: loc.altitude,
+        speed: loc.speed,
+        heading: loc.heading,
+        source: 'gps',
+      },
+    },
+    () =>
+      sharingService.updateLocation(
+        loc.lat,
+        loc.lng,
+        loc.accuracy,
+        loc.altitude,
+        loc.speed,
+        loc.heading
+      )
+  );
 }
 
 type Tab = 'track' | 'devices' | 'routes' | 'settings';
@@ -232,9 +264,149 @@ const TargetTypeIcons: Record<string, JSX.Element> = {
   star: <Star aria-hidden="true" />,
 };
 
+// In-app preferences (merged from the former /settings page).
+type PrefsTheme = 'dark' | 'light' | 'system';
+type PrefsUnits = 'metric' | 'imperial';
+type PrefsLang = 'en' | 'es';
+type BillingPlan = 'starter' | 'pro' | 'enterprise';
+type PrefsBoolKey =
+  | 'precisionMode'
+  | 'offline'
+  | 'safetyAlerts'
+  | 'reducedMotion'
+  | 'highContrast'
+  | 'debug';
+type TextSizePref = 'normal' | 'large' | 'xl';
+
+interface PrefsState {
+  language: PrefsLang;
+  theme: PrefsTheme;
+  units: PrefsUnits;
+  offline: boolean;
+  precisionMode: boolean;
+  safetyAlerts: boolean;
+  reducedMotion: boolean;
+  highContrast: boolean;
+  textSize: TextSizePref;
+  debug: boolean;
+  billingPlan: BillingPlan;
+}
+
+const PREFS_KEY = 'pathmap.settings.v100';
+
+const defaultPrefs: PrefsState = {
+  language: 'en',
+  theme: 'dark',
+  units: 'metric',
+  offline: false,
+  precisionMode: true,
+  safetyAlerts: true,
+  reducedMotion: false,
+  highContrast: false,
+  textSize: 'normal',
+  debug: false,
+  billingPlan: 'pro',
+};
+
+function loadPrefs(): PrefsState {
+  if (typeof window === 'undefined') return defaultPrefs;
+  try {
+    const stored = window.localStorage.getItem(PREFS_KEY);
+    return stored ? { ...defaultPrefs, ...JSON.parse(stored) } : defaultPrefs;
+  } catch {
+    return defaultPrefs;
+  }
+}
+
+// Reflect appearance + accessibility prefs onto the DOM root (theme, reduced
+// motion, contrast, text scale). See utils/applyPrefs.
+function applyAppearance(p: PrefsState): void {
+  applyPrefs({
+    theme: p.theme,
+    reducedMotion: p.reducedMotion,
+    highContrast: p.highContrast,
+    textSize: p.textSize,
+  });
+}
+
+const PLAN_LABEL: Record<BillingPlan, string> = {
+  starter: 'Starter',
+  pro: 'Pro',
+  enterprise: 'Enterprise',
+};
+
 export default function Home() {
-  const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const { messages, showToast, dismiss } = useToast();
+
+  // In-app preferences (merged from the former Settings page)
+  const [prefs, setPrefs] = useState<PrefsState>(loadPrefs);
+  const [prefsSaved, setPrefsSaved] = useState(false);
+  const [showPlans, setShowPlans] = useState(false);
+
+  useEffect(() => {
+    applyAppearance(prefs);
+  }, [prefs.theme, prefs.reducedMotion, prefs.highContrast, prefs.textSize]);
+
+  // High-precision GPS preference drives the live-status sampling cadence.
+  useEffect(() => {
+    liveStatus.setPrecisionMode(prefs.precisionMode);
+  }, [prefs.precisionMode]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const token = trackingService.getToken();
+        const hydrated = await accountBillingService.loadHydratedSettings(token);
+        if (active && hydrated && Object.keys(hydrated).length > 0) {
+          setPrefs(prev => ({ ...prev, ...hydrated }));
+        }
+      } catch {
+        /* keep local prefs */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const setPref = <K extends keyof PrefsState>(key: K, value: PrefsState[K]) => {
+    setPrefs(prev => ({ ...prev, [key]: value }));
+    setPrefsSaved(false);
+  };
+
+  const changeLanguagePref = async (language: PrefsLang) => {
+    try {
+      await i18n.changeLanguage(language);
+    } catch {
+      /* i18n optional */
+    }
+    setPref('language', language);
+  };
+
+  const savePrefs = async () => {
+    try {
+      window.localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+      await accountBillingService.persistSettings(trackingService.getToken(), prefs as never);
+    } catch {
+      /* local save still applied */
+    }
+    setPrefsSaved(true);
+    showToast({
+      kind: 'success',
+      title: 'Settings saved',
+      message: 'Your PathMap preferences are now active.',
+    });
+  };
+
+  const resetPrefs = () => {
+    setPrefs(defaultPrefs);
+    void i18n.changeLanguage(defaultPrefs.language);
+    applyAppearance(defaultPrefs);
+    setPrefsSaved(false);
+    showToast({ kind: 'info', title: 'Settings reset', message: 'Defaults restored on this device.' });
+  };
   const [tab, setTab] = useState<Tab>('track');
   const [authScreen, setAuthScreen] = useState<AuthScreen>('none');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -303,7 +475,7 @@ export default function Home() {
 
   // AI AUTOPILOT - Automatic system control
   const [aiAutopilotActive, setAiAutopilotActive] = useState(false);
-  const [_autopilotStatus, setAutopilotStatus] = useState('Initializing...');
+  const [autopilotStatus, setAutopilotStatus] = useState('Initializing...');
 
   // Universal Device + Satellite Integration
   const [universalDevice, setUniversalDevice] = useState<DeviceInfo | null>(null);
@@ -658,6 +830,39 @@ export default function Home() {
     return unsubscribe;
   }, []);
 
+  // Surface a single, non-blocking toast on a prolonged encrypted-tunnel outage,
+  // and a confirmation once it recovers (always-on resilience feedback).
+  useEffect(() => {
+    const offOutage = eventBus.on('live:outage', () => {
+      showToast({
+        kind: 'info',
+        title: 'Reconnecting',
+        message: 'Lost the secure connection. Retrying automatically.',
+      });
+    });
+    const offRecovered = eventBus.on('live:recovered', () => {
+      showToast({ kind: 'success', title: 'Reconnected', message: 'Secure connection restored.' });
+    });
+    return () => {
+      offOutage();
+      offRecovered();
+    };
+  }, [showToast]);
+
+  // Collapse the bottom sheet when the control cluster requests fullscreen map.
+  // Guarded to act only on activeOverlay transitions so it never fights the
+  // manual sheet handle or churns during map movement.
+  const lastOverlayRef = useRef<string | null>(null);
+  useEffect(() => {
+    const off = eventBus.on(CONTROL_STATE_EVENT, (s: { activeOverlay: string | null }) => {
+      if (s.activeOverlay !== lastOverlayRef.current) {
+        lastOverlayRef.current = s.activeOverlay;
+        setSheetCollapsed(s.activeOverlay === 'fullscreen');
+      }
+    });
+    return off;
+  }, []);
+
   // WebSocket real-time location updates
   useEffect(() => {
     const unsubscribe = trackingService.onLocationUpdate((location: LocationData) => {
@@ -1002,19 +1207,65 @@ export default function Home() {
 
     setRouteLoading(true);
     setAiRoute(null);
+    const routeT0 = performance.now();
 
     const start = [deviceData.location.lat, deviceData.location.lng];
     const end = [targetDevice.data.location.lat, targetDevice.data.location.lng];
 
-    // Try different AI algorithms
-    const algorithms = ['ShadowPath', 'BFS', 'DFS', 'Dijkstra'];
+    // Capture speed in the narrowed scope (the guard above proved location is
+    // defined here, but that narrowing is lost inside the closure below).
+    const speedKmh = deviceData.location.speed ? deviceData.location.speed * 3.6 : 5;
+
+    // Normalize a route payload (tunnel or HTTP) into the UI route model. The
+    // backend returns `cost` (metres) and `algo_used`; older code read the
+    // non-existent `distance`/`algorithm`, leaving ETA as NaN. Read both.
+    const applyRoute = (data: any, algoLabel: string): boolean => {
+      const path = data?.path || [];
+      if (!Array.isArray(path) || path.length === 0) return false;
+      const distance = (data.distance ?? data.cost ?? 0) as number;
+      const etaMinutes = Math.round((distance / 1000 / speedKmh) * 60);
+      setAiRoute({
+        algorithm: data.algorithm || data.algo_used || algoLabel,
+        distance,
+        steps: data.steps,
+        visited: data.visited,
+        path,
+        eta:
+          etaMinutes < 60
+            ? `${etaMinutes} min`
+            : `${Math.round(etaMinutes / 60)}h ${etaMinutes % 60}m`,
+        safety: data.safety_score || 85,
+      });
+      return true;
+    };
+
     let routeFound = false;
 
-    for (const algo of algorithms) {
+    // Prefer the encrypted tunnel so origin/destination never travel in
+    // plaintext. Resolves null when the tunnel is unavailable; we then fall
+    // back to the HTTP route endpoint below.
+    try {
+      const tunnelRoute = await tunnelService.sendRouteRequest({ start, end, algo: 'ShadowPath' });
+      if (tunnelRoute && applyRoute(tunnelRoute, 'ShadowPath')) {
+        routeFound = true;
+        showToast({
+          kind: 'success',
+          title: 'AI route ready',
+          message: `Encrypted route to ${targetDevice.name}.`,
+        });
+      }
+    } catch {
+      /* fall through to HTTP */
+    }
+
+    // HTTP fallback: try different AI algorithms until one returns a path.
+    const algorithms = ['ShadowPath', 'BFS', 'DFS', 'Dijkstra'];
+    for (const algo of routeFound ? [] : algorithms) {
       try {
         const res = await fetch(`${API_BASE}/route`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(8000),
           body: JSON.stringify({
             start,
             end,
@@ -1024,31 +1275,15 @@ export default function Home() {
 
         if (res.ok) {
           const data = await res.json();
-
-          // Calculate ETA based on distance and speed
-          const speedKmh = deviceData.location.speed ? deviceData.location.speed * 3.6 : 5; // walking speed default
-          const distanceKm = data.distance / 1000;
-          const etaMinutes = Math.round((distanceKm / speedKmh) * 60);
-
-          setAiRoute({
-            algorithm: data.algorithm || algo,
-            distance: data.distance,
-            steps: data.steps,
-            visited: data.visited,
-            path: data.path || [],
-            eta:
-              etaMinutes < 60
-                ? `${etaMinutes} min`
-                : `${Math.round(etaMinutes / 60)}h ${etaMinutes % 60}m`,
-            safety: data.safety_score || 85,
-          });
-          routeFound = true;
-          showToast({
-            kind: 'success',
-            title: 'AI route ready',
-            message: `${data.algorithm || algo} found a route to ${targetDevice.name}.`,
-          });
-          break;
+          if (applyRoute(data, algo)) {
+            routeFound = true;
+            showToast({
+              kind: 'success',
+              title: 'AI route ready',
+              message: `${data.algorithm || data.algo_used || algo} found a route to ${targetDevice.name}.`,
+            });
+            break;
+          }
         }
       } catch (e) {
         console.log(`${algo} failed, trying next...`);
@@ -1070,6 +1305,7 @@ export default function Home() {
       });
     }
 
+    telemetryBus.mark('routeCalc', performance.now() - routeT0);
     setRouteLoading(false);
   };
 
@@ -1134,6 +1370,7 @@ export default function Home() {
     setAiRoute(null);
     setTrackingHistory([]);
     setActiveTarget(null);
+    liveStatus.setNavigating(false);
     stopLocationTracking();
   };
 
@@ -1169,6 +1406,13 @@ export default function Home() {
         createdAt: Date.now(),
       };
       setMapTargets(prev => [...prev, target]);
+      // Mirror the target through the encrypted tunnel (best-effort; targets
+      // have no HTTP store yet, so the fallback is a no-op).
+      void tunnelService.sendTaskUpdate(
+        'add',
+        { id: target.id, name: target.name, lat, lng, type },
+        () => {}
+      );
       setShowTargetMenu(null);
       setNewTargetName('');
       return target;
@@ -1183,6 +1427,8 @@ export default function Home() {
       setActiveTarget(target);
       setTracking(true);
       setCalibrating(true);
+      // Hold a screen wake lock while actively navigating to a target.
+      liveStatus.setNavigating(true);
 
       // Force get location if not available
       if (!deviceData?.location) {
@@ -1236,6 +1482,7 @@ export default function Home() {
 
     setRouteLoading(true);
     setAiRoute(null);
+    const routeT0 = performance.now();
 
     const start = [deviceData.location.lat, deviceData.location.lng];
     const end = [target.lat, target.lng];
@@ -1248,6 +1495,7 @@ export default function Home() {
         const res = await fetch(`${API_BASE}/route`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: AbortSignal.timeout(8000),
           body: JSON.stringify({ start, end, algo }),
         });
 
@@ -1297,6 +1545,7 @@ export default function Home() {
       });
     }
 
+    telemetryBus.mark('routeCalc', performance.now() - routeT0);
     setRouteLoading(false);
   };
 
@@ -1304,6 +1553,7 @@ export default function Home() {
   const deleteMapTarget = useCallback(
     (targetId: string) => {
       setMapTargets(prev => prev.filter(t => t.id !== targetId));
+      void tunnelService.sendTaskUpdate('remove', { id: targetId }, () => {});
       if (activeTarget?.id === targetId) {
         stopTracking();
       }
@@ -1315,6 +1565,64 @@ export default function Home() {
     },
     [activeTarget, showToast]
   );
+
+  // Register view-specific commands in the Cmd/Ctrl-K palette. Re-registers when
+  // the underlying handlers/state change so commands always act on current data.
+  useEffect(() => {
+    const unregister = commandRegistry.registerMany([
+      {
+        id: 'track.stop',
+        label: 'Stop tracking',
+        group: 'Tracking',
+        keywords: ['halt', 'end', 'cancel'],
+        run: () => stopTracking(),
+      },
+      {
+        id: 'target.addHere',
+        label: 'Add target at my location',
+        group: 'Tracking',
+        keywords: ['pin', 'mark', 'here', 'place'],
+        run: () => {
+          if (deviceData?.location) {
+            createMapTarget(deviceData.location.lat, deviceData.location.lng, '', 'custom');
+          } else {
+            showToast({
+              kind: 'error',
+              title: 'No location yet',
+              message: 'Enable location to drop a target here.',
+            });
+          }
+        },
+      },
+      {
+        id: 'pref.reducedMotion',
+        label: 'Toggle reduced motion',
+        group: 'Accessibility',
+        keywords: ['animation', 'a11y', 'motion'],
+        run: () => setPref('reducedMotion', !prefs.reducedMotion),
+      },
+      {
+        id: 'pref.highContrast',
+        label: 'Toggle high contrast',
+        group: 'Accessibility',
+        keywords: ['contrast', 'a11y', 'vision'],
+        run: () => setPref('highContrast', !prefs.highContrast),
+      },
+      {
+        id: 'pref.cycleTheme',
+        label: 'Cycle theme (dark / light / system)',
+        group: 'Accessibility',
+        keywords: ['dark', 'light', 'appearance'],
+        run: () => {
+          const order: PrefsTheme[] = ['dark', 'light', 'system'];
+          const next = order[(order.indexOf(prefs.theme) + 1) % order.length];
+          setPref('theme', next);
+        },
+      },
+    ]);
+    return unregister;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceData?.location, createMapTarget, showToast, prefs.reducedMotion, prefs.highContrast, prefs.theme]);
 
   // Grant permission - improved error handling
   const grantPermission = async (id: string) => {
@@ -1476,13 +1784,21 @@ export default function Home() {
   return (
     <div className="app holo-mode">
       <h1 className="sr-only">PathMap — private live location tracking</h1>
+      <a className="skip-link" href="#main-controls">
+        Skip to controls
+      </a>
       <header className="sys-bar" role="banner">
         <div className="sys-bar-left">
           <span className="sys-brand">
             <span className="sys-mark" aria-hidden="true" />
             PathMap
           </span>
-          <span className="sys-stat" data-state={tracking ? 'live' : 'idle'}>
+          <span
+            className="sys-stat"
+            data-state={tracking ? 'live' : 'idle'}
+            role="status"
+            aria-live="polite"
+          >
             <span className="sys-stat-dot" />
             {tracking ? 'Tracking is on' : 'Not tracking'}
           </span>
@@ -1502,6 +1818,38 @@ export default function Home() {
           </span>
         </div>
       </header>
+
+      {/* Apple Maps-style floating top: brand, hero search, live status. */}
+      <div className="top-overlay" role="banner">
+        <div className="top-brand">
+          <span className="sys-mark" aria-hidden="true" />
+          PathMap
+        </div>
+        <div className="top-search">
+          <MapSearch
+            onSelectDestination={dest => {
+              const target = createMapTarget(dest.lat, dest.lng, dest.name, 'place');
+              if (target) startTrackingTarget(target);
+            }}
+          />
+        </div>
+        <div
+          className="top-status"
+          data-live={tracking ? 'true' : 'false'}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="dot" aria-hidden="true" />
+          <span className="label">{tracking ? 'Tracking' : 'Idle'}</span>
+        </div>
+      </div>
+
+      {autopilotStatus !== 'Active' && (
+        <div className="launch-status" role="status" aria-live="polite">
+          <span className="launch-status-dot" aria-hidden="true" />
+          <span>{autopilotStatus}</span>
+        </div>
+      )}
       <MapView3D
         startPoint={
           deviceData?.location ? [deviceData.location.lat, deviceData.location.lng] : null
@@ -1549,6 +1897,8 @@ export default function Home() {
         isLiveNavActive={tracking}
         onMapClick={handleMapClick}
       />
+
+      <ControlCenter />
 
       {/* Tracking Status */}
       {tracking && (selectedDevice || activeTarget) && (
@@ -1676,7 +2026,18 @@ export default function Home() {
               <Route className="inline-icon" width={16} height={16} aria-hidden="true" />
               {aiRoute.algorithm}
             </span>
-            <span className="route-safety">
+            <span
+              className="route-safety"
+              data-tier={
+                aiRoute.algorithm === 'Offline estimate'
+                  ? 'estimate'
+                  : aiRoute.safety >= 70
+                    ? 'safe'
+                    : aiRoute.safety >= 40
+                      ? 'mid'
+                      : 'unsafe'
+              }
+            >
               {aiRoute.algorithm === 'Offline estimate' ? 'Estimate' : `${aiRoute.safety}% safe`}
             </span>
           </div>
@@ -1719,7 +2080,12 @@ export default function Home() {
       )}
 
       {/* Bottom Sheet */}
-      <div className={`sheet ${sheetCollapsed ? 'collapsed' : ''}`} role="main" aria-label="Controls">
+      <div
+        id="main-controls"
+        className={`sheet ${sheetCollapsed ? 'collapsed' : ''}`}
+        role="main"
+        aria-label="Controls"
+      >
         <button
           className="sheet-toggle"
           title={sheetCollapsed ? 'Expand controls' : 'Collapse controls'}
@@ -1731,56 +2097,7 @@ export default function Home() {
         </button>
         <div className="handle" onClick={() => setSheetCollapsed(!sheetCollapsed)}></div>
 
-        <div className="tabs" role="tablist" aria-label="Views">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'track'}
-            className={tab === 'track' ? 'active' : ''}
-            onClick={() => setTab('track')}
-          >
-            <span className="tab-icon">
-              <Crosshair aria-hidden="true" />
-            </span>
-            <span>Map</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'devices'}
-            className={tab === 'devices' ? 'active' : ''}
-            onClick={() => setTab('devices')}
-          >
-            <span className="tab-icon">
-              <Activity aria-hidden="true" />
-            </span>
-            <span>Status</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'routes'}
-            className={tab === 'routes' ? 'active' : ''}
-            onClick={() => setTab('routes')}
-          >
-            <span className="tab-icon">
-              <Route aria-hidden="true" />
-            </span>
-            <span>Directions</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'settings'}
-            className={tab === 'settings' ? 'active' : ''}
-            onClick={() => setTab('settings')}
-          >
-            <span className="tab-icon">
-              <SettingsIcon aria-hidden="true" />
-            </span>
-            <span>Settings</span>
-          </button>
-        </div>
+        <SheetTabs tab={tab} setTab={setTab} />
 
         <div className="content">
           {/* Track Tab */}
@@ -2047,31 +2364,149 @@ export default function Home() {
           {/* Settings Tab */}
           {tab === 'settings' && (
             <>
-              {/* General Settings */}
+              {/* Preferences (merged from the former Settings page) */}
               <div className="section">
-                <div className="section-header">General</div>
-                <div className="settings-command-card">
-                  <div className="settings-command-copy">
-                    <div className="settings-command-icon">
-                      <SettingsIcon aria-hidden="true" width={20} height={20} />
+                <div className="section-header">
+                  <SettingsIcon
+                    className="section-header-icon"
+                    width={16}
+                    height={16}
+                    aria-hidden="true"
+                  />
+                  Preferences
+                </div>
+                <div className="settings-list">
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <div className="setting-name">Language</div>
                     </div>
-                    <div>
-                      <div className="settings-command-title">App Preferences</div>
-                      <div className="settings-command-detail">
-                        Language, theme, units, alerts, and privacy controls
+                    <div className="pref-seg" role="group" aria-label="Language">
+                      <button
+                        className={prefs.language === 'en' ? 'active' : ''}
+                        onClick={() => changeLanguagePref('en')}
+                      >
+                        EN
+                      </button>
+                      <button
+                        className={prefs.language === 'es' ? 'active' : ''}
+                        onClick={() => changeLanguagePref('es')}
+                      >
+                        ES
+                      </button>
+                    </div>
+                  </div>
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <div className="setting-name">Theme</div>
+                    </div>
+                    <div className="pref-seg" role="group" aria-label="Theme">
+                      <button
+                        className={prefs.theme === 'dark' ? 'active' : ''}
+                        aria-label="Dark"
+                        onClick={() => setPref('theme', 'dark')}
+                      >
+                        <Moon width={15} height={15} aria-hidden="true" />
+                      </button>
+                      <button
+                        className={prefs.theme === 'light' ? 'active' : ''}
+                        aria-label="Light"
+                        onClick={() => setPref('theme', 'light')}
+                      >
+                        <Sun width={15} height={15} aria-hidden="true" />
+                      </button>
+                      <button
+                        className={prefs.theme === 'system' ? 'active' : ''}
+                        aria-label="System"
+                        onClick={() => setPref('theme', 'system')}
+                      >
+                        <SlidersHorizontal width={15} height={15} aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <div className="setting-name">Units</div>
+                    </div>
+                    <div className="pref-seg" role="group" aria-label="Units">
+                      <button
+                        className={prefs.units === 'metric' ? 'active' : ''}
+                        onClick={() => setPref('units', 'metric')}
+                      >
+                        Metric
+                      </button>
+                      <button
+                        className={prefs.units === 'imperial' ? 'active' : ''}
+                        onClick={() => setPref('units', 'imperial')}
+                      >
+                        Imperial
+                      </button>
+                    </div>
+                  </div>
+                  {(
+                    [
+                      ['precisionMode', 'High-precision GPS'],
+                      ['offline', 'Offline mode'],
+                      ['safetyAlerts', 'Safety alerts'],
+                      ['reducedMotion', 'Reduced motion'],
+                      ['highContrast', 'High contrast'],
+                      ['debug', 'Debug mode'],
+                    ] as Array<[PrefsBoolKey, string]>
+                  ).map(([key, label]) => (
+                    <div className="setting-item" key={key}>
+                      <div className="setting-info">
+                        <div className="setting-name">{label}</div>
                       </div>
+                      <button
+                        type="button"
+                        className={`toggle ${prefs[key] ? 'on' : ''}`}
+                        aria-pressed={prefs[key]}
+                        aria-label={label}
+                        onClick={() => setPref(key, !prefs[key])}
+                      />
+                    </div>
+                  ))}
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <div className="setting-name">Text size</div>
+                    </div>
+                    <div className="pref-seg" role="group" aria-label="Text size">
+                      {(
+                        [
+                          ['normal', 'A'],
+                          ['large', 'A+'],
+                          ['xl', 'A++'],
+                        ] as Array<[TextSizePref, string]>
+                      ).map(([size, glyph]) => (
+                        <button
+                          key={size}
+                          type="button"
+                          className={prefs.textSize === size ? 'active' : ''}
+                          aria-pressed={prefs.textSize === size}
+                          aria-label={`Text size ${size}`}
+                          onClick={() => setPref('textSize', size)}
+                        >
+                          {glyph}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="settings-command-meta">
-                    <span>
-                      {permissions.filter(perm => perm.granted).length}/{permissions.length}{' '}
-                      permissions
-                    </span>
-                    <span>{geofences.length} safe zones</span>
+                  <div className="setting-item">
+                    <div className="setting-info">
+                      <div className="setting-name">Plan</div>
+                      <div className="setting-detail">{PLAN_LABEL[prefs.billingPlan]}</div>
+                    </div>
+                    <button className="text-btn" onClick={() => setShowPlans(true)}>
+                      View plans
+                    </button>
                   </div>
-                  <button className="settings-command-button" onClick={() => navigate('/settings')}>
-                    Open preferences
-                    <ChevronRight width={18} height={18} aria-hidden="true" />
+                </div>
+                <div className="prefs-actions">
+                  <button className="btn-secondary" onClick={resetPrefs}>
+                    Reset
+                  </button>
+                  <button className="btn-primary" onClick={savePrefs}>
+                    <Save width={16} height={16} aria-hidden="true" />
+                    {prefsSaved ? 'Saved' : 'Save'}
                   </button>
                 </div>
               </div>
@@ -2475,6 +2910,79 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Plans Modal */}
+      {showPlans && (
+        <div className="modal-overlay" onClick={() => setShowPlans(false)}>
+          <div className="modal-content plans-modal" onClick={e => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              title="Close"
+              aria-label="Close plans"
+              onClick={() => setShowPlans(false)}
+            >
+              <X width={22} height={22} aria-hidden="true" />
+            </button>
+            <h2 className="modal-title">Plans</h2>
+            <p className="modal-subtitle">
+              PathMap is commercial software. Local use is free; production, resale, or hosted access
+              needs a paid plan.
+            </p>
+            <div className="plans-grid">
+              {(
+                [
+                  {
+                    id: 'starter',
+                    price: '$19',
+                    cadence: 'per seat / mo',
+                    features: ['Up to 5 devices', 'Encrypted live map', 'Community support'],
+                  },
+                  {
+                    id: 'pro',
+                    price: '$49',
+                    cadence: 'per seat / mo',
+                    features: ['Up to 25 devices', 'Priority workflows', 'Commercial license'],
+                  },
+                  {
+                    id: 'enterprise',
+                    price: 'Custom',
+                    cadence: 'annual',
+                    features: ['Unlimited devices', 'Private deployment', 'Dedicated support'],
+                  },
+                ] as Array<{
+                  id: BillingPlan;
+                  price: string;
+                  cadence: string;
+                  features: string[];
+                }>
+              ).map(plan => (
+                <button
+                  key={plan.id}
+                  className={`plan-card ${prefs.billingPlan === plan.id ? 'active' : ''}`}
+                  onClick={() => setPref('billingPlan', plan.id)}
+                >
+                  <span className="plan-name">{PLAN_LABEL[plan.id]}</span>
+                  <span className="plan-price">
+                    {plan.price}
+                    <em>{plan.cadence}</em>
+                  </span>
+                  <span className="plan-features">
+                    {plan.features.map(f => (
+                      <span key={f}>
+                        <Check width={13} height={13} aria-hidden="true" />
+                        {f}
+                      </span>
+                    ))}
+                  </span>
+                  <span className="plan-badge">
+                    {prefs.billingPlan === plan.id ? 'Current plan' : 'Choose'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Auth Modal */}
       {authScreen !== 'none' && (
         <div className="modal-overlay" onClick={() => setAuthScreen('none')}>
@@ -2607,6 +3115,8 @@ export default function Home() {
         )}
       </button>
       <ToastStack messages={messages} onDismiss={dismiss} />
+      <CommandPalette />
+      <TelemetryHUD />
     </div>
   );
 }

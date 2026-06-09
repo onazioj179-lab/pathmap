@@ -64,6 +64,9 @@ session_users: Dict[str, str] = {}
 # Last known location per user, kept in-process as a write-failure safety net so
 # an ack is still returned even if the durable store is unavailable.
 latest_locations: Dict[str, Dict[str, Any]] = {}
+# Latest tracking targets/tasks per user (user_id -> {target_id: target}). Targets
+# are a client-side concept; this is a best-effort in-process mirror for acks.
+latest_tasks: Dict[str, Dict[str, Any]] = {}
 
 
 class TunnelHandshakeRequest(BaseModel):
@@ -322,6 +325,10 @@ async def _handle_data(session_id: str, data: bytes) -> Optional[bytes]:
             return await _handle_tunnel_register(session_id, message)
         elif msg_type == "location_update":
             return await _handle_location_update(session_id, message)
+        elif msg_type == "route_request":
+            return await _handle_route_request(session_id, message)
+        elif msg_type == "task_update":
+            return await _handle_task_update(session_id, message)
         elif msg_type == "tracking_request":
             return await _handle_tracking_request(session_id, message)
         elif msg_type == "ping":
@@ -406,6 +413,65 @@ async def _handle_location_update(session_id: str, message: Dict) -> bytes:
         "timestamp": time.time(),
         "received": True,
         "broadcasts": broadcasts,
+    }).encode()
+
+
+async def _handle_route_request(session_id: str, message: Dict) -> bytes:
+    """Compute a route over the encrypted tunnel so origin/destination never
+    travel in plaintext. Reuses the exact same routing logic as the HTTP /route
+    endpoint (elevation, analytics, safety) by delegating to main.route().
+    """
+    req = message.get("request", {}) or {}
+    req_id = message.get("reqId")
+    try:
+        import main  # lazy import avoids a circular import at module load time
+        route_req = main.RouteRequest(
+            start=req.get("start"),
+            end=req.get("end"),
+            algo=req.get("algo", "ShadowPath"),
+            profile=req.get("profile", "walking"),
+        )
+        resp = await main.route(route_req)
+        route = resp.model_dump()
+        # Single canonical distance/algorithm aliases for clients (cost is metres).
+        route["distance"] = route.get("cost")
+        route["algorithm"] = route.get("algo_used")
+        return json.dumps({
+            "type": "route_result", "reqId": req_id, "ok": True, "route": route,
+        }).encode()
+    except Exception as e:
+        # Includes "no route" (404) and "graph not loaded" (503); the client
+        # falls back to its HTTP path on a non-ok result.
+        logger.info(f"Tunnel route_request unfulfilled for {session_id[:8]}: {e}")
+        return json.dumps({
+            "type": "route_result", "reqId": req_id, "ok": False, "reason": str(e),
+        }).encode()
+
+
+async def _handle_task_update(session_id: str, message: Dict) -> bytes:
+    """Record an encrypted tracking-target/task change for the registered user.
+    Targets are primarily a client-side concept; we keep the latest per user as a
+    safety net and acknowledge so the client knows the encrypted path succeeded.
+    """
+    req_id = message.get("reqId")
+    user_id = session_users.get(session_id)
+    if not user_id:
+        return json.dumps({
+            "type": "task_ack", "reqId": req_id, "received": False,
+            "reason": "unauthenticated",
+        }).encode()
+
+    action = message.get("action", "update")
+    target = message.get("target", {}) or {}
+    tid = str(target.get("id", ""))
+    user_tasks = latest_tasks.setdefault(user_id, {})
+    if action == "remove":
+        user_tasks.pop(tid, None)
+    elif tid:
+        user_tasks[tid] = target
+
+    return json.dumps({
+        "type": "task_ack", "reqId": req_id, "received": True, "action": action,
     }).encode()
 
 

@@ -4,6 +4,8 @@
  - Re-evaluates every 10 seconds, with minimal visual popping
 */
 
+import { framePacingEngine } from './framePacingEngine';
+
 let tier: 1 | 2 | 3 = 2;
 let timer: number | null = null;
 
@@ -17,8 +19,9 @@ async function getBatteryInfo(): Promise<{ level?: number; charging?: boolean } 
 }
 
 function estimateFps(): number {
-  // Lightweight FPS sampler over ~300ms
-  return 60; // fallback; actual FPS tracking is handled by frame pacing engine elsewhere
+  // Real measured FPS from the frame pacing engine (rolling 120-frame average).
+  const fps = framePacingEngine.getMetrics().fps;
+  return typeof fps === 'number' && fps > 0 ? fps : 60;
 }
 
 function assessTier(fps: number, battery?: { level?: number; charging?: boolean }): 1 | 2 | 3 {

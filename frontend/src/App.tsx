@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import OnboardingTerms from './components/OnboardingTerms';
 import Home from './pages/Home';
-import Settings from './pages/Settings';
 import type { VisualizationMode } from './services/visualization';
 import type { NavigationState } from './services/navigation';
 
@@ -36,7 +35,6 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/settings" element={<Settings />} />
         </Routes>
       </BrowserRouter>
     </OnboardingTerms>

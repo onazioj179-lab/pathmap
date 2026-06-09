@@ -10,6 +10,7 @@ import { antiTamperEngine } from './services/antiTamperEngine';
 import { identityCore } from './services/identityCore';
 import { uiScaleEngine } from './services/uiScaleEngine';
 import { fullDarkModeEngine } from './services/fullDarkModeEngine';
+import { liveStatus } from './services/liveStatus';
 import { initWebVitals } from './services/webVitals';
 
 // Wrap App with ErrorBoundary for graceful error handling
@@ -56,6 +57,12 @@ try {
 // Start responsive UI scaling (FRA-UI + DIS + CVE foundation)
 try {
   uiScaleEngine.start();
+} catch {}
+
+// Start the always-on live status coordinator (tunnel + network + GPS health,
+// adaptive sampling, wake lock, reconnect/resume).
+try {
+  liveStatus.start();
 } catch {}
 
 // Initialize ultra-clean mode - Map + Header + Bottom Nav only

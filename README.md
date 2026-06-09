@@ -1,34 +1,40 @@
 # PathMap
 
-**Private, encrypted live location tracking you host yourself.**
+**Private, encrypted live-location tracking with a map UI that feels like a native app.**
 
-PathMap lets a team see each other on a live map in real time — without handing location data to a third-party tracking cloud. Devices encrypt their location before it leaves the phone, and the server only ever sees ciphertext. You run the backend; you own the data.
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688?logo=fastapi&logoColor=white)
+![Rust](https://img.shields.io/badge/Core-Rust-DEA584?logo=rust&logoColor=white)
+![License](https://img.shields.io/badge/license-see%20LICENSE-blue)
 
-Built for operations leads, private fleets, and safety workflows that need live coordination but can't ship sensitive movement data to someone else's servers.
+PathMap shows people and places on a live map in real time — and the server never sees your
+coordinates. Each device encrypts its location before it ever leaves the phone, so the server
+only handles ciphertext.
 
----
-
-## Open core
-
-PathMap is **open core**:
-
-- **Core (free, self-hosted)** — everything in this repo. Run it yourself, read the code, modify it, use it for your own team. This is the real product, not a demo.
-- **Hosted & Enterprise (paid)** — managed hosting, billing, SSO, priority support, and security review. You never need these to run PathMap; they exist for teams that don't want to operate it themselves.
-
-See [Pricing](#hosted--enterprise) and [LICENSE.md](LICENSE.md).
+It's a full-stack project: a polished React map front-end, a Python routing back-end, and an
+optional Rust core for fast pathfinding. Self-hosted and open — run it, read it, make it yours.
 
 ---
 
-## What you get
+## Highlights
 
-| Feature | What it does |
-| --- | --- |
-| **Encrypted live map** | Track devices in real time; the server can't read the coordinates. |
-| **Team coordination** | Share location between authorized users, friends, and groups. |
-| **Smart routing** | A\*, Dijkstra, and greedy routing over OpenStreetMap — no paid routing API. |
-| **Geofencing** | Entry/exit alerts for zones you define. |
-| **Ghost mode** | Stay online but pause broadcasting when privacy matters. |
-| **Self-hosted** | Your backend, your database, your keys. |
+- **Encrypted live tracking** — end-to-end; the server sees ciphertext only.
+- **Apple Maps-style interface** — a floating search bar, a frosted map-control cluster, and a
+  free-form bottom sheet that becomes a sidebar on desktop. Responsive from phone to wide screen.
+- **Search anywhere** — type a place, the map flies there and routes to it.
+- **Smart routing** — A\*, Dijkstra and greedy search over OpenStreetMap. No paid routing API.
+- **Command palette** — press `Cmd/Ctrl-K` to drive the whole app from the keyboard.
+- **Live telemetry HUD** — watch frame rate, GPS quality, and the secure connection in real time.
+- **Built for everyone** — full keyboard navigation, reduced-motion, high-contrast, and text scaling.
+- **Always-on** — auto-reconnect, offline buffering, and battery-aware sampling.
+
+---
+
+## Screenshots
+
+> Add a screenshot or short GIF here (the live map, the search, and the bottom sheet).
+> `docs/` is a good place to keep them.
 
 ---
 
@@ -36,112 +42,61 @@ See [Pricing](#hosted--enterprise) and [LICENSE.md](LICENSE.md).
 
 You need **Python 3.11+** and **Node 18+**.
 
-### Run everything (Windows)
+**One click (Windows):** double-click **`START PATHMAP.bat`** — it starts both servers and opens
+the app in your browser.
 
-```powershell
-./start-dev.ps1
-```
-
-This launches both servers and prints the URLs. Otherwise, run the two halves manually:
-
-### Backend
+**Or run the two halves yourself:**
 
 ```bash
+# Back-end  → http://localhost:8000
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
+uvicorn main:app --port 8000
 
-Check it's up: open <http://localhost:8000/health> — you should see `"status": "healthy"`.
-API docs live at <http://localhost:8000/docs>.
-
-### Frontend
-
-```bash
+# Front-end → http://localhost:3002
 cd frontend
 npm install
 npm run dev
 ```
 
-Open <http://localhost:3002>.
-
-> **Heads up:** the backend ships with a small sample street graph so it runs out of the box. Point it at a real OpenStreetMap area for production routing.
+Then open <http://localhost:3002>. The back-end ships with a small sample street map, so routing
+works out of the box.
 
 ---
 
-## How the encryption works
+## How it's built
 
-The promise is simple: **the server should never be able to read your location.**
-
-```
-[Device A] --TLS--> [PathMap server] --TLS--> [Device B]
-     |                      |                      |
-     +---- end-to-end encrypted location ----------+
-                  server sees ciphertext only
-```
-
-| Layer | Algorithm |
+| Layer | Tech |
 | --- | --- |
-| Key exchange | ECDH P-256 |
-| Payload encryption | AES-256-GCM |
-| Key derivation | HKDF-SHA256 |
-| Passwords | bcrypt (cost 12) |
+| Front-end | React + TypeScript + Vite, MapLibre GL |
+| Back-end | FastAPI (Python), WebSockets, OpenStreetMap routing |
+| Fast core | Optional Rust A\* via PyO3, with a pure-Python fallback |
+| Encryption | ECDH P-256 + HKDF-SHA256 + AES-256-GCM |
 
-Tunnel keys are ephemeral per connection; each reconnect performs a fresh ECDH handshake.
-
-> **Important:** install the Python `cryptography` package (it's in `requirements.txt`). Without it, PathMap falls back to weak obfuscation meant only for local development — never run real data without it.
-
-**It protects against** a compromised or snooping server, and network interception.
-**It does not protect against** a compromised phone, traffic-timing analysis, or a targeted attacker extracting keys from memory.
+The control surface, live telemetry, always-on, and encryption layers are documented in
+**[docs/control-telemetry-encryption.md](docs/control-telemetry-encryption.md)**.
 
 ---
 
-## Deploy it
-
-```env
-DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/pathmap
-JWT_SECRET_KEY=<openssl rand -hex 32>
-CORS_ORIGINS=https://your-domain.com
-```
+## Develop
 
 ```bash
-docker-compose up -d      # Docker
-kubectl apply -f k8s/     # Kubernetes
+# Front-end checks
+cd frontend
+npm run typecheck
+npm test
+
+# Back-end tests
+cd backend
+pytest
 ```
 
-TLS termination, secrets management, and a production Postgres are left to you — see [PREFLIGHT.md](PREFLIGHT.md) before going live.
-
 ---
 
-## Good to know
+## Author
 
-- Web + backend only — no native iOS/Android app is included.
-- Consumer-GPS accuracy; no indoor or sub-meter positioning.
-- No built-in location history warehouse or analytics.
-- No compliance certifications (HIPAA, SOC 2, GDPR) out of the box.
-
----
-
-## Hosted & Enterprise
-
-Don't want to run servers? These are optional, paid add-ons on top of the free core.
-
-| Plan | Price | For |
-| --- | --- | --- |
-| **Starter** | $19 / seat / mo | Small teams, hosted, up to 5 devices. |
-| **Pro** | $49 / seat / mo | Field ops, up to 25 devices, priority support. |
-| **Enterprise** | Custom | Private deployment, SSO, security review. |
-
-Contact **Onazi Treasure Oj** for hosted access or Enterprise terms.
-
----
-
-## Contributing
-
-Issues and pull requests are welcome on the open core. Run the backend tests with `cd backend && pytest` and the frontend checks with `cd frontend && npm test` before opening a PR.
-
----
+Built by **Onazi Treasure**.
 
 ## License
 
-Open core. The self-hosted core in this repo is free to run and modify under the terms in [LICENSE.md](LICENSE.md). Hosted access and Enterprise features are sold separately by **Onazi Treasure Oj**.
+Self-hosted and open. See **[LICENSE.md](LICENSE.md)**.

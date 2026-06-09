@@ -36,6 +36,12 @@
   --ok: #2fc79b;
   --warn: #e0a43c;
   --danger: #ef6b6b;
+  /* Semantic route/path colors: green=fast/safe, blue=medium, red=hard/unsafe,
+     yellow=flash when a path is found. */
+  --route-safe: #2fc79b;
+  --route-mid: #3da5f5;
+  --route-unsafe: #ef6b6b;
+  --route-found: #f5c84b;
 
   /* Spacing scale */
   --space-1: 4px;
@@ -59,12 +65,18 @@
   --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman',
     serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
-  --text-xs: 11px;
-  --text-sm: 13px;
-  --text-base: 15px;
-  --text-lg: 18px;
-  --text-xl: 22px;
-  --text-2xl: 28px;
+  /* Accessibility text scaling: data-text-scale sets --text-scale (default 1),
+     and every type token multiplies by it so the "Large/XL text" setting scales
+     the whole UI consistently. */
+  --text-scale: 1;
+  --text-xs: calc(11px * var(--text-scale));
+  --text-sm: calc(13px * var(--text-scale));
+  --text-base: calc(15px * var(--text-scale));
+  --text-lg: calc(18px * var(--text-scale));
+  --text-xl: calc(22px * var(--text-scale));
+  --text-2xl: calc(28px * var(--text-scale));
+  /* Some older stylesheets reference --text-md; alias it. */
+  --text-md: var(--text-base);
 
   /* Elevation — soft, warm, low (paper sits flat) */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
@@ -174,4 +186,59 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ── Accessibility: reduced motion ────────────────────────────────────────
+   Honor the user toggle (data-reduced-motion) as the union with the OS setting.
+   Components may still have their own @media (prefers-reduced-motion) blocks. */
+:root[data-reduced-motion='true'] *,
+:root[data-reduced-motion='true'] *::before,
+:root[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ── Accessibility: high contrast ─────────────────────────────────────────
+   Raise text/border contrast on either theme and strengthen the focus ring. */
+:root[data-contrast='high'] {
+  --text: #ffffff;
+  --text-2: #f0ead9;
+  --text-muted: #cabfa6;
+  --text-faint: #a89c84;
+  --border: #6a6150;
+  --border-strong: #8a806a;
+  --accent: #6fc3f0;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent), 0 0 0 6px #ffffff;
+}
+:root[data-contrast='high'][data-pathmap-theme='light'] {
+  --text: #000000;
+  --text-2: #1c1812;
+  --text-muted: #3a342a;
+  --text-faint: #564d3e;
+  --border: #8a806a;
+  --border-strong: #6a6150;
+  --accent: #185a85;
+}
+
+/* ── Accessibility: skip link ─────────────────────────────────────────────
+   Hidden until focused, then pinned top-left for keyboard users. */
+.skip-link {
+  position: fixed;
+  top: -48px;
+  left: var(--space-3);
+  z-index: 2000;
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  transition: top 120ms ease-out;
+}
+.skip-link:focus {
+  top: var(--space-3);
+}
+:root[data-reduced-motion='true'] .skip-link {
+  transition: none;
 }

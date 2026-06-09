@@ -1,0 +1,14 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "pathmap_core"
+version = "0.1.0"
+description = "Native A* routing core for PathMap."
+requires-python = ">=3.9"
+classifiers = ["Programming Language :: Rust"]
+
+[tool.maturin]
+# Build a plain extension module (no Python source package alongside it).
+bindings = "pyo3"

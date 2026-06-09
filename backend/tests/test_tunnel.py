@@ -94,3 +94,27 @@ def test_tampered_ciphertext_is_rejected():
         "ct": base64.b64encode(bytes(ct)).decode(),
     })
     assert eng.decrypt_message(session_id, envelope) is None
+
+
+def test_replayed_envelope_is_rejected():
+    """An identical (nonce, ciphertext) envelope must decrypt at most once."""
+    eng = TunnelEngine()
+    session_id, server_pub = eng.create_session()
+    client_priv, client_pub = _new_client()
+    eng.complete_handshake(session_id, client_pub)
+    server_pubkey = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), server_pub)
+    shared = client_priv.exchange(ec.ECDH(), server_pubkey)
+    key_c2s, _ = _client_derive(shared, client_pub, server_pub)
+
+    msg = json.dumps({"type": "location_update", "location": {"lat": 1.0, "lng": 2.0}}).encode()
+    nonce = os.urandom(12)
+    ct = AESGCM(key_c2s).encrypt(nonce, msg, session_id.encode())
+    envelope = json.dumps({
+        "n": base64.b64encode(nonce).decode(),
+        "ct": base64.b64encode(ct).decode(),
+    })
+
+    # First delivery succeeds; the exact same envelope replayed is rejected.
+    assert eng.decrypt_message(session_id, envelope) == msg
+    assert eng.decrypt_message(session_id, envelope) is None
+    assert eng.ai_model.replay_attempts >= 1
