@@ -19,6 +19,8 @@ export const CONTROL_STATE_EVENT = 'control:state';
 export interface ControlState {
   paletteOpen: boolean;
   hudVisible: boolean;
+  commandCenter: boolean;
+  feedbackOpen: boolean;
   followMe: boolean;
   bearingLock: boolean;
   activeOverlay: string | null;
@@ -28,6 +30,8 @@ export interface ControlState {
 const INITIAL: ControlState = {
   paletteOpen: false,
   hudVisible: false,
+  commandCenter: true,
+  feedbackOpen: false,
   followMe: false,
   bearingLock: false,
   activeOverlay: null,
@@ -68,6 +72,14 @@ class ControlStateStore {
 
   toggleHud(visible?: boolean): void {
     this.set({ hudVisible: visible ?? !this.state.hudVisible });
+  }
+
+  toggleCommandCenter(on?: boolean): void {
+    this.set({ commandCenter: on ?? !this.state.commandCenter });
+  }
+
+  toggleFeedback(open?: boolean): void {
+    this.set({ feedbackOpen: open ?? !this.state.feedbackOpen });
   }
 
   setActiveOverlay(overlay: string | null): void {

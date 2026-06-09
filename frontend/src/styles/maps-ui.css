@@ -207,6 +207,35 @@
   }
 }
 
+/* ── Reconcile the floating info cards with the desktop sidebar ───────────────
+   On wide screens the sidebar occupies the left column, so the tracking banner,
+   route card and quick-action button must move out of its way (they were full
+   width for the old bottom-sheet layout). Center them in the remaining map area
+   and pin the quick-action to the bottom-right, clear of the top-right controls. */
+@media screen and (min-width: 1024px) {
+  .app.holo-mode .tracking-status,
+  .app.holo-mode .ai-route-card {
+    left: calc(380px + var(--space-4) * 2) !important;
+    right: var(--space-4) !important;
+    width: auto !important;
+    max-width: 460px !important;
+    margin: 0 auto !important;
+  }
+  .app.holo-mode .tracking-status {
+    top: calc(var(--safe-top, 0px) + 72px) !important;
+  }
+  .app.holo-mode .ai-route-card {
+    top: auto !important;
+    bottom: var(--space-4) !important;
+  }
+  .app.holo-mode .fab {
+    top: auto !important;
+    bottom: var(--space-4) !important;
+    right: var(--space-4) !important;
+    left: auto !important;
+  }
+}
+
 /* Short landscape phones: keep the card compact. */
 @media screen and (max-height: 520px) and (orientation: landscape) {
   .app.holo-mode .sheet {

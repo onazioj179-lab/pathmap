@@ -47,10 +47,12 @@ import { mapCommandBus } from '../services/mapCommandBus';
 import { telemetryBus } from '../services/telemetryBus';
 import { eventBus } from '../services/eventBus';
 import { commandRegistry } from '../services/commandRegistry';
-import { CONTROL_STATE_EVENT } from '../services/controlState';
+import { controlState, CONTROL_STATE_EVENT } from '../services/controlState';
 import CommandPalette from '../components/CommandPalette/CommandPalette';
 import ControlCenter from '../components/ControlCenter/ControlCenter';
 import TelemetryHUD from '../components/TelemetryHUD/TelemetryHUD';
+import CommandCenter from '../components/CommandCenter/CommandCenter';
+import FeedbackBox from '../components/Feedback/FeedbackBox';
 import SheetTabs from './home/SheetTabs';
 import { applyPrefs } from '../utils/applyPrefs';
 import { sharingService } from '../services/sharingService';
@@ -2509,6 +2511,14 @@ export default function Home() {
                     {prefsSaved ? 'Saved' : 'Save'}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  className="text-btn"
+                  onClick={() => controlState.toggleFeedback(true)}
+                  style={{ marginTop: 'var(--space-2)' }}
+                >
+                  Send feedback
+                </button>
               </div>
 
               {/* Account Section */}
@@ -3117,6 +3127,8 @@ export default function Home() {
       <ToastStack messages={messages} onDismiss={dismiss} />
       <CommandPalette />
       <TelemetryHUD />
+      <CommandCenter targets={mapTargets} activeTarget={activeTarget} route={aiRoute} />
+      <FeedbackBox />
     </div>
   );
 }

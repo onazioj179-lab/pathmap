@@ -68,6 +68,8 @@ commandRegistry.registerMany([
   { id: 'map.mode.satellite', label: 'View: Satellite', group: 'Map mode', keywords: ['imagery', 'aerial'], run: () => void mapCommandBus.setMode('satellite') },
   { id: 'map.mode.globe', label: 'View: Globe', group: 'Map mode', keywords: ['earth', 'sphere'], run: () => void mapCommandBus.setMode('globe') },
   { id: 'hud.toggle', label: 'Toggle telemetry HUD', group: 'View', keywords: ['flow', 'fps', 'diagnostics', 'stats'], run: () => controlState.toggleHud() },
+  { id: 'cc.toggle', label: 'Toggle Command Center grid', group: 'View', keywords: ['dashboard', 'ops', 'grid', 'globe', 'datav'], run: () => controlState.toggleCommandCenter() },
+  { id: 'feedback.open', label: 'Send feedback', group: 'Help', keywords: ['contact', 'bug', 'report', 'idea', 'support'], run: () => controlState.toggleFeedback(true) },
 ]);
 
 export default commandRegistry;
