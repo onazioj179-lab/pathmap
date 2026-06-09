@@ -1,0 +1,225 @@
+/*
+ * maps-ui.css - Apple Maps-inspired top + bottom redesign.
+ *
+ * Loaded after Home.css so it wins the cascade. The map fills the screen; the
+ * search lives top-center, controls float, and the bottom panel is a free-form
+ * frosted card that becomes a left sidebar on wide screens. Uses the warm Paper
+ * Dark tokens so it themes for free.
+ */
+
+/* The old solid status bar is replaced by the floating top overlay below. */
+.app.holo-mode .sys-bar {
+  display: none !important;
+}
+
+/* ── Top overlay: brand + hero search + status, floating over the map ─────── */
+.top-overlay {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 12px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  pointer-events: none;
+}
+
+.top-overlay > * {
+  pointer-events: auto;
+}
+
+.top-overlay .top-search {
+  flex: 1;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.top-brand {
+  display: none; /* hidden on mobile; the search is the hero */
+  align-items: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 var(--space-3);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.top-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 var(--space-3);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  color: var(--text-2);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.top-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.top-status[data-live='true'] .dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 30%, transparent);
+}
+
+.top-status .label {
+  display: none;
+}
+
+/* ── Bottom panel: free-form frosted card ────────────────────────────────── */
+.app.holo-mode .sheet {
+  position: absolute !important;
+  left: var(--space-3) !important;
+  right: var(--space-3) !important;
+  bottom: calc(var(--safe-bottom, 0px) + var(--space-3)) !important;
+  top: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  max-height: 62vh !important;
+  margin: 0 auto !important;
+  background: color-mix(in srgb, var(--surface) 90%, transparent) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-3) !important;
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: max-height 240ms ease, transform 240ms ease;
+}
+
+.app.holo-mode .sheet.collapsed {
+  max-height: 84px !important;
+}
+
+/* Grab handle */
+.app.holo-mode .handle {
+  width: 40px !important;
+  height: 5px !important;
+  margin: var(--space-2) auto var(--space-1) !important;
+  border-radius: var(--radius-pill) !important;
+  background: var(--border-strong) !important;
+  cursor: grab;
+  flex: none;
+}
+
+/* Hide the legacy chevron toggle; the handle is the affordance now. */
+.app.holo-mode .sheet-toggle {
+  display: none !important;
+}
+
+/* Tab bar: clean icon row */
+.app.holo-mode .tabs {
+  display: flex !important;
+  gap: var(--space-1) !important;
+  padding: 0 var(--space-2) var(--space-1) !important;
+  background: transparent !important;
+  border: none !important;
+  flex: none;
+}
+
+.app.holo-mode .tabs button {
+  flex: 1;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) !important;
+  min-height: 52px;
+  border: none !important;
+  border-radius: var(--radius-md) !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  font-size: var(--text-xs);
+}
+
+.app.holo-mode .tabs button.active {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+.app.holo-mode .tabs button .tab-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Scrollable content area inside the card */
+.app.holo-mode .content {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  padding: var(--space-3) var(--space-4) var(--space-4) !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app.holo-mode .sheet.collapsed .content,
+.app.holo-mode .sheet.collapsed .tabs {
+  display: none !important;
+}
+
+/* ── Responsive: left sidebar card on wide screens (Apple Maps on Mac) ────── */
+@media screen and (min-width: 1024px) {
+  .top-overlay {
+    justify-content: flex-start;
+  }
+  .top-overlay .top-search {
+    margin: 0;
+    max-width: 380px;
+  }
+  .top-brand {
+    display: inline-flex;
+  }
+  .top-status .label {
+    display: inline;
+  }
+
+  .app.holo-mode .sheet {
+    left: var(--space-4) !important;
+    right: auto !important;
+    bottom: var(--space-4) !important;
+    top: calc(var(--safe-top, 0px) + 72px) !important;
+    width: 380px !important;
+    max-height: none !important;
+  }
+  .app.holo-mode .sheet.collapsed {
+    top: auto !important;
+    max-height: 84px !important;
+  }
+}
+
+/* Short landscape phones: keep the card compact. */
+@media screen and (max-height: 520px) and (orientation: landscape) {
+  .app.holo-mode .sheet {
+    max-height: 80vh !important;
+  }
+}
+
+:root[data-reduced-motion='true'] .app.holo-mode .sheet {
+  transition: none;
+}
+:root[data-reduced-motion='true'] .top-brand,
+:root[data-reduced-motion='true'] .top-status,
+:root[data-reduced-motion='true'] .app.holo-mode .sheet {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

@@ -50,6 +50,7 @@ import { checkIntegrity as bfisCheck } from '../services/bfis';
 import { mapBootPipeline } from '../services/mapBootPipeline';
 import { getMapRendererFix } from '../services/mapRendererFix';
 import { getMapModeController } from '../services/mapModeController';
+import { mapCommandBus } from '../services/mapCommandBus';
 import type { MapMode } from '../services/mapModeController';
 import { mapEngine } from '../services/mapEngine';
 
@@ -124,6 +125,11 @@ function MapView3D(props: MapView3DProps) {
   const currentMarkerRef = useRef<any | null>(null);
   // Landmark/target markers
   const landmarkMarkersRef = useRef<Map<string, any>>(new Map());
+  // Holds a function that renders the current route into the map sources. It is
+  // (re)assigned by the route-update effect and invoked again after a style
+  // swap (raster failover) so the route geometry + safety color are restored
+  // onto the freshly re-created, initially-empty layers.
+  const renderRouteRef = useRef<(() => void) | null>(null);
   const [ready, setReady] = useState(false);
 
   // Initialize theme bridge once on mount
@@ -209,25 +215,29 @@ function MapView3D(props: MapView3DProps) {
 
       const initialCenter: [number, number] = startPoint || [40.7128, -74.006];
 
-      // Always-available map style fallback that does not depend on backend proxies.
+      // Carto raster basemap, kept as a keyless failover if the vector style fails.
+      const rasterFallbackStyle: any = {
+        version: 8,
+        sources: {
+          carto: {
+            type: 'raster',
+            tiles: [
+              'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
+              'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
+              'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
+            ],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors © CARTO',
+          },
+        },
+        layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
+      };
+
+      // Primary: free OpenFreeMap vector basemap (no API key) -> real 3D buildings
+      // + crisp labels. Falls back to the raster style on error (see below).
       function pickStyle(): any {
         if (isMapbox) return 'mapbox://styles/mapbox/dark-v11';
-        return {
-          version: 8,
-          sources: {
-            carto: {
-              type: 'raster',
-              tiles: [
-                'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
-                'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
-                'https://c.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}@2x.png',
-              ],
-              tileSize: 256,
-              attribution: '© OpenStreetMap contributors © CARTO',
-            },
-          },
-          layers: [{ id: 'carto', type: 'raster', source: 'carto' }],
-        };
+        return 'https://tiles.openfreemap.org/styles/dark';
       }
 
       const styleUrl = pickStyle();
@@ -239,8 +249,8 @@ function MapView3D(props: MapView3DProps) {
         style: styleUrl,
         center: [initialCenter[1], initialCenter[0]],
         zoom: isCompactViewport ? 14 : 15,
-        pitch: isCompactViewport ? 0 : 28,
-        bearing: 0,
+        pitch: isCompactViewport ? 35 : 50,
+        bearing: -18,
         antialias: true,
         preserveDrawingBuffer: false,
         failIfMajorPerformanceCaveat: false,
@@ -249,7 +259,7 @@ function MapView3D(props: MapView3DProps) {
         dragRotate: true,
         pitchWithRotate: true,
         touchZoomRotate: true,
-        maxPitch: 60,
+        maxPitch: 75,
         refreshExpiredTiles: false,
         maxTileCacheSize: 100,
         performanceMetricsCollection: false,
@@ -259,10 +269,208 @@ function MapView3D(props: MapView3DProps) {
       mapRef.current = map;
       (window as any).glMap = map;
 
+      // One-time failover from the vector style to the raster basemap if the
+      // vector style/tiles cannot load. A setStyle swap discards all sources and
+      // layers; the 'styledata' handler below re-creates the route/segment
+      // layers AND re-applies the current route geometry + safety color (via
+      // renderRouteRef), so the displayed route survives the swap.
+      let usedRasterFallback = false;
+      map.on('error', (e: any) => {
+        const msg = String(e?.error?.message || e?.error || '');
+        if (
+          !usedRasterFallback &&
+          !isMapbox &&
+          !map.isStyleLoaded?.() &&
+          /style|sprite|glyph|source|tile|fetch|load|network/i.test(msg)
+        ) {
+          usedRasterFallback = true;
+          console.warn('[MapView3D] vector basemap failed; using raster fallback');
+          try {
+            map.setStyle(rasterFallbackStyle);
+          } catch {}
+        }
+      });
+
+      // Idempotent route + segment layer setup; runs on initial load and after any
+      // style change (so it survives the raster failover).
+      //
+      // The tracking line is built from four stacked layers for a real
+      // navigation-grade look that reads clearly over any basemap:
+      //   route-glow   - wide, blurred aura so the line "lifts" off the map
+      //   route-casing - dark outline that separates the line from the street
+      //   route-line   - the main colored line (safety-tier color, rounded)
+      //   route-flow   - bright animated dashes that flow toward the destination
+      // Width is interpolated by zoom so the line stays proportional from a
+      // city overview down to street level.
+      // Each width is its own top-level zoom interpolate. A ["zoom"] interpolate
+      // must be the outermost value of a paint property in MapLibre - it cannot
+      // be nested inside arithmetic (e.g. ["*", interpolate, 3]), or the layer
+      // is silently rejected. So the glow/casing/flow widths carry pre-scaled
+      // stops rather than multiplying ROUTE_WIDTH.
+      const zoomWidth = (stops: number[][]): any => [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        ...stops.flat(),
+      ];
+      const ROUTE_WIDTH = zoomWidth([
+        [10, 3.5],
+        [14, 6],
+        [17, 9],
+        [20, 13],
+      ]);
+      const GLOW_WIDTH = zoomWidth([
+        [10, 10.5],
+        [14, 18],
+        [17, 27],
+        [20, 39],
+      ]); // ROUTE_WIDTH x3
+      const CASING_WIDTH = zoomWidth([
+        [10, 8.5],
+        [14, 11],
+        [17, 14],
+        [20, 18],
+      ]); // ROUTE_WIDTH +5
+      const FLOW_WIDTH = zoomWidth([
+        [10, 1.5],
+        [14, 2.5],
+        [17, 3.8],
+        [20, 5.5],
+      ]); // ROUTE_WIDTH x0.42
+      const SEG_CASING_WIDTH = zoomWidth([
+        [10, 7.5],
+        [14, 10],
+        [17, 13],
+        [20, 17],
+      ]); // ROUTE_WIDTH +4
+      const ensureRouteLayers = () => {
+        try {
+          if (!map.getSource('route')) {
+            // lineMetrics lets us use line-progress gradients later if needed.
+            map.addSource('route', {
+              type: 'geojson',
+              lineMetrics: true,
+              data: { type: 'FeatureCollection', features: [] },
+            });
+            map.addLayer({
+              id: 'route-glow',
+              type: 'line',
+              source: 'route',
+              layout: { 'line-cap': 'round', 'line-join': 'round' },
+              paint: {
+                'line-color': '#2fc79b',
+                'line-width': GLOW_WIDTH,
+                'line-opacity': 0.18,
+                'line-blur': 12,
+              },
+            });
+            map.addLayer({
+              id: 'route-casing',
+              type: 'line',
+              source: 'route',
+              layout: { 'line-cap': 'round', 'line-join': 'round' },
+              paint: {
+                'line-color': '#15120d',
+                'line-width': CASING_WIDTH,
+                'line-opacity': 0.55,
+              },
+            });
+            map.addLayer({
+              id: 'route-line',
+              type: 'line',
+              source: 'route',
+              layout: { 'line-cap': 'round', 'line-join': 'round' },
+              paint: { 'line-color': '#2fc79b', 'line-width': ROUTE_WIDTH, 'line-opacity': 0.98 },
+            });
+            map.addLayer({
+              id: 'route-flow',
+              type: 'line',
+              source: 'route',
+              layout: { 'line-cap': 'butt', 'line-join': 'round' },
+              paint: {
+                'line-color': '#f4efe3',
+                'line-width': FLOW_WIDTH,
+                'line-opacity': 0.7,
+                'line-dasharray': [0, 4, 3],
+              },
+            });
+            startRouteFlowAnimation();
+          }
+          ['seg-safe', 'seg-traffic', 'seg-unsafe'].forEach((id, idx) => {
+            if (!map.getSource(id)) {
+              map.addSource(id, {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] },
+              });
+              map.addLayer({
+                id: id + '-casing',
+                type: 'line',
+                source: id,
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: {
+                  'line-color': '#15120d',
+                  'line-width': SEG_CASING_WIDTH,
+                  'line-opacity': 0.5,
+                },
+              });
+              map.addLayer({
+                id: id + '-line',
+                type: 'line',
+                source: id,
+                layout: { 'line-cap': 'round', 'line-join': 'round' },
+                paint: {
+                  // green = fast/safe, blue = medium, red = hard/unsafe
+                  'line-color': idx === 0 ? '#2fc79b' : idx === 1 ? '#3da5f5' : '#ef6b6b',
+                  'line-width': ROUTE_WIDTH,
+                  'line-opacity': 0.95,
+                },
+              });
+            }
+          });
+        } catch {}
+      };
+
+      // Animated "flow" dashes that march along the route toward the
+      // destination, giving the tracking line a clear sense of direction.
+      // Driven by a single low-rate timer (~14fps is plenty for a dash march)
+      // and torn down with the map.
+      function startRouteFlowAnimation() {
+        if ((map as any)._routeFlowTimer) return;
+        // A sequence of dash patterns whose gap "slides" each tick.
+        const sequence: number[][] = [];
+        const steps = 8;
+        for (let i = 0; i < steps; i++) {
+          const lead = (i / steps) * 4;
+          sequence.push([0, lead, 2.2, 4 - lead]);
+        }
+        let frame = 0;
+        (map as any)._routeFlowTimer = setInterval(() => {
+          if (!map.getLayer('route-flow')) return;
+          try {
+            map.setPaintProperty('route-flow', 'line-dasharray', sequence[frame % steps]);
+          } catch {}
+          frame++;
+        }, 70);
+      }
+      map.on('styledata', () => {
+        ensureRouteLayers();
+        // A style swap recreates the route/segment sources EMPTY, so re-apply
+        // the current route geometry + safety color onto them. No-op if there is
+        // no active route yet.
+        try {
+          renderRouteRef.current?.();
+        } catch {}
+      });
+
       // Initialize map mode controller
       const mapModeController = getMapModeController();
       mapModeController.bindMap(map);
       console.log('[V92] Map Mode Controller bound - Standard/Satellite/Globe modes ready');
+
+      // Register the map + mode controller with the command bus so the control
+      // cluster, command palette and HUD can drive the map. Single attach point;
+      // the bus only delegates and never creates a second map or controller.
+      mapCommandBus.attach(map, mapModeController);
 
       // Run full boot pipeline before map initialization
       console.log('[V87] Starting map boot pipeline...');
@@ -282,7 +490,10 @@ function MapView3D(props: MapView3DProps) {
       // Live heartbeat monitoring now active
       console.log('[V91] Live tile heartbeat monitoring active - 3s interval');
 
-      map.on('load', () => {
+      let mapReadyDone = false;
+      const onMapReady = () => {
+        if (mapReadyDone) return;
+        mapReadyDone = true;
         // Initialize 120Hz rendering pipeline
         console.log('[V57] Initializing ultra-fluid 120Hz rendering');
 
@@ -307,6 +518,11 @@ function MapView3D(props: MapView3DProps) {
         try {
           automaticQualityScalingSystem.start();
         } catch {}
+
+        // Throttle accumulators so heavy per-frame work (sun lighting, shadows)
+        // runs at a fixed sub-rate, keeping the render loop at 60fps+.
+        let lightAccumMs = 0;
+        let shadowAccumMs = 0;
 
         // Start frame pacing engine with V56 lighting + V57 fluidity
         framePacingEngine.start(deltaMs => {
@@ -341,22 +557,30 @@ function MapView3D(props: MapView3DProps) {
               globalElevationTerrainMorphingEngine.tick(map, deltaMs);
             } catch {}
           }
-          // Update global lighting and shadows
+          // Update global lighting ~20Hz and shadows ~12Hz (not every frame)
+          lightAccumMs += deltaMs;
+          shadowAccumMs += deltaMs;
           try {
-            const cpos = map.getCenter();
-            const lig = aiGlobalLightingEngine.compute({
-              lat: cpos.lat,
-              lon: cpos.lng,
-              time: new Date(),
-            });
-            const sunColor = cinematicLighting.colorTemperatureToRGB(5400);
-            map.setLight({
-              anchor: 'viewport',
-              color: sunColor,
-              intensity: 0.5 + 0.5 * lig.surfaceLightValue,
-              position: [1.15, lig.sunAzimuth, lig.sunElevation],
-            } as any);
-            realTimeShadowSystem.update(map, map.getZoom?.() ?? 12);
+            if (lightAccumMs >= 50) {
+              lightAccumMs = 0;
+              const cpos = map.getCenter();
+              const lig = aiGlobalLightingEngine.compute({
+                lat: cpos.lat,
+                lon: cpos.lng,
+                time: new Date(),
+              });
+              const sunColor = cinematicLighting.colorTemperatureToRGB(5400);
+              map.setLight({
+                anchor: 'viewport',
+                color: sunColor,
+                intensity: 0.5 + 0.5 * lig.surfaceLightValue,
+                position: [1.15, lig.sunAzimuth, lig.sunElevation],
+              } as any);
+            }
+            if (shadowAccumMs >= 80) {
+              shadowAccumMs = 0;
+              realTimeShadowSystem.update(map, map.getZoom?.() ?? 12);
+            }
           } catch {}
         });
 
@@ -505,43 +729,62 @@ function MapView3D(props: MapView3DProps) {
           }
         }
 
-        // Route source/layers
-        if (!map.getSource('route')) {
-          map.addSource('route', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-          });
-          map.addLayer({
-            id: 'route-line',
-            type: 'line',
-            source: 'route',
-            paint: {
-              'line-color': '#2fc79b',
-              'line-width': 5,
-              'line-opacity': 0.95,
-            },
-          });
+        // 3D buildings on the free vector basemap (OpenMapTiles schema, source id
+        // "openmaptiles"). Skipped automatically on the raster fallback.
+        if (!isMapbox && map.getSource('openmaptiles') && !map.getLayer('building-3d')) {
+          try {
+            map.addLayer({
+              id: 'building-3d',
+              source: 'openmaptiles',
+              'source-layer': 'building',
+              type: 'fill-extrusion',
+              minzoom: 14,
+              paint: {
+                // Height-based ramp tuned to the warm "Paper Dark" palette:
+                // low structures stay warm-charcoal, mid-rise warms toward
+                // stone, and towers pick up a faint dusk-lit highlight so the
+                // skyline reads with real depth instead of a flat grey block.
+                'fill-extrusion-color': [
+                  'interpolate',
+                  ['linear'],
+                  ['coalesce', ['get', 'render_height'], ['get', 'height'], 8],
+                  0,
+                  '#2b2722',
+                  20,
+                  '#3a342c',
+                  60,
+                  '#4a4238',
+                  120,
+                  '#5a5044',
+                  240,
+                  '#6b5f4f',
+                ],
+                'fill-extrusion-height': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  14,
+                  0,
+                  15.5,
+                  ['coalesce', ['get', 'render_height'], ['get', 'height'], 8],
+                ],
+                'fill-extrusion-base': [
+                  'coalesce',
+                  ['get', 'render_min_height'],
+                  ['get', 'min_height'],
+                  0,
+                ],
+                'fill-extrusion-opacity': 0.94,
+                'fill-extrusion-vertical-gradient': true,
+              },
+            } as any);
+          } catch (e) {
+            console.warn('[MapView3D] vector buildings setup:', e);
+          }
         }
 
-        // Segment layers for colored safety/traffic
-        ['seg-safe', 'seg-traffic', 'seg-unsafe'].forEach((id, idx) => {
-          if (!map.getSource(id)) {
-            map.addSource(id, {
-              type: 'geojson',
-              data: { type: 'FeatureCollection', features: [] },
-            });
-            map.addLayer({
-              id: id + '-line',
-              type: 'line',
-              source: id,
-              paint: {
-                'line-color': idx === 0 ? '#2fc79b' : idx === 1 ? '#e0a43c' : '#ef6b6b',
-                'line-width': 5,
-                'line-opacity': 0.95,
-              },
-            });
-          }
-        });
+        // Route + segment layers (shared, idempotent; also re-added on style swap)
+        ensureRouteLayers();
 
         // Click handler
         map.on('click', (e: any) => {
@@ -550,7 +793,19 @@ function MapView3D(props: MapView3DProps) {
         });
 
         setReady(true);
-      });
+      };
+      map.on('load', onMapReady);
+      map.once('idle', onMapReady);
+      // Some vector styles never flip isStyleLoaded() on constrained networks, so
+      // the 'load' event can stall. Run the setup anyway once tiles are present,
+      // so tap-to-track, 3D buildings, terrain and lighting always attach.
+      setTimeout(() => {
+        try {
+          onMapReady();
+        } catch (e) {
+          console.warn('[MapView3D] deferred map setup:', e);
+        }
+      }, 3500);
     })();
 
     return () => {
@@ -561,11 +816,17 @@ function MapView3D(props: MapView3DProps) {
         if ((m as any)._lightInterval) {
           clearInterval((m as any)._lightInterval);
         }
+        // Clean up animated route-flow dash timer
+        if ((m as any)._routeFlowTimer) {
+          clearInterval((m as any)._routeFlowTimer);
+          (m as any)._routeFlowTimer = null;
+        }
         try {
           m.remove();
         } catch {}
       }
       mapRef.current = null;
+      mapCommandBus.detach();
       if ((window as any).glMap) delete (window as any).glMap;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -926,37 +1187,77 @@ function MapView3D(props: MapView3DProps) {
       } as const;
     }
 
-    if (routeData?.path) {
-      const base = { type: 'FeatureCollection', features: [toLineString(routeData.path)] } as any;
-      (map.getSource('route') as any)?.setData(base);
+    // The actual render, factored out so it can be re-invoked after a style swap
+    // (raster failover) recreates the sources empty. Closes over the latest
+    // routeData; the effect reassigns renderRouteRef on every routeData change.
+    const renderRoute = () => {
+      if (routeData?.path) {
+        const base = { type: 'FeatureCollection', features: [toLineString(routeData.path)] } as any;
+        (map.getSource('route') as any)?.setData(base);
 
-      // Segments
-      const safe: any = { type: 'FeatureCollection', features: [] };
-      const traffic: any = { type: 'FeatureCollection', features: [] };
-      const unsafe: any = { type: 'FeatureCollection', features: [] };
-      if (Array.isArray(routeData.segments) && routeData.segments.length > 0) {
-        routeData.segments.forEach((seg: any) => {
-          const status = (seg.status || seg.safety || '').toString().toLowerCase();
-          const path = seg.path
-            ? seg.path
-            : seg.indices && Array.isArray(seg.indices) && seg.indices.length === 2
-              ? routeData.path.slice(seg.indices[0], seg.indices[1] + 1)
-              : routeData.path;
-          const feature = toLineString(path);
-          if (status === 'unsafe') unsafe.features.push(feature);
-          else if (status === 'traffic') traffic.features.push(feature);
-          else safe.features.push(feature);
+        // Yellow "path found" flash, then settle into the safety-tier color
+        // (green = fast/safe, blue = medium, red = hard/unsafe).
+        try {
+          const safety = typeof routeData.safety === 'number' ? routeData.safety : 100;
+          const settled = safety >= 70 ? '#2fc79b' : safety >= 40 ? '#3da5f5' : '#ef6b6b';
+          if (map.getLayer('route-line')) {
+            // Yellow "path found" flash on the main line...
+            map.setPaintProperty('route-line', 'line-color', '#f5c84b');
+            if (map.getLayer('route-glow')) {
+              map.setPaintProperty('route-glow', 'line-color', '#f5c84b');
+            }
+            setTimeout(() => {
+              try {
+                if (map.getLayer('route-line')) {
+                  // ...then settle the line and its aura into the safety-tier color.
+                  map.setPaintProperty('route-line', 'line-color', settled);
+                }
+                if (map.getLayer('route-glow')) {
+                  map.setPaintProperty('route-glow', 'line-color', settled);
+                }
+              } catch {}
+            }, 480);
+          }
+        } catch {}
+
+        // Segments
+        const safe: any = { type: 'FeatureCollection', features: [] };
+        const traffic: any = { type: 'FeatureCollection', features: [] };
+        const unsafe: any = { type: 'FeatureCollection', features: [] };
+        if (Array.isArray(routeData.segments) && routeData.segments.length > 0) {
+          routeData.segments.forEach((seg: any) => {
+            const status = (seg.status || seg.safety || '').toString().toLowerCase();
+            const path = seg.path
+              ? seg.path
+              : seg.indices && Array.isArray(seg.indices) && seg.indices.length === 2
+                ? routeData.path.slice(seg.indices[0], seg.indices[1] + 1)
+                : routeData.path;
+            const feature = toLineString(path);
+            if (status === 'unsafe' || status === 'danger' || status === 'hard')
+              unsafe.features.push(feature);
+            else if (
+              status === 'traffic' ||
+              status === 'mid' ||
+              status === 'medium' ||
+              status === 'slow'
+            )
+              traffic.features.push(feature);
+            else safe.features.push(feature);
+          });
+        }
+        (map.getSource('seg-safe') as any)?.setData(safe);
+        (map.getSource('seg-traffic') as any)?.setData(traffic);
+        (map.getSource('seg-unsafe') as any)?.setData(unsafe);
+      } else {
+        const empty = { type: 'FeatureCollection', features: [] } as any;
+        ['route', 'seg-safe', 'seg-traffic', 'seg-unsafe'].forEach(id => {
+          if (map.getSource(id)) (map.getSource(id) as any).setData(empty);
         });
       }
-      (map.getSource('seg-safe') as any)?.setData(safe);
-      (map.getSource('seg-traffic') as any)?.setData(traffic);
-      (map.getSource('seg-unsafe') as any)?.setData(unsafe);
-    } else {
-      const empty = { type: 'FeatureCollection', features: [] } as any;
-      ['route', 'seg-safe', 'seg-traffic', 'seg-unsafe'].forEach(id => {
-        if (map.getSource(id)) (map.getSource(id) as any).setData(empty);
-      });
-    }
+    };
+
+    renderRouteRef.current = renderRoute;
+    renderRoute();
   }, [routeData, ready]);
 
   // Helper to create marker elements

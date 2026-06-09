@@ -41,6 +41,9 @@ class AlwaysOnLiveLocation:
         self.tracking_active: bool = False
         self.permission_granted: bool = False
         self.watch_id: Optional[str] = None
+        # Monotonic counter so each watch id is unique even when two starts land
+        # in the same clock tick (timestamp resolution alone is not enough).
+        self._watch_seq: int = 0
         self.last_position: Optional[Dict] = None
         self.position_callbacks: list[Callable] = []
         self.error_callbacks: list[Callable] = []
@@ -81,7 +84,8 @@ class AlwaysOnLiveLocation:
             }
         
         self.tracking_active = True
-        self.watch_id = f"watch_{datetime.utcnow().timestamp()}"
+        self._watch_seq += 1
+        self.watch_id = f"watch_{datetime.utcnow().timestamp()}_{self._watch_seq}"
         
         return {
             "success": True,
@@ -287,19 +291,37 @@ class AlwaysOnLiveLocation:
     
     def handle_app_resume(self) -> Dict:
         """
-        Handle app resuming from background
-        
+        Handle app resuming from background.
+
+        A watchPosition handle is commonly killed while the app is backgrounded,
+        yet our `tracking_active` flag can still read True (we never observed a
+        stop). So on resume, if permission is still granted we ALWAYS re-establish
+        a fresh watch rather than trusting the stale flag. The last known position
+        is preserved so the UI never blanks during the transition.
+
         Returns:
-            Resume status
+            Resume status including whether tracking was resumed and the new watch id.
         """
-        if self.permission_granted and not self.tracking_active:
-            # Auto-restart tracking
-            return self.start_tracking()
-        
+        if not self.permission_granted:
+            return {
+                "success": True,
+                "message": "App resumed (no permission)",
+                "tracking_active": False,
+                "resumed": False,
+            }
+
+        was_active = self.tracking_active
+        # Clear the (possibly stale) flag so start_tracking issues a fresh watch.
+        self.tracking_active = False
+        start_result = self.start_tracking()
+
         return {
-            "success": True,
+            "success": start_result.get("success", False),
             "message": "App resumed",
-            "tracking_active": self.tracking_active
+            "tracking_active": self.tracking_active,
+            "resumed": True,
+            "was_active": was_active,
+            "watch_id": self.watch_id,
         }
     
     def get_status(self) -> Dict:

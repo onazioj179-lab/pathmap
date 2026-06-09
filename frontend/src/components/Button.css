@@ -45,7 +45,7 @@
 .pm-btn--primary {
   background: var(--sys-action);
   color: #1a1813;
-  box-shadow: 0 10px 24px -10px rgba(217, 119, 87, 0.55);
+  box-shadow: 0 10px 24px -10px rgba(62, 169, 221, 0.55);
 }
 
 .pm-btn--primary:hover:not(:disabled) {
@@ -99,7 +99,7 @@
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  border: 1px solid var(--color-border, rgba(217, 119, 87, 0.16));
+  border: 1px solid var(--color-border, rgba(62, 169, 221, 0.16));
   background: rgba(35, 32, 25, 0.86);
   color: var(--color-text, #f4efe3);
   cursor: pointer;

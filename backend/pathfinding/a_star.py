@@ -1,4 +1,5 @@
 import heapq
+import logging
 import math
 from typing import Any, Tuple, List, Dict, Union
 
@@ -9,10 +10,22 @@ from .utils import (
     path_length,
     reconstruct_path,
 )
+from . import native_routing
+
+logger = logging.getLogger(__name__)
 
 
 class AStar:
-    """A* pathfinding that returns path, visited order, and total cost."""
+    """A* pathfinding that returns path, visited order, and total cost.
+
+    When the optional Rust core (`pathmap_core`) is installed, the search runs
+    natively for a large speedup; otherwise it falls back to the pure-Python
+    implementation below. Both paths produce identical results.
+    """
+
+    # Allow callers/tests to force the pure-Python path even when the native
+    # core is present (e.g. for parity testing).
+    use_native: bool = True
 
     def __init__(self, graph):
         self.graph = graph
@@ -39,6 +52,22 @@ class AStar:
     def find_route(
         self, start_lat: float, start_lon: float, end_lat: float, end_lon: float
     ) -> Tuple[List[List[float]], List[int], float, List[Dict[str, Union[int, float]]]]:
+        # Fast path: native Rust core. Any failure silently falls through to the
+        # pure-Python search below, so routing never breaks if it is missing.
+        if self.use_native and native_routing.NATIVE_AVAILABLE:
+            try:
+                return native_routing.find_route_native(
+                    self.graph, start_lat, start_lon, end_lat, end_lon
+                )
+            except Exception:
+                # The native core is present but failed at runtime. Log it so the
+                # silent loss of the speedup is observable, then fall back to the
+                # pure-Python search below (routing still succeeds).
+                logger.warning(
+                    "native routing failed; falling back to pure-Python A*",
+                    exc_info=True,
+                )
+
         start = nearest_node(self.graph, start_lat, start_lon)
         goal = nearest_node(self.graph, end_lat, end_lon)
 

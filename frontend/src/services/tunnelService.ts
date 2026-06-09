@@ -1,25 +1,45 @@
 /**
- * PATHMAP - Military-Grade Encrypted Tunnel Client
- * =================================================
- * X25519 key exchange + AES-256-GCM encryption + Stealth obfuscation
+ * PATHMAP - Encrypted Tunnel Client (protocol v2)
+ * ===============================================
+ * ECDH P-256 key exchange + HKDF-SHA256 + AES-256-GCM authenticated encryption.
  *
- * Features:
- * - Perfect Forward Secrecy
- * - Zero-Knowledge Architecture
- * - Traffic Obfuscation
- * - AI-powered reconnection
+ * Live protocol (matches backend security/tunnel_engine.py + api/tunnel_api.py):
+ *   1. POST /api/v1/tunnel/handshake { client_public_key } -> { session_id, server_public_key }
+ *      Public keys are 65-byte uncompressed P-256 points (0x04 || X(32) || Y(32)).
+ *   2. salt = SHA-256("pathmap-tunnel-v2" || clientPub(65) || serverPub(65))
+ *      okm  = HKDF-SHA256(ikm=ECDH(sharedBits), salt, info="pathmap-tunnel-keys:0", 64 bytes)
+ *      key_c2s = okm[0:32] (client->server), key_s2c = okm[32:64] (server->client)
+ *   3. WS /api/v1/tunnel/ws/{session_id}. Each frame is a JSON envelope
+ *      {"n": base64(nonce12), "ct": base64(ciphertext+tag)}, AES-256-GCM, AAD = utf8(session_id).
+ *   4. First app message is { type: "tunnel_register", token } to bind the session to a user.
+ *
+ * Properties: perfect forward secrecy (ephemeral keys per connection; a reconnect
+ * performs a fresh ECDH handshake), authenticated encryption, per-session AAD.
+ * Mid-session key rotation is not negotiated with the browser (see backend
+ * should_rotate_keys), so getSecurityState() reports ephemeral-per-session keys.
  */
 
 import { getApiHttpBase, getApiWsBase } from './apiConfig';
+import { eventBus } from './eventBus';
 
 interface TunnelConfig {
   apiBase: string;
   wsBase: string;
   reconnectAttempts: number;
   reconnectDelay: number;
+  maxReconnectDelay: number;
   heartbeatInterval: number;
   stealthMode: boolean;
 }
+
+/** Connection state broadcast on the `tunnel:state` event for HUD/indicators. */
+export type TunnelConnState =
+  | 'disconnected'
+  | 'handshaking'
+  | 'established'
+  | 'reconnecting'
+  | 'failed'
+  | 'closed';
 
 interface TunnelSession {
   sessionId: string;
@@ -44,11 +64,16 @@ type MessageHandler = (message: TunnelMessage) => void;
 const DEFAULT_CONFIG: TunnelConfig = {
   apiBase: getApiHttpBase(),
   wsBase: getApiWsBase(),
-  reconnectAttempts: 5,
-  reconnectDelay: 2000,
+  reconnectAttempts: 8,
+  reconnectDelay: 1000,
+  maxReconnectDelay: 30000,
   heartbeatInterval: 30000,
   stealthMode: true,
 };
+
+// Bound on the offline send buffer so a long outage can't grow memory without
+// limit. Oldest frames are dropped first (newest position/route matters most).
+const MAX_PENDING_MESSAGES = 500;
 
 class TunnelService {
   private config: TunnelConfig;
@@ -60,9 +85,37 @@ class TunnelService {
   private messageHandlers: Map<string, MessageHandler[]> = new Map();
   private pendingMessages: TunnelMessage[] = [];
   private registered = false;
+  private reqCounter = 0;
+  // Resilience state.
+  private autoReconnect = true;
+  private reconnecting = false;
+  private lastToken: string | null = null;
+  private connState: TunnelConnState = 'disconnected';
 
   constructor(config: Partial<TunnelConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+  }
+
+  /** Broadcast a connection-state change once, on the `tunnel:state` event. */
+  private setState(state: TunnelConnState): void {
+    if (this.connState === state) return;
+    this.connState = state;
+    if (this.session) {
+      // Keep the session view in sync for getStats()/getSecurityState().
+      this.session.state =
+        state === 'established'
+          ? 'established'
+          : state === 'closed'
+            ? 'closed'
+            : state === 'reconnecting'
+              ? 'reconnecting'
+              : 'disconnected';
+    }
+    eventBus.emit('tunnel:state', { state, registered: this.registered });
+  }
+
+  getConnState(): TunnelConnState {
+    return this.connState;
   }
 
   /**
@@ -161,6 +214,8 @@ class TunnelService {
         lastActivity: Date.now(),
       };
 
+      this.setState('handshaking');
+
       // Connect WebSocket
       await this.connectWebSocket();
 
@@ -168,6 +223,7 @@ class TunnelService {
       return true;
     } catch (error) {
       console.error('[TUNNEL] Connection failed:', error);
+      this.setState('disconnected');
       return false;
     }
   }
@@ -188,9 +244,8 @@ class TunnelService {
 
       this.ws.onopen = () => {
         console.log('[TUNNEL] WebSocket connected');
-        if (this.session) {
-          this.session.state = 'established';
-        }
+        this.reconnectAttempts = 0;
+        this.setState('established');
         this.startHeartbeat();
         this.flushPendingMessages();
         resolve();
@@ -203,10 +258,11 @@ class TunnelService {
       this.ws.onclose = event => {
         console.log('[TUNNEL] WebSocket closed:', event.code);
         this.stopHeartbeat();
-        if (this.session) {
-          this.session.state = 'disconnected';
+        this.registered = false;
+        if (this.connState !== 'closed') {
+          this.setState('disconnected');
+          void this.attemptReconnect();
         }
-        this.attemptReconnect();
       };
 
       this.ws.onerror = error => {
@@ -223,7 +279,12 @@ class TunnelService {
    */
   async send(message: TunnelMessage): Promise<boolean> {
     if (!this.session || this.session.state !== 'established' || !this.ws) {
+      // Buffer in order while disconnected; drop the oldest if the outage is
+      // long enough to exceed the cap (newest frames are the most relevant).
       this.pendingMessages.push(message);
+      if (this.pendingMessages.length > MAX_PENDING_MESSAGES) {
+        this.pendingMessages.shift();
+      }
       return false;
     }
 
@@ -304,25 +365,53 @@ class TunnelService {
   }
 
   /**
-   * Attempt reconnection
+   * Reconnect after a drop. The server destroys the session on disconnect, so a
+   * reconnect performs a FULL fresh ECDH handshake (not just a socket reopen)
+   * and transparently re-registers the user. Backoff is exponential with full
+   * jitter, capped at maxReconnectDelay. A single loop runs at a time.
    */
   private async attemptReconnect(): Promise<void> {
+    if (!this.autoReconnect || this.reconnecting) return;
     if (this.reconnectAttempts >= this.config.reconnectAttempts) {
       console.log('[TUNNEL] Max reconnect attempts reached');
+      this.setState('failed');
       return;
     }
 
+    this.reconnecting = true;
     this.reconnectAttempts++;
-    console.log(`[TUNNEL] Reconnecting (attempt ${this.reconnectAttempts})...`);
+    this.setState('reconnecting');
 
-    await new Promise(resolve => setTimeout(resolve, this.config.reconnectDelay));
+    // Exponential backoff with full jitter: random in [0, base], base capped.
+    const base = Math.min(
+      this.config.reconnectDelay * 2 ** (this.reconnectAttempts - 1),
+      this.config.maxReconnectDelay
+    );
+    const delay = Math.floor(Math.random() * base);
+    console.log(`[TUNNEL] Reconnecting (attempt ${this.reconnectAttempts}) in ${delay}ms...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
 
-    try {
-      await this.connectWebSocket();
-      this.reconnectAttempts = 0;
-    } catch {
-      this.attemptReconnect();
+    if (!this.autoReconnect) {
+      this.reconnecting = false;
+      return;
     }
+
+    const ok = await this.connect();
+    this.reconnecting = false;
+    if (ok) {
+      // Restore the authenticated association so persistence resumes silently.
+      if (this.lastToken) await this.registerSession(this.lastToken);
+    } else {
+      void this.attemptReconnect();
+    }
+  }
+
+  /** Manually (re)establish the tunnel, e.g. after coming back online. */
+  async ensureConnected(): Promise<void> {
+    this.autoReconnect = true;
+    if (this.isConnected()) return;
+    this.reconnectAttempts = 0;
+    if (!this.reconnecting) await this.attemptReconnect();
   }
 
   /**
@@ -394,12 +483,97 @@ class TunnelService {
   }
 
   /**
+   * Send a payload over the encrypted tunnel when it is established and
+   * registered, otherwise invoke the provided HTTP fallback. This generalizes
+   * the capability-check pattern so every caller (location, route, task) gets
+   * the same "encrypt if possible, never drop the request" behaviour.
+   */
+  async sendOrFallback(
+    type: string,
+    payload: Record<string, unknown>,
+    httpFallback: () => void | Promise<unknown>
+  ): Promise<boolean> {
+    if (this.isConnected() && this.isRegistered()) {
+      const ok = await this.send({ type, ...payload });
+      if (ok) return true;
+    }
+    try {
+      await httpFallback();
+    } catch (error) {
+      console.error('[TUNNEL] Fallback failed:', error);
+    }
+    return false;
+  }
+
+  /**
+   * Send a message and resolve with the correlated response (matched by reqId)
+   * over the encrypted tunnel. Resolves null if the tunnel is unavailable or no
+   * response arrives within timeoutMs, so callers can fall back to HTTP.
+   */
+  async request(
+    type: string,
+    payload: Record<string, unknown>,
+    timeoutMs = 8000
+  ): Promise<TunnelMessage | null> {
+    if (!this.isConnected() || !this.isRegistered()) return null;
+    const reqId = `${type}:${++this.reqCounter}`;
+    return new Promise<TunnelMessage | null>(resolve => {
+      const handler = (msg: TunnelMessage) => {
+        if (msg && msg.reqId === reqId) {
+          this.off('*', handler);
+          clearTimeout(timer);
+          resolve(msg);
+        }
+      };
+      const timer = setTimeout(() => {
+        this.off('*', handler);
+        resolve(null);
+      }, timeoutMs);
+      this.on('*', handler);
+      void this.send({ type, reqId, ...payload });
+    });
+  }
+
+  /**
+   * Request a route over the encrypted tunnel (origin/destination never travel
+   * in plaintext). Resolves the route payload, or null when the tunnel can't
+   * fulfil it so the caller can fall back to the HTTP route endpoint.
+   */
+  async sendRouteRequest(
+    request: Record<string, unknown>,
+    timeoutMs = 8000
+  ): Promise<Record<string, unknown> | null> {
+    const resp = await this.request('route_request', { request }, timeoutMs);
+    if (resp && resp.ok && resp.route) return resp.route as Record<string, unknown>;
+    return null;
+  }
+
+  /**
+   * Send a tracking-target/task update through the encrypted tunnel, with HTTP
+   * fallback. action is add | remove | update.
+   */
+  async sendTaskUpdate(
+    action: 'add' | 'remove' | 'update',
+    target: Record<string, unknown>,
+    httpFallback: () => void | Promise<unknown>
+  ): Promise<boolean> {
+    return this.sendOrFallback(
+      'task_update',
+      { action, target, timestamp: Date.now() },
+      httpFallback
+    );
+  }
+
+  /**
    * Associate this established tunnel session with an authenticated user by
    * sending the bearer token over the encrypted channel. Must be called (and
    * resolve true) before location updates will be persisted server-side.
    */
   async registerSession(token: string): Promise<boolean> {
     if (!token || !this.isConnected()) return false;
+    // Remember the token so a transparent reconnect can re-register without the
+    // caller's involvement.
+    this.lastToken = token;
     return new Promise<boolean>(resolve => {
       const cleanup = () => {
         clearTimeout(timer);
@@ -408,6 +582,7 @@ class TunnelService {
       };
       const onOk = () => {
         this.registered = true;
+        eventBus.emit('tunnel:state', { state: this.connState, registered: true });
         cleanup();
         resolve(true);
       };
@@ -430,6 +605,36 @@ class TunnelService {
   }
 
   /**
+   * Compact security state for telemetry/UI. Keys are ephemeral per connection
+   * (forward secrecy across sessions); mid-session rotation is not negotiated
+   * with the browser, so rekeyedAt reflects the handshake/reconnect time.
+   */
+  getSecurityState(): {
+    connected: boolean;
+    registered: boolean;
+    encrypted: boolean;
+    cipher: string;
+    keyExchange: string;
+    sessionId: string | null;
+    establishedAt: number | null;
+    bytesTransferred: number;
+    messagesTransferred: number;
+  } {
+    const s = this.session;
+    return {
+      connected: s?.state === 'established',
+      registered: this.registered,
+      encrypted: s?.state === 'established' && !!s?.sendKey,
+      cipher: 'AES-256-GCM',
+      keyExchange: 'ECDH P-256 + HKDF-SHA256',
+      sessionId: s ? s.sessionId.slice(0, 8) + '...' : null,
+      establishedAt: s?.createdAt ?? null,
+      bytesTransferred: s?.bytesTransferred ?? 0,
+      messagesTransferred: s?.messagesTransferred ?? 0,
+    };
+  }
+
+  /**
    * Request tracking for target
    */
   async requestTracking(targetId: string): Promise<boolean> {
@@ -441,10 +646,26 @@ class TunnelService {
   }
 
   /**
-   * Close tunnel connection
+   * Close tunnel connection. Sends a best-effort encrypted "close" frame so the
+   * server can tear the session down promptly, then zeroizes in-memory key
+   * material. Call on logout and page unload.
    */
   close(): void {
     this.stopHeartbeat();
+    // Prevent the onclose handler from trying to reconnect a deliberate close.
+    this.autoReconnect = false;
+    this.reconnecting = false;
+    this.lastToken = null;
+
+    // Send the close frame while the session is still established (before we
+    // flip state, which would cause send() to buffer instead of transmit).
+    if (this.session?.state === 'established' && this.ws) {
+      try {
+        void this.send({ type: 'close', timestamp: Date.now() });
+      } catch {
+        /* best effort */
+      }
+    }
 
     if (this.ws) {
       this.ws.close();
@@ -452,8 +673,11 @@ class TunnelService {
     }
 
     if (this.session) {
-      this.session.state = 'closed';
+      // Zeroize key references so derived secrets are not retained after close.
+      this.session.sendKey = null;
+      this.session.recvKey = null;
     }
+    this.setState('closed');
 
     this.keyPair = null;
     this.registered = false;
@@ -508,6 +732,12 @@ class TunnelService {
 export const tunnelService = new TunnelService();
 export default tunnelService;
 export type { TunnelConfig, TunnelSession, TunnelMessage };
+
+// Tear the tunnel down on page unload so the server frees the session promptly
+// and in-memory key material is zeroized rather than left dangling.
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => tunnelService.close());
+}
 
 // Dev-only handle so end-to-end test bots can drive the real client in-page
 // (handshake + register + send) without re-implementing the crypto. Never ships

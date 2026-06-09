@@ -12,8 +12,8 @@
    ═══════════════════════════════════════════════════════════ */
 
 .holo-mode {
-  --holo-primary: #d97757;
-  --holo-secondary: #d97757;
+  --holo-primary: #3ea9dd;
+  --holo-secondary: #3ea9dd;
   --holo-accent: #cf6a52;
   --holo-danger: #cf6a52;
   --holo-bg-dark: #1a1813;
@@ -592,7 +592,7 @@
 
   .hdc-value,
   .hfl-value {
-    color: #d97757;
+    color: #3ea9dd;
     font-weight: 700;
   }
 }

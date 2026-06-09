@@ -25,7 +25,7 @@ import logging
 from typing import Optional, Dict, Any, List, Tuple, Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from collections import deque
+from collections import deque, OrderedDict
 
 try:
     from cryptography.hazmat.primitives.asymmetric import ec
@@ -96,15 +96,15 @@ class AISecurityModel:
 
 class TunnelEngine:
     """
-    Military-Grade Encrypted Tunnel Engine
-    
+    Encrypted Tunnel Engine (protocol v2).
+
     Features:
-    - X25519 Elliptic Curve Diffie-Hellman key exchange
-    - AES-256-GCM authenticated encryption
-    - Perfect Forward Secrecy with automatic key rotation
-    - Anti-traffic analysis with padding and timing jitter
-    - AI-powered threat detection and adaptive security
-    - Zero-knowledge architecture
+    - ECDH P-256 (secp256r1) key exchange (native browser WebCrypto, no fallback)
+    - HKDF-SHA256 directional key derivation from a salt over both public keys
+    - AES-256-GCM authenticated encryption, AAD bound to the session id
+    - Perfect forward secrecy via ephemeral keys per connection
+    - Replay protection on the JSON-envelope path (per-session nonce window)
+    - Anti-traffic-analysis padding/jitter and AI-powered threat detection
     """
     
     VERSION = 1
@@ -122,6 +122,11 @@ class TunnelEngine:
     KEY_ROTATION_INTERVAL = 300
     KEY_ROTATION_BYTES = 104857600
     KEY_ROTATION_MESSAGES = 10000
+
+    # Replay protection window for the JSON-envelope path (decrypt_message). The
+    # browser client uses random 96-bit nonces, so we remember recently-seen
+    # nonces per session and reject duplicates.
+    NONCE_REPLAY_WINDOW = 8192
     
     MIN_PADDING = 16
     MAX_PADDING = 256
@@ -133,6 +138,9 @@ class TunnelEngine:
         self.ai_model = AISecurityModel()
         self._lock = threading.RLock()
         self._nonce_cache: Dict[str, set] = {}
+        # Per-session ordered set of recently-seen JSON-envelope nonces (base64),
+        # bounded to NONCE_REPLAY_WINDOW, oldest evicted first.
+        self._json_nonce_seen: Dict[str, "OrderedDict[str, None]"] = {}
         self._threat_callbacks: List[Callable] = []
         self._last_packet_time = time.time()
         
@@ -270,6 +278,7 @@ class TunnelEngine:
                 session.local_private_key = None
                 session.state = TunnelState.TERMINATED
             self._nonce_cache.pop(session_id, None)
+            self._json_nonce_seen.pop(session_id, None)
             logger.info(f"Session closed: {session_id[:8]}...")
     
     def encrypt_frame(self, session_id: str, plaintext: bytes, frame_type: int = 0) -> Optional[bytes]:
@@ -390,9 +399,30 @@ class TunnelEngine:
                 return None
             try:
                 obj = json.loads(envelope)
-                nonce = base64.b64decode(obj["n"])
+                nonce_b64 = obj["n"]
+                nonce = base64.b64decode(nonce_b64)
                 ct = base64.b64decode(obj["ct"])
+
+                # Reject replays: a nonce we have already accepted for this
+                # session must never be processed twice (checked before decrypt
+                # so we don't even spend a decrypt on a duplicate).
+                seen = self._json_nonce_seen.get(session_id)
+                if seen is not None and nonce_b64 in seen:
+                    self.ai_model.replay_attempts += 1
+                    self._check_threat_level()
+                    logger.warning(f"Replay detected (json) for {session_id[:8]}...")
+                    return None
+
                 pt = AESGCM(session.recv_key).decrypt(nonce, ct, session_id.encode())
+
+                # Record only after successful authentication so invalid nonces
+                # cannot poison the window.
+                if seen is None:
+                    seen = self._json_nonce_seen.setdefault(session_id, OrderedDict())
+                seen[nonce_b64] = None
+                if len(seen) > self.NONCE_REPLAY_WINDOW:
+                    seen.popitem(last=False)
+
                 session.bytes_received += len(ct)
                 session.messages_received += 1
                 return pt

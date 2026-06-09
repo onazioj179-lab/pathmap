@@ -1,0 +1,189 @@
+/* Telemetry / flow-tracking HUD. Warm Paper Dark tokens; draggable overlay. */
+
+.hud {
+  position: fixed;
+  z-index: 900;
+  width: 232px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-2);
+  font-family: var(--font);
+  color: var(--text-2);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+}
+
+.hud-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+  touch-action: none;
+}
+
+.hud-head:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.hud-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.hud-fps {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent);
+}
+
+.hud-icon-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-md);
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.hud-icon-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.hud-body {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 18px;
+}
+
+.hud-spark-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  margin-bottom: var(--space-1);
+}
+
+.hud-spark {
+  width: 100%;
+  height: 28px;
+}
+
+.hud-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.hud-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.hud-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text);
+}
+
+.hud-value.is-ok {
+  color: var(--ok);
+}
+
+.hud-value.is-warn {
+  color: var(--warn);
+}
+
+.hud-value.is-mono {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.hud-vitals,
+.hud-engines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--space-1);
+}
+
+.hud-vital {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+
+.hud-vital.is-good {
+  color: var(--ok);
+}
+.hud-vital.is-needs-improvement {
+  color: var(--warn);
+}
+.hud-vital.is-poor {
+  color: var(--danger);
+}
+
+.hud-engine {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.hud-engine .hud-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.hud-engine.is-on {
+  color: var(--text-2);
+}
+
+.hud-engine.is-on .hud-dot {
+  background: var(--ok);
+}
+
+.hud-copy {
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.hud-copy:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+:root[data-reduced-motion='true'] .hud {
+  backdrop-filter: none;
+}

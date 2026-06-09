@@ -45,7 +45,7 @@
 }
 
 .error-boundary__summary {
-  color: #d97757;
+  color: #3ea9dd;
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
@@ -82,13 +82,13 @@
 }
 
 .error-boundary__button--primary {
-  background-color: #d97757;
+  background-color: #3ea9dd;
   color: #f4efe3;
   border: none;
 }
 
 .error-boundary__button--secondary {
   background-color: transparent;
-  color: #d97757;
-  border: 1px solid #d97757;
+  color: #3ea9dd;
+  border: 1px solid #3ea9dd;
 }

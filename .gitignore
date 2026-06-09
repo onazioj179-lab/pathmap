@@ -82,6 +82,13 @@ coverage/
 .ruff_cache/
 .mypy_cache/
 
-# Build integrity verification artifacts (generated per build)
-buildlogs/biv_*.json
+# Internal build logs / version summaries (not part of the public project)
+buildlogs/
 frontend/src/services/ees.generated.ts
+
+# Stale legacy root config (superseded by .env + apiConfig)
+/settings.json
+
+# Rust native core build artifacts
+native/**/target/
+native/**/Cargo.lock

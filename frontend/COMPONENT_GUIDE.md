@@ -108,6 +108,39 @@ Before shipping a UI change:
 - Forms use associated labels or accessible names.
 - No recoverable UI errors are console-only.
 
+## Control Surface & Telemetry
+
+These overlays live above the map and are driven by the eventBus + service
+singletons (no global store). See `docs/control-telemetry-encryption.md` for the
+full architecture.
+
+### ControlCenter
+
+`components/ControlCenter` renders the on-screen map control cluster (zoom,
+recenter, follow-me, compass, tilt, mode, bearing-lock, fullscreen, scale bar).
+It is self-contained - mount it once as a sibling of `MapView3D`. Every control
+calls `mapCommandBus`; live camera state comes from the `map:camera` event.
+
+### CommandPalette
+
+`components/CommandPalette` is the Cmd/Ctrl-K palette. Register view-specific
+commands with `commandRegistry.registerMany([...])` in an effect and return the
+unregister function. Commands are `{ id, label, group?, keywords?, run }`.
+
+### TelemetryHUD
+
+`components/TelemetryHUD` is the live flow-tracking panel, gated by
+`controlState.hudVisible` (toggle via the palette). It starts/stops `telemetryBus`
+with visibility, so it costs nothing when closed. Add timings with
+`telemetryBus.mark(name, ms)`.
+
+### Accessibility prefs
+
+Appearance/accessibility prefs are applied to the DOM root via
+`utils/applyPrefs.ts` (theme, reduced motion, high contrast, text scale). New
+components must use the type tokens (which honor `--text-scale`), provide 44px
+touch targets, and label every icon-only control.
+
 ## Commercial Copy
 
 PathMap is proprietary commercial software, not freeware or an open-source distribution. User-facing billing, license, and plan language should be clear about evaluation limits, paid production use, and the current plan without pretending that payment processing exists inside the frontend.
@@ -118,7 +151,7 @@ Run these gates for user-facing changes:
 
 ```powershell
 npm run typecheck
-npx vitest run src/components/Button.test.tsx src/components/UXPrimitives.test.tsx src/pages/Settings.test.tsx
+npx vitest run src/components/Button.test.tsx src/components/UXPrimitives.test.tsx src/components/controlSurface.a11y.test.tsx
 npm run build
 ```
 

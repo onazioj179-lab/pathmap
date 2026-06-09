@@ -1,0 +1,22 @@
+[package]
+name = "pathmap_core"
+version = "0.1.0"
+edition = "2021"
+description = "Native A* routing core for PathMap (PyO3 extension)."
+license = "UNLICENSED"
+
+[lib]
+name = "pathmap_core"
+# cdylib produces the importable Python extension module.
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+# Note: panic must unwind (not "abort") so an unexpected panic propagates to
+# Python instead of killing the host process. The astar() core is written to be
+# panic-free for any input, so this is a defence-in-depth backstop.

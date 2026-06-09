@@ -1,0 +1,117 @@
+/* Command palette - Cmd/Ctrl-K. Uses the warm Paper Dark tokens. */
+
+.cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  animation: cmdk-fade 120ms ease-out;
+}
+
+.cmdk-panel {
+  width: min(620px, 92vw);
+  max-height: 64vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
+  overflow: hidden;
+}
+
+.cmdk-input {
+  appearance: none;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--text-lg);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border);
+}
+
+.cmdk-input::placeholder {
+  color: var(--text-faint);
+}
+
+.cmdk-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-2);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: var(--text-2);
+  min-height: 44px;
+}
+
+.cmdk-item.is-active {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.cmdk-item-label {
+  font-size: var(--text-md);
+}
+
+.cmdk-item-group {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cmdk-empty {
+  list-style: none;
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.cmdk-hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: var(--text-xs);
+}
+
+.cmdk-hint kbd {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+@keyframes cmdk-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+:root[data-reduced-motion='true'] .cmdk-overlay {
+  animation: none;
+}

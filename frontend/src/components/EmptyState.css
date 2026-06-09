@@ -3,7 +3,7 @@
   place-items: center;
   gap: 12px;
   padding: 28px 18px;
-  border: 1px dashed rgba(217, 119, 87, 0.22);
+  border: 1px dashed rgba(62, 169, 221, 0.22);
   border-radius: 8px;
   background: rgba(35, 32, 25, 0.72);
   text-align: center;
@@ -16,8 +16,8 @@
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: rgba(217, 119, 87, 0.14);
-  color: #d97757;
+  background: rgba(62, 169, 221, 0.14);
+  color: #3ea9dd;
 }
 
 .pm-empty-state__title {
