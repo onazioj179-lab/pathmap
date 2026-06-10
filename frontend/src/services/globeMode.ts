@@ -15,6 +15,7 @@
  */
 
 import maplibregl from 'maplibre-gl';
+import { debugLog } from '../utils/debug';
 
 export interface GlobeModeConfig {
   enabled: boolean;
@@ -52,7 +53,10 @@ export class GlobeModeController {
   private previousCameraState: CameraState | null = null;
   private terrainSourceId: string = 'v92-terrain-source';
   private isDragging: boolean = false;
-  private lastDragTime: number = 0;
+  // Recent camera samples during a drag, used to derive release velocity.
+  private dragSamples: Array<{ t: number; bearing: number; pitch: number }> = [];
+  private inertiaFrame: number | null = null;
+  private orbitFrame: number | null = null;
 
   constructor(config?: Partial<GlobeModeConfig>) {
     this.config = {
@@ -77,9 +81,9 @@ export class GlobeModeController {
       ...config
     } as GlobeModeConfig;
 
-    console.log('[V92:GLOBE] Globe Mode Controller initialized');
-    console.log(`[V92:GLOBE] FOV: ${this.config.camera.fieldOfView}°`);
-    console.log(`[V92:GLOBE] Altitude range: ${this.config.camera.minAltitude}m - ${this.config.camera.maxAltitude}m`);
+    debugLog('[V92:GLOBE] Globe Mode Controller initialized');
+    debugLog(`[V92:GLOBE] FOV: ${this.config.camera.fieldOfView}°`);
+    debugLog(`[V92:GLOBE] Altitude range: ${this.config.camera.minAltitude}m - ${this.config.camera.maxAltitude}m`);
   }
 
   /**
@@ -88,7 +92,7 @@ export class GlobeModeController {
   bindMap(map: maplibregl.Map) {
     this.map = map;
     this.setupCameraControls();
-    console.log('[V92:GLOBE] Map instance bound');
+    debugLog('[V92:GLOBE] Map instance bound');
   }
 
   /**
@@ -97,15 +101,20 @@ export class GlobeModeController {
   private setupCameraControls() {
     if (!this.map) return;
 
-    // Track drag state for damping
+    // Sample camera motion during the drag so release inertia follows the
+    // user's actual gesture (direction and speed), never a synthetic kick.
     this.map.on('dragstart', () => {
       this.isDragging = true;
-      this.lastDragTime = performance.now();
+      this.stopInertia();
+      this.dragSamples = [];
+      this.sampleDrag();
     });
+
+    this.map.on('drag', () => this.sampleDrag());
 
     this.map.on('dragend', () => {
       this.isDragging = false;
-      this.applyDragDamping();
+      this.applyDragInertia();
     });
 
     // Smooth zoom damping
@@ -117,39 +126,62 @@ export class GlobeModeController {
     });
   }
 
+  private sampleDrag() {
+    if (!this.map) return;
+    this.dragSamples.push({
+      t: performance.now(),
+      bearing: this.map.getBearing(),
+      pitch: this.map.getPitch(),
+    });
+    if (this.dragSamples.length > 6) this.dragSamples.shift();
+  }
+
+  private stopInertia() {
+    if (this.inertiaFrame !== null) {
+      cancelAnimationFrame(this.inertiaFrame);
+      this.inertiaFrame = null;
+    }
+  }
+
   /**
-   * Apply orbit damping after drag ends.
+   * Continue the camera's measured motion after release, decaying with the
+   * configured orbit damping so the globe glides to a stop.
    */
-  private applyDragDamping() {
-    if (!this.map || !this.isActive) return;
+  private applyDragInertia() {
+    if (!this.map || !this.isActive || this.dragSamples.length < 2) return;
+
+    const newest = this.dragSamples[this.dragSamples.length - 1];
+    const oldest = this.dragSamples[0];
+    const dt = newest.t - oldest.t;
+    if (dt <= 0 || performance.now() - newest.t > 100) return;
+
+    // Per-frame (~16ms) velocity from the sampled gesture, normalizing the
+    // bearing delta across the ±180° seam and capping runaway flicks.
+    let bearingDelta = newest.bearing - oldest.bearing;
+    if (bearingDelta > 180) bearingDelta -= 360;
+    if (bearingDelta < -180) bearingDelta += 360;
+    const clamp = (v: number, lim: number) => Math.max(-lim, Math.min(lim, v));
+    const velocity = {
+      bearing: clamp((bearingDelta / dt) * 16, 4),
+      pitch: clamp(((newest.pitch - oldest.pitch) / dt) * 16, 2),
+    };
 
     const damping = this.config.camera.orbitDamping;
-    let velocity = { bearing: 0, pitch: 0 };
-    const timeSinceDrag = performance.now() - this.lastDragTime;
-
-    if (timeSinceDrag < 100) {
-      // Calculate velocity based on recent drag
-      velocity.bearing = Math.random() * 2 - 1; // Simplified
-      velocity.pitch = Math.random() * 0.5 - 0.25;
-    }
-
-    // Damped animation
     const animate = () => {
-      if (!this.map || Math.abs(velocity.bearing) < 0.01) return;
+      this.inertiaFrame = null;
+      if (!this.map || this.isDragging) return;
+      if (Math.abs(velocity.bearing) < 0.01 && Math.abs(velocity.pitch) < 0.01) return;
 
       velocity.bearing *= (1 - damping);
       velocity.pitch *= (1 - damping);
 
-      const currentBearing = this.map.getBearing();
-      const currentPitch = this.map.getPitch();
+      this.map.setBearing(this.map.getBearing() + velocity.bearing);
+      this.map.setPitch(Math.max(0, Math.min(85, this.map.getPitch() + velocity.pitch)));
 
-      this.map.setBearing(currentBearing + velocity.bearing);
-      this.map.setPitch(Math.max(0, Math.min(85, currentPitch + velocity.pitch)));
-
-      requestAnimationFrame(animate);
+      this.inertiaFrame = requestAnimationFrame(animate);
     };
 
-    requestAnimationFrame(animate);
+    this.inertiaFrame = requestAnimationFrame(animate);
   }
 
   /**
@@ -158,14 +190,15 @@ export class GlobeModeController {
   private applyZoomDamping(deltaY: number) {
     if (!this.map) return;
 
-    const damping = this.config.camera.zoomDamping;
-    const zoomChange = -deltaY * 0.002 * damping;
+    // ~0.45 zoom levels per standard wheel tick; the short ease provides the
+    // damped feel without making the wheel sluggish.
+    const zoomChange = -deltaY * 0.0045;
     const currentZoom = this.map.getZoom();
     const newZoom = Math.max(0, Math.min(22, currentZoom + zoomChange));
 
     this.map.easeTo({
       zoom: newZoom,
-      duration: 150,
+      duration: 160,
       easing: (t) => t * (2 - t) // Ease out quad
     });
   }
@@ -180,12 +213,12 @@ export class GlobeModeController {
     }
 
     if (this.isActive) {
-      console.log('[V92:GLOBE] Already active');
+      debugLog('[V92:GLOBE] Already active');
       return true;
     }
 
     try {
-      console.log('[V92:GLOBE] Enabling globe mode...');
+      debugLog('[V92:GLOBE] Enabling globe mode...');
 
       // Save current camera state for restoration
       this.previousCameraState = {
@@ -203,7 +236,7 @@ export class GlobeModeController {
           tileSize: 256,
           maxzoom: 14
         });
-        console.log('[V92:GLOBE] Terrain source added');
+        debugLog('[V92:GLOBE] Terrain source added');
       }
 
       this.map.setTerrain({
@@ -215,7 +248,7 @@ export class GlobeModeController {
       await this.transitionToGlobeView();
 
       this.isActive = true;
-      console.log('[V92:GLOBE] [OK] Globe mode enabled');
+      debugLog('[V92:GLOBE] [OK] Globe mode enabled');
       return true;
 
     } catch (error) {
@@ -234,12 +267,15 @@ export class GlobeModeController {
     }
 
     if (!this.isActive) {
-      console.log('[V92:GLOBE] Already inactive');
+      debugLog('[V92:GLOBE] Already inactive');
       return true;
     }
 
     try {
-      console.log('[V92:GLOBE] Disabling globe mode...');
+      debugLog('[V92:GLOBE] Disabling globe mode...');
+
+      this.stopFreeOrbit();
+      this.stopInertia();
 
       // Disable 3D terrain
       this.map.setTerrain(null);
@@ -250,7 +286,7 @@ export class GlobeModeController {
       }
 
       this.isActive = false;
-      console.log('[V92:GLOBE] [OK] Globe mode disabled');
+      debugLog('[V92:GLOBE] [OK] Globe mode disabled');
       return true;
 
     } catch (error) {
@@ -321,7 +357,7 @@ export class GlobeModeController {
     const earthCircumference = 40075016.686; // meters
     const zoom = Math.log2(earthCircumference / (clampedAltitude * 256 / 256));
 
-    console.log(`[V92:GLOBE] Zooming to altitude: ${clampedAltitude}m (zoom ${zoom.toFixed(2)})`);
+    debugLog(`[V92:GLOBE] Zooming to altitude: ${clampedAltitude}m (zoom ${zoom.toFixed(2)})`);
 
     this.map.easeTo({
       zoom: Math.max(0, Math.min(22, zoom)),
@@ -335,24 +371,32 @@ export class GlobeModeController {
    */
   startFreeOrbit(speed?: number) {
     if (!this.map || !this.isActive) return;
+    this.stopFreeOrbit(); // never stack rotation loops
 
     const rotationSpeed = speed || this.config.camera.rotationSpeed;
-    let animationId: number;
 
     const rotate = () => {
-      if (!this.map || !this.isActive) {
-        cancelAnimationFrame(animationId);
-        return;
-      }
+      this.orbitFrame = null;
+      if (!this.map || !this.isActive) return;
 
       const currentBearing = this.map.getBearing();
       this.map.setBearing((currentBearing + rotationSpeed) % 360);
 
-      animationId = requestAnimationFrame(rotate);
+      this.orbitFrame = requestAnimationFrame(rotate);
     };
 
-    animationId = requestAnimationFrame(rotate);
-    console.log('[V92:GLOBE] Free orbit started');
+    this.orbitFrame = requestAnimationFrame(rotate);
+    debugLog('[V92:GLOBE] Free orbit started');
+  }
+
+  /**
+   * Stop the free-orbit rotation if it is running.
+   */
+  stopFreeOrbit() {
+    if (this.orbitFrame !== null) {
+      cancelAnimationFrame(this.orbitFrame);
+      this.orbitFrame = null;
+    }
   }
 
   /**
@@ -373,13 +417,15 @@ export class GlobeModeController {
    * Cleanup resources.
    */
   destroy() {
+    this.stopFreeOrbit();
+    this.stopInertia();
     if (this.map) {
       try {
         this.map.setTerrain(null);
         if (this.map.getSource(this.terrainSourceId)) {
           this.map.removeSource(this.terrainSourceId);
         }
-        console.log('[V92:GLOBE] Resources cleaned up');
+        debugLog('[V92:GLOBE] Resources cleaned up');
       } catch (error) {
         console.warn('[V92:GLOBE] Cleanup warning:', error);
       }

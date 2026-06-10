@@ -13,6 +13,7 @@ import { fetchRoute, fetchSafeReturn, fetchExplore } from '../services/api';
 import { deviceLocationService } from '../services/deviceLocationService';
 import { actionPipeline, PipelineAction } from './ActionPipeline';
 import { scanAnimationEngine, ScanMode } from './ScanAnimationEngine';
+import { debugLog, debugWarn } from '../utils/debug';
 
 type PanelType = 'routing' | 'safe' | 'compare' | 'track' | 'marks' | null;
 
@@ -22,7 +23,6 @@ interface InteractionState {
   isExploreLoading: boolean;
   isTrackingActive: boolean;
   activePanel: PanelType;
-  lastInteractionTime: number;
 }
 
 class InteractionController {
@@ -31,12 +31,16 @@ class InteractionController {
     isSafeReturnLoading: false,
     isExploreLoading: false,
     isTrackingActive: false,
-    activePanel: null,
-    lastInteractionTime: 0
+    activePanel: null
   };
 
   private listeners: Set<(state: InteractionState) => void> = new Set();
   private trackingPoints: Array<{ lat: number; lon: number; timestamp: number }> = [];
+  private stopTrackingListener: (() => void) | null = null;
+  // Debounce per action so e.g. starting a route never delays the track
+  // button. Kept out of React state: stamping a timestamp must not re-render
+  // every subscribed panel before the action itself has even started.
+  private lastInteractionAt: Map<string, number> = new Map();
   private readonly DEBOUNCE_MS = 300; // Prevent rapid double-clicks
 
   /**
@@ -63,15 +67,18 @@ class InteractionController {
   }
 
   /**
-   * Check if enough time has passed since last interaction (debounce)
+   * Check if enough time has passed since the last interaction of this kind
+   * (debounce). Each action debounces independently so different controls
+   * never block each other.
    */
-  private canInteract(): boolean {
+  private canInteract(action: string): boolean {
     const now = Date.now();
-    if (now - this.state.lastInteractionTime < this.DEBOUNCE_MS) {
-      console.warn('Interaction debounced - too fast');
+    const last = this.lastInteractionAt.get(action) ?? 0;
+    if (now - last < this.DEBOUNCE_MS) {
+      debugWarn(`Interaction debounced - too fast (${action})`);
       return false;
     }
-    this.updateState({ lastInteractionTime: now });
+    this.lastInteractionAt.set(action, now);
     return true;
   }
 
@@ -85,9 +92,9 @@ class InteractionController {
     onSuccess?: (routeData: any) => void,
     onError?: (error: string) => void
   ): Promise<void> {
-    if (!this.canInteract()) return;
+    if (!this.canInteract('route')) return;
     if (this.state.isRouteLoading) {
-      console.warn('Route already loading');
+      debugWarn('Route already loading');
       return;
     }
 
@@ -124,7 +131,7 @@ class InteractionController {
         onSuccess(routeData);
       }
 
-      console.log('[V42] Route calculated successfully');
+      debugLog('[V42] Route calculated successfully');
     } catch (error) {
       // Force stop animation on error
       scanAnimationEngine.forceStop();
@@ -148,9 +155,9 @@ class InteractionController {
     onSuccess?: (routeData: any) => void,
     onError?: (error: string) => void
   ): Promise<void> {
-    if (!this.canInteract()) return;
+    if (!this.canInteract('safe-return')) return;
     if (this.state.isSafeReturnLoading) {
-      console.warn('Safe return already loading');
+      debugWarn('Safe return already loading');
       return;
     }
 
@@ -184,7 +191,7 @@ class InteractionController {
         onSuccess(routeData);
       }
 
-      console.log('[V42] Safe return route calculated');
+      debugLog('[V42] Safe return route calculated');
     } catch (error) {
       // Force stop animation on error
       scanAnimationEngine.forceStop();
@@ -209,9 +216,9 @@ class InteractionController {
     onSuccess?: (routeData: any) => void,
     onError?: (error: string) => void
   ): Promise<void> {
-    if (!this.canInteract()) return;
+    if (!this.canInteract('explore')) return;
     if (this.state.isExploreLoading) {
-      console.warn('Explore already loading');
+      debugWarn('Explore already loading');
       return;
     }
 
@@ -246,7 +253,7 @@ class InteractionController {
         onSuccess(routeData);
       }
 
-      console.log('[V42] Exploration route calculated');
+      debugLog('[V42] Exploration route calculated');
     } catch (error) {
       // Force stop animation on error
       scanAnimationEngine.forceStop();
@@ -266,28 +273,28 @@ class InteractionController {
    * Start tracking user movement
    */
   public onTrackStart(): void {
-    if (!this.canInteract()) return;
+    if (!this.canInteract('track')) return;
     if (this.state.isTrackingActive) {
-      console.warn('Tracking already active');
+      debugWarn('Tracking already active');
       return;
     }
 
     this.trackingPoints = [];
     this.updateState({ isTrackingActive: true });
 
-    // Subscribe to device location updates
-    deviceLocationService.addLocationListener((location) => {
+    // Subscribe to device location updates; keep the unsubscribe handle so
+    // repeated start/stop cycles never stack duplicate listeners.
+    this.stopTrackingListener = deviceLocationService.addLocationListener((location) => {
       if (this.state.isTrackingActive) {
         this.trackingPoints.push({
           lat: location.latitude,
           lon: location.longitude,
           timestamp: location.timestamp
         });
-        console.log(`Tracking point added: ${this.trackingPoints.length} total`);
       }
     });
 
-    console.log('Tracking started');
+    debugLog('Tracking started');
   }
 
   /**
@@ -295,13 +302,15 @@ class InteractionController {
    */
   public onTrackStop(): Array<{ lat: number; lon: number; timestamp: number }> {
     if (!this.state.isTrackingActive) {
-      console.warn('Tracking not active');
+      debugWarn('Tracking not active');
       return [];
     }
 
+    this.stopTrackingListener?.();
+    this.stopTrackingListener = null;
     this.updateState({ isTrackingActive: false });
     const points = [...this.trackingPoints];
-    console.log(`Tracking stopped. Recorded ${points.length} points`);
+    debugLog(`Tracking stopped. Recorded ${points.length} points`);
     
     return points;
   }
@@ -311,12 +320,12 @@ class InteractionController {
    */
   public onPanelOpen(panel: PanelType): void {
     if (this.state.activePanel === panel) {
-      console.log(`Panel ${panel} already open`);
+      debugLog(`Panel ${panel} already open`);
       return;
     }
 
     this.updateState({ activePanel: panel });
-    console.log(`Panel opened: ${panel}`);
+    debugLog(`Panel opened: ${panel}`);
   }
 
   /**
@@ -324,13 +333,13 @@ class InteractionController {
    */
   public onPanelClose(): void {
     if (this.state.activePanel === null) {
-      console.log('No panel to close');
+      debugLog('No panel to close');
       return;
     }
 
     const closedPanel = this.state.activePanel;
     this.updateState({ activePanel: null });
-    console.log(`Panel closed: ${closedPanel}`);
+    debugLog(`Panel closed: ${closedPanel}`);
   }
 
   /**
@@ -355,9 +364,11 @@ class InteractionController {
    * Clear all tracking data
    */
   public clearTracking(): void {
+    this.stopTrackingListener?.();
+    this.stopTrackingListener = null;
     this.trackingPoints = [];
     this.updateState({ isTrackingActive: false });
-    console.log('Tracking data cleared');
+    debugLog('Tracking data cleared');
   }
 
   /**

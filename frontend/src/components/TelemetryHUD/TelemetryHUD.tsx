@@ -46,6 +46,18 @@ export default function TelemetryHUD() {
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: 16, y: 80 });
   const [collapsed, setCollapsed] = useState(false);
   const dragRef = useRef<{ dx: number; dy: number } | null>(null);
+  // Drag updates are batched to one state write per frame; posRef always holds
+  // the latest position so pointer-up persists exactly where the panel landed.
+  const posRef = useRef(pos);
+  posRef.current = pos;
+  const moveRaf = useRef<number | null>(null);
+  const pendingPos = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (moveRaf.current !== null) cancelAnimationFrame(moveRaf.current);
+    };
+  }, []);
 
   // Start/stop sampling with visibility so it costs nothing when closed.
   useEffect(() => {
@@ -81,17 +93,32 @@ export default function TelemetryHUD() {
   }, []);
 
   const onPointerDown = (e: React.PointerEvent) => {
-    dragRef.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+    dragRef.current = { dx: e.clientX - posRef.current.x, dy: e.clientY - posRef.current.y };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent) => {
     if (!dragRef.current) return;
-    setPos({ x: e.clientX - dragRef.current.dx, y: e.clientY - dragRef.current.dy });
+    // Pointer events can fire far above the display rate; coalesce to one
+    // render per frame so the drag stays glued to the cursor without jank.
+    pendingPos.current = { x: e.clientX - dragRef.current.dx, y: e.clientY - dragRef.current.dy };
+    if (moveRaf.current === null) {
+      moveRaf.current = requestAnimationFrame(() => {
+        moveRaf.current = null;
+        if (pendingPos.current) setPos(pendingPos.current);
+      });
+    }
   };
   const onPointerUp = () => {
     if (dragRef.current) {
       dragRef.current = null;
-      void lepl.save(POS_KEY, pos).catch(() => {});
+      const final = pendingPos.current ?? posRef.current;
+      pendingPos.current = null;
+      if (moveRaf.current !== null) {
+        cancelAnimationFrame(moveRaf.current);
+        moveRaf.current = null;
+      }
+      setPos(final);
+      void lepl.save(POS_KEY, final).catch(() => {});
     }
   };
 
@@ -117,7 +144,7 @@ export default function TelemetryHUD() {
   return (
     <section
       className="hud"
-      style={{ left: pos.x, top: pos.y }}
+      style={{ transform: `translate3d(${pos.x}px, ${pos.y}px, 0)` }}
       role="region"
       aria-label="System telemetry"
     >
