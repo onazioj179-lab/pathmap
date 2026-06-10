@@ -18,6 +18,7 @@
  */
 
 import maplibregl from 'maplibre-gl';
+import { debugLog } from '../utils/debug';
 import { SatelliteModeController, getSatelliteModeController } from './satelliteMode';
 import { GlobeModeController, getGlobeModeController } from './globeMode';
 
@@ -89,9 +90,9 @@ export class MapModeController {
     this.satelliteController = getSatelliteModeController();
     this.globeController = getGlobeModeController();
 
-    console.log('[V92:MODE] Map Mode Controller initialized');
-    console.log(`[V92:MODE] Initial mode: ${this.config.initialMode}`);
-    console.log(
+    debugLog('[V92:MODE] Map Mode Controller initialized');
+    debugLog(`[V92:MODE] Initial mode: ${this.config.initialMode}`);
+    debugLog(
       `[V92:MODE] FPS targets: 2D=${this.config.performanceTargets.fps_2d}, Globe=${this.config.performanceTargets.fps_globe}`
     );
   }
@@ -104,7 +105,7 @@ export class MapModeController {
     this.satelliteController.bindMap(map);
     this.globeController.bindMap(map);
     this.startPerformanceMonitoring();
-    console.log('[V92:MODE] Map instance bound to all controllers');
+    debugLog('[V92:MODE] Map instance bound to all controllers');
   }
 
   /**
@@ -112,11 +113,11 @@ export class MapModeController {
    */
   async switchToStandard(): Promise<boolean> {
     if (this.state.currentMode === 'standard') {
-      console.log('[V92:MODE] Already in standard mode');
+      debugLog('[V92:MODE] Already in standard mode');
       return true;
     }
 
-    console.log('[V92:MODE] Switching to standard mode...');
+    debugLog('[V92:MODE] Switching to standard mode...');
     this.state.isTransitioning = true;
     this.state.previousMode = this.state.currentMode;
 
@@ -132,7 +133,7 @@ export class MapModeController {
       this.state.currentMode = 'standard';
       this.state.isTransitioning = false;
 
-      console.log('[V92:MODE] [OK] Switched to standard mode');
+      debugLog('[V92:MODE] [OK] Switched to standard mode');
       return true;
     } catch (error) {
       console.error('[V92:MODE] Standard mode switch failed:', error);
@@ -146,11 +147,11 @@ export class MapModeController {
    */
   async switchToSatellite(): Promise<boolean> {
     if (this.state.currentMode === 'satellite') {
-      console.log('[V92:MODE] Already in satellite mode');
+      debugLog('[V92:MODE] Already in satellite mode');
       return true;
     }
 
-    console.log('[V92:MODE] Switching to satellite mode...');
+    debugLog('[V92:MODE] Switching to satellite mode...');
     this.state.isTransitioning = true;
     this.state.previousMode = this.state.currentMode;
 
@@ -166,7 +167,7 @@ export class MapModeController {
       if (success) {
         this.state.currentMode = 'satellite';
         this.state.isTransitioning = false;
-        console.log('[V92:MODE] [OK] Switched to satellite mode');
+        debugLog('[V92:MODE] [OK] Switched to satellite mode');
         return true;
       } else {
         throw new Error('Satellite activation failed');
@@ -183,11 +184,11 @@ export class MapModeController {
    */
   async switchToGlobe(): Promise<boolean> {
     if (this.state.currentMode === 'globe') {
-      console.log('[V92:MODE] Already in globe mode');
+      debugLog('[V92:MODE] Already in globe mode');
       return true;
     }
 
-    console.log('[V92:MODE] Switching to globe mode...');
+    debugLog('[V92:MODE] Switching to globe mode...');
     this.state.isTransitioning = true;
     this.state.previousMode = this.state.currentMode;
 
@@ -201,10 +202,10 @@ export class MapModeController {
       if (success) {
         this.state.currentMode = 'globe';
         this.state.isTransitioning = false;
-        console.log('[V92:MODE] [OK] Switched to globe mode');
+        debugLog('[V92:MODE] [OK] Switched to globe mode');
 
         if (satelliteWasActive) {
-          console.log('[V92:MODE] Satellite imagery remains active in globe mode');
+          debugLog('[V92:MODE] Satellite imagery remains active in globe mode');
         }
 
         return true;
@@ -244,7 +245,7 @@ export class MapModeController {
     const nextIndex = (currentIndex + 1) % modeOrder.length;
     const nextMode = modeOrder[nextIndex];
 
-    console.log(`[V92:MODE] Cycling: ${this.state.currentMode} → ${nextMode}`);
+    debugLog(`[V92:MODE] Cycling: ${this.state.currentMode} → ${nextMode}`);
     return await this.switchToMode(nextMode);
   }
 
@@ -336,7 +337,7 @@ export class MapModeController {
     this.satelliteController.destroy();
     this.globeController.destroy();
     this.map = null;
-    console.log('[V92:MODE] Map Mode Controller destroyed');
+    debugLog('[V92:MODE] Map Mode Controller destroyed');
   }
 }
 

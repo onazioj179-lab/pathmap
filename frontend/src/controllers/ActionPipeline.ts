@@ -14,6 +14,8 @@
  *   - Exposes current state to UI
  */
 
+import { debugLog } from '../utils/debug';
+
 export enum PipelineState {
   IDLE = 'AP_IDLE',
   WAITING_BACKEND = 'AP_WAITING_BACKEND',
@@ -188,7 +190,7 @@ class ActionPipeline {
     // Notify listeners
     this.notifyListeners();
 
-    console.log(`[AP] ${previousState} → ${state} (action: ${this.currentAction || 'none'})`);
+    debugLog(`[AP] ${previousState} → ${state} (action: ${this.currentAction || 'none'})`);
   }
 
   /**
@@ -219,7 +221,7 @@ class ActionPipeline {
     }
 
     this.errorTimeout = setTimeout(() => {
-      console.log('[AP] Auto-resetting after error');
+      debugLog('[AP] Auto-resetting after error');
       this.reset();
     }, this.ERROR_RESET_DELAY);
   }
@@ -233,7 +235,7 @@ class ActionPipeline {
     this.isLocked = false;
     this.metrics = this.resetMetrics();
     this.notifyListeners();
-    console.log('[AP] Pipeline reset to IDLE');
+    debugLog('[AP] Pipeline reset to IDLE');
   }
 
   /**
@@ -246,7 +248,9 @@ class ActionPipeline {
   }
 
   /**
-   * Wait for render cycle
+   * Wait for render cycle. This double-rAF (~2 frames) is a deliberate settle
+   * delay: it lets the map commit the new route before the UI announces
+   * completion, so results never feel like they "pop" in mid-frame.
    */
   private waitForRender(): Promise<void> {
     return new Promise(resolve => {
@@ -259,7 +263,8 @@ class ActionPipeline {
   }
 
   /**
-   * Wait for UI update cycle
+   * Wait for UI update cycle — one more frame of breathing room so loading
+   * states fade out in step with the rendered result.
    */
   private waitForUIUpdate(): Promise<void> {
     return new Promise(resolve => {
@@ -293,7 +298,7 @@ class ActionPipeline {
         ? m.renderEndTime - m.renderStartTime 
         : 0;
 
-      console.log(`[AP] Metrics:`, {
+      debugLog(`[AP] Metrics:`, {
         action: this.currentAction,
         backendTime: `${backendTime.toFixed(2)}ms`,
         renderTime: `${renderTime.toFixed(2)}ms`,

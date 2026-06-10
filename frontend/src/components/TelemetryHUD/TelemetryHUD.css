@@ -2,6 +2,11 @@
 
 .hud {
   position: fixed;
+  /* Positioned via translate3d (set inline) so drags move on the compositor
+     instead of triggering layout every frame. */
+  left: 0;
+  top: 0;
+  will-change: transform;
   z-index: 900;
   width: 232px;
   background: color-mix(in srgb, var(--surface) 94%, transparent);

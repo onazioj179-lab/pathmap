@@ -13,6 +13,7 @@
  */
 
 import maplibregl from 'maplibre-gl';
+import { debugLog } from '../utils/debug';
 
 export interface SatelliteModeConfig {
   enabled: boolean;
@@ -45,8 +46,8 @@ export class SatelliteModeController {
       ...config
     };
 
-    console.log('[V92:SATELLITE] Satellite Mode Controller initialized');
-    console.log(`[V92:SATELLITE] Tile source: ${this.config.tileSourceUrl}`);
+    debugLog('[V92:SATELLITE] Satellite Mode Controller initialized');
+    debugLog(`[V92:SATELLITE] Tile source: ${this.config.tileSourceUrl}`);
   }
 
   /**
@@ -54,7 +55,7 @@ export class SatelliteModeController {
    */
   bindMap(map: maplibregl.Map) {
     this.map = map;
-    console.log('[V92:SATELLITE] Map instance bound');
+    debugLog('[V92:SATELLITE] Map instance bound');
   }
 
   /**
@@ -67,12 +68,12 @@ export class SatelliteModeController {
     }
 
     if (this.isActive) {
-      console.log('[V92:SATELLITE] Already active');
+      debugLog('[V92:SATELLITE] Already active');
       return true;
     }
 
     try {
-      console.log('[V92:SATELLITE] Activating satellite mode...');
+      debugLog('[V92:SATELLITE] Activating satellite mode...');
 
       // Add satellite source if not exists
       if (!this.map.getSource(this.satelliteSourceId)) {
@@ -82,7 +83,7 @@ export class SatelliteModeController {
           tileSize: 256,
           attribution: 'PathFinder V92 Satellite'
         });
-        console.log('[V92:SATELLITE] Satellite source added');
+        debugLog('[V92:SATELLITE] Satellite source added');
       }
 
       // Add satellite layer if not exists
@@ -109,7 +110,7 @@ export class SatelliteModeController {
           },
           firstSymbolId // Insert before first symbol layer
         );
-        console.log('[V92:SATELLITE] Satellite layer added');
+        debugLog('[V92:SATELLITE] Satellite layer added');
       }
 
       // Smooth fade-in animation
@@ -120,7 +121,7 @@ export class SatelliteModeController {
       }
 
       this.isActive = true;
-      console.log('[V92:SATELLITE] [OK] Satellite mode activated');
+      debugLog('[V92:SATELLITE] [OK] Satellite mode activated');
       return true;
 
     } catch (error) {
@@ -139,12 +140,12 @@ export class SatelliteModeController {
     }
 
     if (!this.isActive) {
-      console.log('[V92:SATELLITE] Already inactive');
+      debugLog('[V92:SATELLITE] Already inactive');
       return true;
     }
 
     try {
-      console.log('[V92:SATELLITE] Deactivating satellite mode...');
+      debugLog('[V92:SATELLITE] Deactivating satellite mode...');
 
       // Smooth fade-out animation
       if (this.config.smoothTransitions) {
@@ -154,7 +155,7 @@ export class SatelliteModeController {
       }
 
       this.isActive = false;
-      console.log('[V92:SATELLITE] [OK] Satellite mode deactivated');
+      debugLog('[V92:SATELLITE] [OK] Satellite mode deactivated');
       return true;
 
     } catch (error) {
@@ -274,7 +275,7 @@ export class SatelliteModeController {
    */
   updateConfig(newConfig: Partial<SatelliteModeConfig>) {
     this.config = { ...this.config, ...newConfig };
-    console.log('[V92:SATELLITE] Configuration updated');
+    debugLog('[V92:SATELLITE] Configuration updated');
   }
 
   /**
@@ -289,7 +290,7 @@ export class SatelliteModeController {
         if (this.map.getSource(this.satelliteSourceId)) {
           this.map.removeSource(this.satelliteSourceId);
         }
-        console.log('[V92:SATELLITE] Resources cleaned up');
+        debugLog('[V92:SATELLITE] Resources cleaned up');
       } catch (error) {
         console.warn('[V92:SATELLITE] Cleanup warning:', error);
       }

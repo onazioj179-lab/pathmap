@@ -11,6 +11,8 @@
  *   - <15% CPU usage, <25% GPU usage
  */
 
+import { debugLog } from '../utils/debug';
+
 export enum ScanMode {
   ROUTE = 'ROUTE-SCAN',
   SAFE_RETURN = 'SAFE-RETURN-SCAN',
@@ -68,7 +70,7 @@ class ScanAnimationEngine {
     this.handleResize();
     window.addEventListener('resize', this.handleResize.bind(this));
 
-    console.log('[SAE] Initialized');
+    debugLog('[SAE] Initialized');
   }
 
   /**
@@ -91,7 +93,7 @@ class ScanAnimationEngine {
 
     this.animate();
 
-    console.log(`[SAE] Started ${config.mode} scan`);
+    debugLog(`[SAE] Started ${config.mode} scan`);
   }
 
   /**
@@ -103,7 +105,7 @@ class ScanAnimationEngine {
     this.isFadingOut = true;
     this.fadeStartTime = performance.now();
 
-    console.log('[SAE] Stopping scan with fade out');
+    debugLog('[SAE] Stopping scan with fade out');
   }
 
   /**
@@ -124,7 +126,7 @@ class ScanAnimationEngine {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    console.log('[SAE] Force stopped');
+    debugLog('[SAE] Force stopped');
   }
 
   /**
@@ -371,7 +373,7 @@ class ScanAnimationEngine {
     this.canvas = null;
     this.ctx = null;
 
-    console.log('[SAE] Destroyed');
+    debugLog('[SAE] Destroyed');
   }
 }
 
