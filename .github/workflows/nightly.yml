@@ -71,10 +71,20 @@ jobs:
           POSTGRES_DB: pathmap_test
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pathmap"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout code
@@ -138,10 +148,22 @@ jobs:
           POSTGRES_DB: pathmap_test
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pathmap"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Test backup procedure
         run: |
+          # Wait until postgres accepts connections (healthcheck covers the
+          # container, but the published port can lag a moment behind).
+          for i in $(seq 1 30); do
+            PGPASSWORD=pathmap_test pg_isready -h localhost -U pathmap && break
+            sleep 2
+          done
+
           # Test pg_dump
           PGPASSWORD=pathmap_test pg_dump -h localhost -U pathmap pathmap_test > backup_test.sql
           

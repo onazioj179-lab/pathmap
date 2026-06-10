@@ -13,7 +13,10 @@ export interface BotUser {
 
 /** Register a fresh user, log in, and return their id + access token. */
 export async function registerAndLogin(request: APIRequestContext, tag: string): Promise<BotUser> {
-  const username = `bot_${tag}_${Date.now()}_${Math.floor(Math.random() * 1e4)}`;
+  // Backend caps usernames at 30 chars; base36 keeps the unique suffix short.
+  const suffix = `${Date.now().toString(36)}${Math.floor(Math.random() * 1296).toString(36).padStart(2, '0')}`;
+  const username = `bot_${tag}_${suffix}`;
+  expect(username.length, `username "${username}" must fit the 30-char limit`).toBeLessThanOrEqual(30);
   const password = 'BotPass123!';
   const email = `${username}@example.com`;
 
