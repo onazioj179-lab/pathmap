@@ -19,7 +19,7 @@ PyJWT==2.8.0  # JWT token authentication
 
 # V97: Production Hardening
 redis[hiredis]==5.0.1  # Distributed rate limiting, caching
-asyncpg==0.29.0  # PostgreSQL async driver
+asyncpg==0.31.0  # PostgreSQL async driver
 sqlalchemy[asyncio]==2.0.23  # ORM with async support
 
 # V99: Observability
